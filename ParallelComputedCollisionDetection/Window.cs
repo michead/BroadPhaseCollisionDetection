@@ -1,4 +1,6 @@
-﻿using System;
+﻿#define ORTHO
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -21,11 +23,14 @@ namespace ParallelComputedCollisionDetection
     {
         #region Global Members
         int oldX, oldY;
-        float oldWheel;
         float offsetX = 0f, offsetY = 0f;
         Vector3 eye, target, up;
         float mouse_sensitivity=0.2f;
         Matrix4 modelView;
+        float old_wheel;
+        float scale_factor;
+        float rotation_speed = 2f;
+        bool stop;
         #endregion
 
         public Window()
@@ -38,7 +43,8 @@ namespace ParallelComputedCollisionDetection
         {
             base.OnLoad(e);
 
-            eye = new Vector3(0, 0, 7);
+            VSync = VSyncMode.On;
+            eye = new Vector3(0, 0, 14);
             target = new Vector3(0, 0, 0);
             up = new Vector3(0, 1, 0);
 
@@ -46,6 +52,8 @@ namespace ParallelComputedCollisionDetection
 
             oldX = OpenTK.Input.Mouse.GetState().X;
             oldY = OpenTK.Input.Mouse.GetState().Y;
+            old_wheel = 0f;
+            stop = false;
         }
 
         protected override void OnUnload(EventArgs e)
@@ -75,6 +83,7 @@ namespace ParallelComputedCollisionDetection
                 else
                     WindowState = WindowState.Maximized;
             checkMouseInput();
+            checkKeyboardInput();
         }
 
         void checkMouseInput()
@@ -91,12 +100,47 @@ namespace ParallelComputedCollisionDetection
 
             oldX = mouse.X;
             oldY = mouse.Y;
-            eye.Z += (oldWheel - mouse.WheelPrecise);
-            if (eye.Z < 1)
-                eye.Z = 1;
-            else if (eye.Z > 15)
-                eye.Z = 15;
-            oldWheel = mouse.WheelPrecise;
+#if ORTHO
+            scale_factor = mouse.WheelPrecise + 10f;
+            if(scale_factor > 20f)
+                scale_factor=20f;
+            if(scale_factor < 1f)
+                scale_factor=1f;
+#else
+            eye.Z -= (mouse.WheelPrecise - old_wheel);
+            if (eye.Z < 3)
+                eye.Z = 3;
+            old_wheel = mouse.WheelPrecise;
+#endif
+        }
+
+        void checkKeyboardInput()
+        {
+            if (Keyboard[Key.Left])
+                offsetX -= rotation_speed;
+            if (Keyboard[Key.Right])
+                offsetX += rotation_speed;
+            if (Keyboard[Key.Up])
+                offsetY += rotation_speed;
+            if (Keyboard[Key.Down])
+                offsetY -= rotation_speed;
+            if (Keyboard[Key.Z])
+            {
+                offsetX = 0f;
+                offsetY = 0f;
+            }
+            if (Keyboard[Key.Y])
+            {
+                offsetX = 0f;
+                offsetY = 90f;
+            }
+            if (Keyboard[Key.X])
+            {
+                offsetX = 90f;
+                offsetY = 0f;
+            }
+            
+
         }
 
         protected override void OnRenderFrame(FrameEventArgs e)
@@ -104,22 +148,31 @@ namespace ParallelComputedCollisionDetection
             base.OnRenderFrame(e);
 
             GL.Clear(ClearBufferMask.DepthBufferBit | ClearBufferMask.ColorBufferBit);
+
+#if ORTHO
+            modelView = Matrix4.CreateOrthographic(16, 9, 3, -3);
+            GL.MatrixMode(MatrixMode.Projection);
+            GL.LoadMatrix(ref modelView);
+            GL.Ortho(-10, 10, -10, 10, 20, -20);
+            GL.Scale(scale_factor, scale_factor, scale_factor);
+#else
             modelView = Matrix4.LookAt(eye, target, up);
             GL.MatrixMode(MatrixMode.Modelview);
             GL.LoadMatrix(ref modelView);
+#endif
 
             GL.Rotate(offsetX, 0.0f, 1.0f, 0.0f);
             GL.Rotate(offsetY, 1.0f, 0.0f, 0.0f);
 
-            #region Drawing Primitives
+            #region Draw Grid 3x3x3
             GL.Begin(PrimitiveType.LineLoop);
             {
                 GL.Color3(1.0, 1.0, 1.0);
 
-                GL.Vertex3(-1.0, 1.0, 1.0);
-                GL.Vertex3(1.0, 1.0, 1.0);
-                GL.Vertex3(1.0, -1.0, 1.0);
-                GL.Vertex3(-1.0, -1.0, 1.0);
+                GL.Vertex3(-3.0, 3.0, 3.0);
+                GL.Vertex3(3.0, 3.0, 3.0);
+                GL.Vertex3(3.0, -3.0, 3.0);
+                GL.Vertex3(-3.0, -3.0, 3.0);
             }
             GL.End();
 
@@ -127,10 +180,32 @@ namespace ParallelComputedCollisionDetection
             {
                 GL.Color3(1.0, 1.0, 1.0);
 
-                GL.Vertex3(-1.0, 1.0, -1.0);
-                GL.Vertex3(1.0, 1.0, -1.0);
-                GL.Vertex3(1.0, -1.0, -1.0);
-                GL.Vertex3(-1.0, -1.0, -1.0);
+                GL.Vertex3(-3.0, 3.0, 1.0);
+                GL.Vertex3(3.0, 3.0, 1.0);
+                GL.Vertex3(3.0, -3.0, 1.0);
+                GL.Vertex3(-3.0, -3.0, 1.0);
+            }
+            GL.End();
+
+            GL.Begin(PrimitiveType.LineLoop);
+            {
+                GL.Color3(1.0, 1.0, 1.0);
+
+                GL.Vertex3(-3.0, 3.0, -1.0);
+                GL.Vertex3(3.0, 3.0, -1.0);
+                GL.Vertex3(3.0, -3.0, -1.0);
+                GL.Vertex3(-3.0, -3.0, -1.0);
+            }
+            GL.End();
+
+            GL.Begin(PrimitiveType.LineLoop);
+            {
+                GL.Color3(1.0, 1.0, 1.0);
+
+                GL.Vertex3(-3.0, 3.0, -3.0);
+                GL.Vertex3(3.0, 3.0, -3.0);
+                GL.Vertex3(3.0, -3.0, -3.0);
+                GL.Vertex3(-3.0, -3.0, -3.0);
             }
             GL.End();
 
@@ -138,8 +213,8 @@ namespace ParallelComputedCollisionDetection
             {
                 GL.Color3(1.0, 1.0, 1.0);
 
-                GL.Vertex3(-1.0, 1.0, 1.0);
-                GL.Vertex3(-1.0, 1.0, -1.0);
+                GL.Vertex3(-3.0, 3.0, 3.0);
+                GL.Vertex3(-3.0, 3.0, -3.0);
             }
             GL.End();
             
@@ -147,8 +222,8 @@ namespace ParallelComputedCollisionDetection
             {
                 GL.Color3(1.0, 1.0, 1.0);
 
-                GL.Vertex3(1.0, 1.0, 1.0);
-                GL.Vertex3(1.0, 1.0, -1.0);
+                GL.Vertex3(3.0, 3.0, 3.0);
+                GL.Vertex3(3.0, 3.0, -3.0);
             }
             GL.End();
             
@@ -156,8 +231,8 @@ namespace ParallelComputedCollisionDetection
             {
                 GL.Color3(1.0, 1.0, 1.0);
 
-                GL.Vertex3(1.0, -1.0, 1.0);
-                GL.Vertex3(1.0, -1.0, -1.0);
+                GL.Vertex3(3.0, -3.0, 3.0);
+                GL.Vertex3(3.0, -3.0, -3.0);
             }
             GL.End();
             
@@ -165,8 +240,124 @@ namespace ParallelComputedCollisionDetection
             {
                 GL.Color3(1.0, 1.0, 1.0);
 
-                GL.Vertex3(-1.0, -1.0, 1.0);
-                GL.Vertex3(-1.0, -1.0, -1.0);
+                GL.Vertex3(-3.0, -3.0, 3.0);
+                GL.Vertex3(-3.0, -3.0, -3.0);
+            }
+            GL.End();
+
+            GL.Begin(PrimitiveType.LineLoop);
+            {
+                GL.Color3(1.0, 1.0, 1.0);
+
+                GL.Vertex3(-1.0, 3.0, 3.0);
+                GL.Vertex3(-1.0, 3.0, -3.0);
+                GL.Vertex3(-1.0, -3.0, -3.0);
+                GL.Vertex3(-1.0, -3.0, 3.0);
+            }
+            GL.End();
+
+            GL.Begin(PrimitiveType.LineLoop);
+            {
+                GL.Color3(1.0, 1.0, 1.0);
+
+                GL.Vertex3(1.0, 3.0, 3.0);
+                GL.Vertex3(1.0, 3.0, -3.0);
+                GL.Vertex3(1.0, -3.0, -3.0);
+                GL.Vertex3(1.0, -3.0, 3.0);
+            }
+            GL.End();
+
+            GL.Begin(PrimitiveType.LineLoop);
+            {
+                GL.Color3(1.0, 1.0, 1.0);
+
+                GL.Vertex3(3.0, 1.0, 3.0);
+                GL.Vertex3(3.0, 1.0, -3.0);
+                GL.Vertex3(-3.0, 1.0, -3.0);
+                GL.Vertex3(-3.0, 1.0, 3.0);
+            }
+            GL.End();
+
+            GL.Begin(PrimitiveType.LineLoop);
+            {
+                GL.Color3(1.0, 1.0, 1.0);
+
+                GL.Vertex3(3.0, -1.0, 3.0);
+                GL.Vertex3(3.0, -1.0, -3.0);
+                GL.Vertex3(-3.0, -1.0, -3.0);
+                GL.Vertex3(-3.0, -1.0, 3.0);
+            }
+            GL.End();
+
+            GL.Begin(PrimitiveType.Lines);
+            {
+                GL.Color3(1.0, 1.0, 1.0);
+
+                GL.Vertex3(-1.0, 1.0, 3.0);
+                GL.Vertex3(-1.0, 1.0, -3.0);
+            }
+            GL.End();
+
+            GL.Begin(PrimitiveType.Lines);
+            {
+                GL.Color3(1.0, 1.0, 1.0);
+
+                GL.Vertex3(1.0, 1.0, 3.0);
+                GL.Vertex3(1.0, 1.0, -3.0);
+            }
+            GL.End();
+
+            GL.Begin(PrimitiveType.Lines);
+            {
+                GL.Color3(1.0, 1.0, 1.0);
+
+                GL.Vertex3(-1.0, -1.0, 3.0);
+                GL.Vertex3(-1.0, -1.0, -3.0);
+            }
+            GL.End();
+
+            GL.Begin(PrimitiveType.Lines);
+            {
+                GL.Color3(1.0, 1.0, 1.0);
+
+                GL.Vertex3(1.0, -1.0, 3.0);
+                GL.Vertex3(1.0, -1.0, -3.0);
+            }
+            GL.End();
+
+            GL.Begin(PrimitiveType.Lines);
+            {
+                GL.Color3(1.0, 1.0, 1.0);
+
+                GL.Vertex3(-3.0, 1.0, 1.0);
+                GL.Vertex3(3.0, 1.0, 1.0);
+            }
+            GL.End();
+
+            GL.Begin(PrimitiveType.Lines);
+            {
+                GL.Color3(1.0, 1.0, 1.0);
+
+                GL.Vertex3(-3.0, 1.0, -1.0);
+                GL.Vertex3(3.0, 1.0, -1.0);
+            }
+            GL.End();
+
+            GL.Begin(PrimitiveType.Lines);
+            {
+                GL.Color3(1.0, 1.0, 1.0);
+
+                GL.Vertex3(-3.0, -1.0, 1.0);
+                GL.Vertex3(3.0, -1.0, 1.0);
+            }
+            GL.End();
+
+            GL.Begin(PrimitiveType.Lines);
+            {
+                GL.Color3(1.0, 1.0, 1.0);
+
+                GL.Vertex3(-3.0, -1.0, -1.0);
+                GL.Vertex3(3.0, -1.0, -1.0);
             }
             GL.End();
             #endregion
