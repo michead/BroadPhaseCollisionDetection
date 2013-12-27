@@ -1,4 +1,4 @@
-﻿//#define ORTHO
+﻿#define ORTHO
 
 using System;
 using System.Collections.Generic;
@@ -98,7 +98,7 @@ namespace ParallelComputedCollisionDetection
             else
                 CursorVisible = true;
 #if ORTHO
-            scale_factor = mouse.WheelPrecise + 10f;
+            scale_factor = mouse.WheelPrecise + 6f;
             if(scale_factor > 20f)
                 scale_factor=20f;
             if(scale_factor < 1f)
@@ -134,9 +134,9 @@ namespace ParallelComputedCollisionDetection
                     offsetY -= rotation_speed;
                 else if (offsetY < 0f)
                     offsetY += rotation_speed;
-                if (offsetX  >-1f && offsetX < 1f)
+                if (offsetX  > -2f && offsetX < 2f)
                     offsetX = 0f;
-                if (offsetY > -1f && offsetY < 1f)
+                if (offsetY > -2f && offsetY < 2f)
                     offsetY = 0f;
                 if (offsetX == 0f && offsetY == 0f)
                     zRot = false;
@@ -152,9 +152,9 @@ namespace ParallelComputedCollisionDetection
                     offsetY -= rotation_speed;
                 else if (offsetY < 90f)
                     offsetY += rotation_speed;
-                if (offsetX > -1f && offsetX < 1f)
+                if (offsetX > -2f && offsetX < 2f)
                     offsetX = 0f;
-                if (offsetY > 89f && offsetY < 91f)
+                if (offsetY > 88f && offsetY < 92f)
                     offsetY = 90f;
                 if (offsetX == 0f && offsetY == 90f)
                     yRot = false;
@@ -170,9 +170,9 @@ namespace ParallelComputedCollisionDetection
                     offsetY -= rotation_speed;
                 else if (offsetY < 0f)
                     offsetY += rotation_speed;
-                if (offsetX > 89f && offsetX < 91f)
+                if (offsetX > 88f && offsetX < 92f)
                     offsetX = 90f;
-                if (offsetY > -1f && offsetY < 1f)
+                if (offsetY > -2f && offsetY < 2f)
                     offsetY = 0f;
                 if (offsetX == 90f && offsetY == 0f)
                     xRot = false;
@@ -189,10 +189,10 @@ namespace ParallelComputedCollisionDetection
             GL.Clear(ClearBufferMask.DepthBufferBit | ClearBufferMask.ColorBufferBit);
 
 #if ORTHO
-            modelView = Matrix4.CreateOrthographic(16, 9, 3, -3);
+            modelView = Matrix4.CreateOrthographic(16, 9, 6, -6);
             GL.MatrixMode(MatrixMode.Projection);
             GL.LoadMatrix(ref modelView);
-            GL.Ortho(-10, 10, -10, 10, 20, -20);
+            GL.Ortho(-6, 6, -6, 6, 6, -6);
             GL.Scale(scale_factor, scale_factor, scale_factor);
 #else
             modelView = Matrix4.LookAt(eye, target, up);
