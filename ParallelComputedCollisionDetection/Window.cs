@@ -1,4 +1,4 @@
-﻿#define ORTHO
+﻿//#define ORTHO
 
 using System;
 using System.Collections.Generic;
@@ -22,15 +22,17 @@ namespace ParallelComputedCollisionDetection
     public class Window : GameWindow
     {
         #region Global Members
-        int oldX, oldY;
+        MouseState old_mouse;
         float offsetX = 0f, offsetY = 0f;
         Vector3 eye, target, up;
         float mouse_sensitivity=0.2f;
         Matrix4 modelView;
-        float old_wheel;
         float scale_factor;
         float rotation_speed = 2f;
-        bool stop;
+        KeyboardState old_key;
+        bool xRot;
+        bool yRot;
+        bool zRot;
         #endregion
 
         public Window()
@@ -50,10 +52,8 @@ namespace ParallelComputedCollisionDetection
 
             GL.ClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
-            oldX = OpenTK.Input.Mouse.GetState().X;
-            oldY = OpenTK.Input.Mouse.GetState().Y;
-            old_wheel = 0f;
-            stop = false;
+            old_mouse = OpenTK.Input.Mouse.GetState();
+            old_key = OpenTK.Input.Keyboard.GetState();
         }
 
         protected override void OnUnload(EventArgs e)
@@ -92,14 +92,11 @@ namespace ParallelComputedCollisionDetection
             if (mouse.IsButtonDown(MouseButton.Right))
             {
                 CursorVisible = false;
-                offsetX += (mouse.X - oldX) * mouse_sensitivity;
-                offsetY += (mouse.Y - oldY) * mouse_sensitivity;
+                offsetX += (mouse.X - old_mouse.X) * mouse_sensitivity;
+                offsetY += (mouse.Y - old_mouse.Y) * mouse_sensitivity;
             }
             else
                 CursorVisible = true;
-
-            oldX = mouse.X;
-            oldY = mouse.Y;
 #if ORTHO
             scale_factor = mouse.WheelPrecise + 10f;
             if(scale_factor > 20f)
@@ -107,11 +104,11 @@ namespace ParallelComputedCollisionDetection
             if(scale_factor < 1f)
                 scale_factor=1f;
 #else
-            eye.Z -= (mouse.WheelPrecise - old_wheel);
+            eye.Z -= (mouse.WheelPrecise - old_mouse.WheelPrecise);
             if (eye.Z < 3)
                 eye.Z = 3;
-            old_wheel = mouse.WheelPrecise;
 #endif
+            old_mouse = mouse;
         }
 
         void checkKeyboardInput()
@@ -124,22 +121,65 @@ namespace ParallelComputedCollisionDetection
                 offsetY += rotation_speed;
             if (Keyboard[Key.Down])
                 offsetY -= rotation_speed;
-            if (Keyboard[Key.Z])
+
+            #region XYZ Grid Rotations
+            if (Keyboard[Key.Z] || zRot)
             {
-                offsetX = 0f;
-                offsetY = 0f;
+                zRot = true;
+                if (offsetX > 0f)
+                    offsetX--;
+                else if (offsetX < 0f)
+                    offsetX++;
+                if (offsetY > 0f)
+                    offsetY--;
+                else if (offsetY < 0f)
+                    offsetY++;
+                if ((offsetX  >-1f && offsetX < 1f) && (offsetY > -1f && offsetY < 1f))
+                {
+                    offsetX = 0f;
+                    offsetY = 0f;
+                    zRot = false;
+                }
+                
             }
-            if (Keyboard[Key.Y])
+            if (Keyboard[Key.Y] || yRot)
             {
-                offsetX = 0f;
-                offsetY = 90f;
+                yRot = true;
+                if (offsetX > 0f)
+                    offsetX--;
+                else if (offsetX < 0f)
+                    offsetX++;
+                if (offsetY > 90f)
+                    offsetY--;
+                else if (offsetY < 90f)
+                    offsetY++;
+                if ((offsetX > -1f && offsetX < 1f) && (offsetY > 89f && offsetY < 91f))
+                {
+                    offsetX = 0f;
+                    offsetY = 90f;
+                    yRot = false;
+                }
             }
-            if (Keyboard[Key.X])
+            if (Keyboard[Key.X] || xRot)
             {
-                offsetX = 90f;
-                offsetY = 0f;
+                xRot = true;
+                if (offsetX > 90f)
+                    offsetX--;
+                else if (offsetX < 90f)
+                    offsetX++;
+                if (offsetY > 0f)
+                    offsetY--;
+                else if (offsetY < 0f)
+                    offsetY++;
+                if ((offsetX > 89f && offsetX < 91f) && (offsetY > -1f && offsetY < 1f))
+                {
+                    offsetX = 90f;
+                    offsetY = 0f;
+                    xRot = false;
+                }
             }
-            
+            #endregion
+            //old_key = OpenTK.Input.Keyboard.GetState();
 
         }
 
