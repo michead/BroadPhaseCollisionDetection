@@ -127,56 +127,55 @@ namespace ParallelComputedCollisionDetection
             {
                 zRot = true;
                 if (offsetX > 0f)
-                    offsetX--;
+                    offsetX -= rotation_speed;
                 else if (offsetX < 0f)
-                    offsetX++;
+                    offsetX += rotation_speed;
                 if (offsetY > 0f)
-                    offsetY--;
+                    offsetY -= rotation_speed;
                 else if (offsetY < 0f)
-                    offsetY++;
-                if ((offsetX  >-1f && offsetX < 1f) && (offsetY > -1f && offsetY < 1f))
-                {
+                    offsetY += rotation_speed;
+                if (offsetX  >-1f && offsetX < 1f)
                     offsetX = 0f;
+                if (offsetY > -1f && offsetY < 1f)
                     offsetY = 0f;
+                if (offsetX == 0f && offsetY == 0f)
                     zRot = false;
-                }
-                
             }
             if (Keyboard[Key.Y] || yRot)
             {
                 yRot = true;
                 if (offsetX > 0f)
-                    offsetX--;
+                    offsetX -= rotation_speed;
                 else if (offsetX < 0f)
-                    offsetX++;
+                    offsetX += rotation_speed;
                 if (offsetY > 90f)
-                    offsetY--;
+                    offsetY -= rotation_speed;
                 else if (offsetY < 90f)
-                    offsetY++;
-                if ((offsetX > -1f && offsetX < 1f) && (offsetY > 89f && offsetY < 91f))
-                {
+                    offsetY += rotation_speed;
+                if (offsetX > -1f && offsetX < 1f)
                     offsetX = 0f;
+                if (offsetY > 89f && offsetY < 91f)
                     offsetY = 90f;
+                if (offsetX == 0f && offsetY == 90f)
                     yRot = false;
-                }
             }
             if (Keyboard[Key.X] || xRot)
             {
                 xRot = true;
                 if (offsetX > 90f)
-                    offsetX--;
+                    offsetX -= rotation_speed;
                 else if (offsetX < 90f)
-                    offsetX++;
+                    offsetX += rotation_speed;
                 if (offsetY > 0f)
-                    offsetY--;
+                    offsetY -= rotation_speed;
                 else if (offsetY < 0f)
-                    offsetY++;
-                if ((offsetX > 89f && offsetX < 91f) && (offsetY > -1f && offsetY < 1f))
-                {
+                    offsetY += rotation_speed;
+                if (offsetX > 89f && offsetX < 91f)
                     offsetX = 90f;
+                if (offsetY > -1f && offsetY < 1f)
                     offsetY = 0f;
+                if (offsetX == 90f && offsetY == 0f)
                     xRot = false;
-                }
             }
             #endregion
             //old_key = OpenTK.Input.Keyboard.GetState();
@@ -398,6 +397,42 @@ namespace ParallelComputedCollisionDetection
 
                 GL.Vertex3(-3.0, -1.0, -1.0);
                 GL.Vertex3(3.0, -1.0, -1.0);
+            }
+            GL.End();
+            
+            GL.Begin(PrimitiveType.Lines);
+            {
+                GL.Color3(1.0, 1.0, 1.0);
+
+                GL.Vertex3(-1.0, 3.0, 1.0);
+                GL.Vertex3(-1.0, -3.0, 1.0);
+            }
+            GL.End();
+
+            GL.Begin(PrimitiveType.Lines);
+            {
+                GL.Color3(1.0, 1.0, 1.0);
+
+                GL.Vertex3(1.0, 3.0, 1.0);
+                GL.Vertex3(1.0, -3.0, 1.0);
+            }
+            GL.End();
+
+            GL.Begin(PrimitiveType.Lines);
+            {
+                GL.Color3(1.0, 1.0, 1.0);
+
+                GL.Vertex3(-1.0, 3.0, -1.0);
+                GL.Vertex3(-1.0, -3.0, -1.0);
+            }
+            GL.End();
+
+            GL.Begin(PrimitiveType.Lines);
+            {
+                GL.Color3(1.0, 1.0, 1.0);
+
+                GL.Vertex3(1.0, 3.0, -1.0);
+                GL.Vertex3(1.0, -3.0, -1.0);
             }
             GL.End();
             #endregion
