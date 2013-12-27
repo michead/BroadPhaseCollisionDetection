@@ -1,4 +1,4 @@
-﻿#define ORTHO
+﻿//#define ORTHO
 
 using System;
 using System.Collections.Generic;
@@ -98,7 +98,7 @@ namespace ParallelComputedCollisionDetection
             else
                 CursorVisible = true;
 #if ORTHO
-            scale_factor = mouse.WheelPrecise + 6f;
+            scale_factor = mouse.WheelPrecise + 7f;
             if(scale_factor > 20f)
                 scale_factor=20f;
             if(scale_factor < 1f)
@@ -162,19 +162,19 @@ namespace ParallelComputedCollisionDetection
             if (Keyboard[Key.X] || xRot)
             {
                 xRot = true;
-                if (offsetX > 90f)
+                if (offsetX > -90f)
                     offsetX -= rotation_speed;
-                else if (offsetX < 90f)
+                else if (offsetX < -90f)
                     offsetX += rotation_speed;
                 if (offsetY > 0f)
                     offsetY -= rotation_speed;
                 else if (offsetY < 0f)
                     offsetY += rotation_speed;
-                if (offsetX > 88f && offsetX < 92f)
-                    offsetX = 90f;
+                if (offsetX < -88f && offsetX > -92f)
+                    offsetX = -90f;
                 if (offsetY > -2f && offsetY < 2f)
                     offsetY = 0f;
-                if (offsetX == 90f && offsetY == 0f)
+                if (offsetX == -90f && offsetY == 0f)
                     xRot = false;
             }
             #endregion
