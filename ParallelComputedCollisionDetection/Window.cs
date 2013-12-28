@@ -1,4 +1,4 @@
-﻿#define ORTHO
+﻿//#define ORTHO
 
 using System;
 using System.Collections.Generic;
@@ -17,12 +17,13 @@ using System.Windows.Forms;
 using OpenTK.Platform;
 using System.Diagnostics;
 using TK = OpenTK.Graphics.OpenGL;
+using GL = OpenTK.Graphics.OpenGL.GL;
 
 namespace ParallelComputedCollisionDetection
 {
     public class Window : GameWindow
     {
-        #region TK.GLobal Members
+        #region GLobal Members
         MouseState old_mouse;
         float offsetX = 0f, offsetY = 0f;
         Vector3 eye, target, up;
@@ -30,15 +31,19 @@ namespace ParallelComputedCollisionDetection
         Matrix4 modelView;
         float scale_factor;
         float rotation_speed = 2f;
+        float fov = 10f;
+        int sphere_precision = 30;
         KeyboardState old_key;
         bool xRot;
         bool yRot;
         bool zRot;
-        float[] lightAmb = { 1.0f, 1.0f, 0.0f, 1.0f };
-        float[] lightSpec = { 1.0f, 1.0f, 1.0f, 1.0f };
-        float[] lightDiff = { 1.0f, 1.0f, 0.0f, 1.0f };
-        float[] lightPos0 = { 0.0f, 0.0f, 5.0f, 1.0f };
-        IntPtr quad;
+        float[] mat_specular = { 1.0f, 1.0f, 1.0f, 1.0f };
+        float[] mat_shininess = { 50.0f };
+        float[] light_position = { 1.0f, 1.0f, 1.0f, 0.0f };
+        float[] light_ambient = { 0.5f, 0.5f, 0.5f, 1.0f };
+
+        List<Sphere> spheres;
+        List<Parallelepiped> paras;
         #endregion
 
         public Window()
@@ -53,26 +58,35 @@ namespace ParallelComputedCollisionDetection
 
             
             VSync = VSyncMode.On;
-            eye = new Vector3(0, 0, 14);
+            eye = new Vector3(0, 0, 20);
             target = new Vector3(0, 0, 0);
             up = new Vector3(0, 1, 0);
 
-            TK.GL.ClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-            TK.GL.Enable(TK.EnableCap.DepthTest);
-            TK.GL.Enable(TK.EnableCap.CullFace);
+            GL.ClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
-            TK.GL.Light(TK.LightName.Light0, TK.LightParameter.Ambient, lightAmb);
-            TK.GL.Light(TK.LightName.Light0, TK.LightParameter.Specular, lightSpec);
-            TK.GL.Light(TK.LightName.Light0, TK.LightParameter.Diffuse, lightDiff);
-            TK.GL.Light(TK.LightName.Light0, TK.LightParameter.Position, lightPos0);
-            TK.GL.Enable(TK.EnableCap.Lighting);
+            GL.Material(TK.MaterialFace.Front, TK.MaterialParameter.Specular, mat_specular);
+            GL.Material(TK.MaterialFace.Front, TK.MaterialParameter.Shininess, mat_shininess);
+            GL.Light(TK.LightName.Light0, TK.LightParameter.Position, light_position);
+            GL.Light(TK.LightName.Light0, TK.LightParameter.Ambient, light_ambient);
+            GL.Light(TK.LightName.Light0, TK.LightParameter.Diffuse, mat_specular);
 
-            TK.GL.ShadeModel(TK.ShadingModel.Smooth);
+            GL.Enable(TK.EnableCap.CullFace);
+            GL.Enable(TK.EnableCap.DepthTest);
+            GL.ShadeModel(TK.ShadingModel.Smooth);
+            GL.Enable(TK.EnableCap.ColorMaterial);
 
             old_mouse = OpenTK.Input.Mouse.GetState();
             old_key = OpenTK.Input.Keyboard.GetState();
 
-            quad = Glu.NewQuadric();
+            spheres = new List<Sphere>();
+            spheres.Add(new Sphere(new Vector3(2, 2, 2), 0.5 * Math.Sqrt(3), sphere_precision, sphere_precision));
+            spheres.Add(new Sphere(new Vector3(-1, -1, -1), Math.Sqrt(3), sphere_precision, sphere_precision));
+            spheres.Add(new Sphere(new Vector3(-2f, 2f, 0), 0.25 * Math.Sqrt(3), sphere_precision, sphere_precision));
+
+            paras = new List<Parallelepiped>();
+            paras.Add(new Parallelepiped(new Vector3(2, 2, 2), 1, 1, 1, 90));
+            paras.Add(new Parallelepiped(new Vector3(-1, -1, -1), 2, 2, 2, 90));
+            paras.Add(new Parallelepiped(new Vector3(-2f, 2f, 0), 0.5, 0.5, 0.5, 90));
         }
 
         protected override void OnUnload(EventArgs e)
@@ -81,12 +95,12 @@ namespace ParallelComputedCollisionDetection
 
         protected override void OnResize(EventArgs e)
         {
-            TK.GL.Viewport(0, 0, Width, Height);
+            GL.Viewport(0, 0, Width, Height);
 
             float aspect_ratio = Width / (float)Height;
             Matrix4 perpective = Matrix4.CreatePerspectiveFieldOfView(MathHelper.PiOver4, aspect_ratio, 1, 64);
-            TK.GL.MatrixMode(TK.MatrixMode.Projection);
-            TK.GL.LoadMatrix(ref perpective);
+            GL.MatrixMode(TK.MatrixMode.Projection);
+            GL.LoadMatrix(ref perpective);
         }
 
         protected override void OnUpdateFrame(FrameEventArgs e)
@@ -117,7 +131,7 @@ namespace ParallelComputedCollisionDetection
             else
                 CursorVisible = true;
 #if ORTHO
-            scale_factor = mouse.WheelPrecise + 7f;
+            scale_factor = mouse.WheelPrecise + 1f;
             if(scale_factor > 20f)
                 scale_factor=20f;
             if(scale_factor < 1f)
@@ -205,268 +219,362 @@ namespace ParallelComputedCollisionDetection
         {
             base.OnRenderFrame(e);
 
-            TK.GL.Clear(TK.ClearBufferMask.DepthBufferBit | TK.ClearBufferMask.ColorBufferBit);
+            GL.Clear(TK.ClearBufferMask.DepthBufferBit | TK.ClearBufferMask.ColorBufferBit);
 
 #if ORTHO
-            modelView = Matrix4.CreateOrthographic(16, 9, 6, -6);
-            TK.GL.MatrixMode(TK.MatrixMode.Projection);
-            TK.GL.LoadMatrix(ref modelView);
-            TK.GL.Ortho(-6, 6, -6, 6, 6, -6);
-            TK.GL.Scale(scale_factor, scale_factor, scale_factor);
+            modelView = Matrix4.CreateOrthographic(16, 9, -fov, fov);
+            GL.MatrixMode(TK.MatrixMode.Projection);
+            GL.LoadMatrix(ref modelView);
+            GL.Scale(scale_factor, scale_factor, scale_factor);
 #else
             modelView = Matrix4.LookAt(eye, target, up);
-            TK.GL.MatrixMode(TK.MatrixMode.Modelview);
-            TK.GL.LoadMatrix(ref modelView);
+            GL.MatrixMode(TK.MatrixMode.Modelview);
+            GL.LoadMatrix(ref modelView);
 #endif
-            TK.GL.Rotate(offsetX, 0.0f, 1.0f, 0.0f);
-            TK.GL.Rotate(offsetY, 1.0f, 0.0f, 0.0f);
+            GL.Rotate(offsetX, 0.0f, 1.0f, 0.0f);
+            GL.Rotate(offsetY, 1.0f, 0.0f, 0.0f);
 
-            #region Draw Grid 3x3x3
+            DrawGrid(5);
 
-            TK.GL.Disable(TK.EnableCap.Lighting);
-            TK.GL.Disable(TK.EnableCap.Light0);
-
-            TK.GL.Begin(TK.PrimitiveType.LineLoop);
-            {
-                TK.GL.Color3(1.0, 1.0, 1.0);
-
-                TK.GL.Vertex3(-3.0, 3.0, 3.0);
-                TK.GL.Vertex3(3.0, 3.0, 3.0);
-                TK.GL.Vertex3(3.0, -3.0, 3.0);
-                TK.GL.Vertex3(-3.0, -3.0, 3.0);
-            }
-            TK.GL.End();
-
-            TK.GL.Begin(PrimitiveType.LineLoop);
-            {
-                TK.GL.Color3(1.0, 1.0, 1.0);
-
-                TK.GL.Vertex3(-3.0, 3.0, 1.0);
-                TK.GL.Vertex3(3.0, 3.0, 1.0);
-                TK.GL.Vertex3(3.0, -3.0, 1.0);
-                TK.GL.Vertex3(-3.0, -3.0, 1.0);
-            }
-            TK.GL.End();
-
-            TK.GL.Begin(PrimitiveType.LineLoop);
-            {
-                TK.GL.Color3(1.0, 1.0, 1.0);
-
-                TK.GL.Vertex3(-3.0, 3.0, -1.0);
-                TK.GL.Vertex3(3.0, 3.0, -1.0);
-                TK.GL.Vertex3(3.0, -3.0, -1.0);
-                TK.GL.Vertex3(-3.0, -3.0, -1.0);
-            }
-            TK.GL.End();
-
-            TK.GL.Begin(PrimitiveType.LineLoop);
-            {
-                TK.GL.Color3(1.0, 1.0, 1.0);
-
-                TK.GL.Vertex3(-3.0, 3.0, -3.0);
-                TK.GL.Vertex3(3.0, 3.0, -3.0);
-                TK.GL.Vertex3(3.0, -3.0, -3.0);
-                TK.GL.Vertex3(-3.0, -3.0, -3.0);
-            }
-            TK.GL.End();
-
-            TK.GL.Begin(PrimitiveType.Lines);
-            {
-                TK.GL.Color3(1.0, 1.0, 1.0);
-
-                TK.GL.Vertex3(-3.0, 3.0, 3.0);
-                TK.GL.Vertex3(-3.0, 3.0, -3.0);
-            }
-            TK.GL.End();
+            #region Draw 3D Polyhedrons
             
-            TK.GL.Begin(PrimitiveType.Lines);
-            {
-                TK.GL.Color3(1.0, 1.0, 1.0);
+            GL.Color3(0.0, 0.5, 1.0);
 
-                TK.GL.Vertex3(3.0, 3.0, 3.0);
-                TK.GL.Vertex3(3.0, 3.0, -3.0);
-            }
-            TK.GL.End();
-            
-            TK.GL.Begin(PrimitiveType.Lines);
-            {
-                TK.GL.Color3(1.0, 1.0, 1.0);
+            GL.Enable(TK.EnableCap.Light0);
+            GL.Enable(TK.EnableCap.Lighting);
 
-                TK.GL.Vertex3(3.0, -3.0, 3.0);
-                TK.GL.Vertex3(3.0, -3.0, -3.0);
-            }
-            TK.GL.End();
-            
-            TK.GL.Begin(PrimitiveType.Lines);
-            {
-                TK.GL.Color3(1.0, 1.0, 1.0);
+            GL.PolygonMode(TK.MaterialFace.FrontAndBack, TK.PolygonMode.Line);
+            foreach (Sphere sphere in spheres)
+                sphere.Draw();
 
-                TK.GL.Vertex3(-3.0, -3.0, 3.0);
-                TK.GL.Vertex3(-3.0, -3.0, -3.0);
-            }
-            TK.GL.End();
+            GL.PolygonMode(TK.MaterialFace.FrontAndBack, TK.PolygonMode.Fill);
+            foreach (Parallelepiped para in paras)
+                para.Draw();
 
-            TK.GL.Begin(PrimitiveType.LineLoop);
-            {
-                TK.GL.Color3(1.0, 1.0, 1.0);
-
-                TK.GL.Vertex3(-1.0, 3.0, 3.0);
-                TK.GL.Vertex3(-1.0, 3.0, -3.0);
-                TK.GL.Vertex3(-1.0, -3.0, -3.0);
-                TK.GL.Vertex3(-1.0, -3.0, 3.0);
-            }
-            TK.GL.End();
-
-            TK.GL.Begin(PrimitiveType.LineLoop);
-            {
-                TK.GL.Color3(1.0, 1.0, 1.0);
-
-                TK.GL.Vertex3(1.0, 3.0, 3.0);
-                TK.GL.Vertex3(1.0, 3.0, -3.0);
-                TK.GL.Vertex3(1.0, -3.0, -3.0);
-                TK.GL.Vertex3(1.0, -3.0, 3.0);
-            }
-            TK.GL.End();
-
-            TK.GL.Begin(PrimitiveType.LineLoop);
-            {
-                TK.GL.Color3(1.0, 1.0, 1.0);
-
-                TK.GL.Vertex3(3.0, 1.0, 3.0);
-                TK.GL.Vertex3(3.0, 1.0, -3.0);
-                TK.GL.Vertex3(-3.0, 1.0, -3.0);
-                TK.GL.Vertex3(-3.0, 1.0, 3.0);
-            }
-            TK.GL.End();
-
-            TK.GL.Begin(PrimitiveType.LineLoop);
-            {
-                TK.GL.Color3(1.0, 1.0, 1.0);
-
-                TK.GL.Vertex3(3.0, -1.0, 3.0);
-                TK.GL.Vertex3(3.0, -1.0, -3.0);
-                TK.GL.Vertex3(-3.0, -1.0, -3.0);
-                TK.GL.Vertex3(-3.0, -1.0, 3.0);
-            }
-            TK.GL.End();
-
-            TK.GL.Begin(PrimitiveType.Lines);
-            {
-                TK.GL.Color3(1.0, 1.0, 1.0);
-
-                TK.GL.Vertex3(-1.0, 1.0, 3.0);
-                TK.GL.Vertex3(-1.0, 1.0, -3.0);
-            }
-            TK.GL.End();
-
-            TK.GL.Begin(PrimitiveType.Lines);
-            {
-                TK.GL.Color3(1.0, 1.0, 1.0);
-
-                TK.GL.Vertex3(1.0, 1.0, 3.0);
-                TK.GL.Vertex3(1.0, 1.0, -3.0);
-            }
-            TK.GL.End();
-
-            TK.GL.Begin(PrimitiveType.Lines);
-            {
-                TK.GL.Color3(1.0, 1.0, 1.0);
-
-                TK.GL.Vertex3(-1.0, -1.0, 3.0);
-                TK.GL.Vertex3(-1.0, -1.0, -3.0);
-            }
-            TK.GL.End();
-
-            TK.GL.Begin(PrimitiveType.Lines);
-            {
-                TK.GL.Color3(1.0, 1.0, 1.0);
-
-                TK.GL.Vertex3(1.0, -1.0, 3.0);
-                TK.GL.Vertex3(1.0, -1.0, -3.0);
-            }
-            TK.GL.End();
-
-            TK.GL.Begin(PrimitiveType.Lines);
-            {
-                TK.GL.Color3(1.0, 1.0, 1.0);
-
-                TK.GL.Vertex3(-3.0, 1.0, 1.0);
-                TK.GL.Vertex3(3.0, 1.0, 1.0);
-            }
-            TK.GL.End();
-
-            TK.GL.Begin(PrimitiveType.Lines);
-            {
-                TK.GL.Color3(1.0, 1.0, 1.0);
-
-                TK.GL.Vertex3(-3.0, 1.0, -1.0);
-                TK.GL.Vertex3(3.0, 1.0, -1.0);
-            }
-            TK.GL.End();
-
-            TK.GL.Begin(PrimitiveType.Lines);
-            {
-                TK.GL.Color3(1.0, 1.0, 1.0);
-
-                TK.GL.Vertex3(-3.0, -1.0, 1.0);
-                TK.GL.Vertex3(3.0, -1.0, 1.0);
-            }
-            TK.GL.End();
-
-            TK.GL.Begin(PrimitiveType.Lines);
-            {
-                TK.GL.Color3(1.0, 1.0, 1.0);
-
-                TK.GL.Vertex3(-3.0, -1.0, -1.0);
-                TK.GL.Vertex3(3.0, -1.0, -1.0);
-            }
-            TK.GL.End();
-            
-            TK.GL.Begin(PrimitiveType.Lines);
-            {
-                TK.GL.Color3(1.0, 1.0, 1.0);
-
-                TK.GL.Vertex3(-1.0, 3.0, 1.0);
-                TK.GL.Vertex3(-1.0, -3.0, 1.0);
-            }
-            TK.GL.End();
-
-            TK.GL.Begin(PrimitiveType.Lines);
-            {
-                TK.GL.Color3(1.0, 1.0, 1.0);
-
-                TK.GL.Vertex3(1.0, 3.0, 1.0);
-                TK.GL.Vertex3(1.0, -3.0, 1.0);
-            }
-            TK.GL.End();
-
-            TK.GL.Begin(PrimitiveType.Lines);
-            {
-                TK.GL.Color3(1.0, 1.0, 1.0);
-
-                TK.GL.Vertex3(-1.0, 3.0, -1.0);
-                TK.GL.Vertex3(-1.0, -3.0, -1.0);
-            }
-            TK.GL.End();
-
-            TK.GL.Begin(PrimitiveType.Lines);
-            {
-                TK.GL.Color3(1.0, 1.0, 1.0);
-
-                TK.GL.Vertex3(1.0, 3.0, -1.0);
-                TK.GL.Vertex3(1.0, -3.0, -1.0);
-            }
-            TK.GL.End();
+            GL.Disable(TK.EnableCap.Lighting);
+            GL.Disable(TK.EnableCap.Light0);
             #endregion
-
-            TK.GL.PolygonMode(TK.MaterialFace.FrontAndBack, TK.PolygonMode.Fill);
-
-            TK.GL.Enable(TK.EnableCap.Light0);
-            TK.GL.Enable(TK.EnableCap.Lighting);
-            TK.GL.Translate(2f, 2f, 2f);
-            Glu.Sphere(quad, 1, 50, 50);
-            
             SwapBuffers();
+        }
+
+        void DrawGrid3x3()
+        {
+            GL.Begin(TK.PrimitiveType.LineLoop);
+            {
+                GL.Color3(1.0, 1.0, 1.0);
+
+                GL.Vertex3(-3.0, 3.0, 3.0);
+                GL.Vertex3(3.0, 3.0, 3.0);
+                GL.Vertex3(3.0, -3.0, 3.0);
+                GL.Vertex3(-3.0, -3.0, 3.0);
+            }
+            GL.End();
+
+            GL.Begin(PrimitiveType.LineLoop);
+            {
+                GL.Color3(1.0, 1.0, 1.0);
+
+                GL.Vertex3(-3.0, 3.0, 1.0);
+                GL.Vertex3(3.0, 3.0, 1.0);
+                GL.Vertex3(3.0, -3.0, 1.0);
+                GL.Vertex3(-3.0, -3.0, 1.0);
+            }
+            GL.End();
+
+            GL.Begin(PrimitiveType.LineLoop);
+            {
+                GL.Color3(1.0, 1.0, 1.0);
+
+                GL.Vertex3(-3.0, 3.0, -1.0);
+                GL.Vertex3(3.0, 3.0, -1.0);
+                GL.Vertex3(3.0, -3.0, -1.0);
+                GL.Vertex3(-3.0, -3.0, -1.0);
+            }
+            GL.End();
+
+            GL.Begin(PrimitiveType.LineLoop);
+            {
+                GL.Color3(1.0, 1.0, 1.0);
+
+                GL.Vertex3(-3.0, 3.0, -3.0);
+                GL.Vertex3(3.0, 3.0, -3.0);
+                GL.Vertex3(3.0, -3.0, -3.0);
+                GL.Vertex3(-3.0, -3.0, -3.0);
+            }
+            GL.End();
+
+            GL.Begin(PrimitiveType.Lines);
+            {
+                GL.Color3(1.0, 1.0, 1.0);
+
+                GL.Vertex3(-3.0, 3.0, 3.0);
+                GL.Vertex3(-3.0, 3.0, -3.0);
+            }
+            GL.End();
+
+            GL.Begin(PrimitiveType.Lines);
+            {
+                GL.Color3(1.0, 1.0, 1.0);
+
+                GL.Vertex3(3.0, 3.0, 3.0);
+                GL.Vertex3(3.0, 3.0, -3.0);
+            }
+            GL.End();
+
+            GL.Begin(PrimitiveType.Lines);
+            {
+                GL.Color3(1.0, 1.0, 1.0);
+
+                GL.Vertex3(3.0, -3.0, 3.0);
+                GL.Vertex3(3.0, -3.0, -3.0);
+            }
+            GL.End();
+
+            GL.Begin(PrimitiveType.Lines);
+            {
+                GL.Color3(1.0, 1.0, 1.0);
+
+                GL.Vertex3(-3.0, -3.0, 3.0);
+                GL.Vertex3(-3.0, -3.0, -3.0);
+            }
+            GL.End();
+
+            GL.Begin(PrimitiveType.LineLoop);
+            {
+                GL.Color3(1.0, 1.0, 1.0);
+
+                GL.Vertex3(-1.0, 3.0, 3.0);
+                GL.Vertex3(-1.0, 3.0, -3.0);
+                GL.Vertex3(-1.0, -3.0, -3.0);
+                GL.Vertex3(-1.0, -3.0, 3.0);
+            }
+            GL.End();
+
+            GL.Begin(PrimitiveType.LineLoop);
+            {
+                GL.Color3(1.0, 1.0, 1.0);
+
+                GL.Vertex3(1.0, 3.0, 3.0);
+                GL.Vertex3(1.0, 3.0, -3.0);
+                GL.Vertex3(1.0, -3.0, -3.0);
+                GL.Vertex3(1.0, -3.0, 3.0);
+            }
+            GL.End();
+
+            GL.Begin(PrimitiveType.LineLoop);
+            {
+                GL.Color3(1.0, 1.0, 1.0);
+
+                GL.Vertex3(3.0, 1.0, 3.0);
+                GL.Vertex3(3.0, 1.0, -3.0);
+                GL.Vertex3(-3.0, 1.0, -3.0);
+                GL.Vertex3(-3.0, 1.0, 3.0);
+            }
+            GL.End();
+
+            GL.Begin(PrimitiveType.LineLoop);
+            {
+                GL.Color3(1.0, 1.0, 1.0);
+
+                GL.Vertex3(3.0, -1.0, 3.0);
+                GL.Vertex3(3.0, -1.0, -3.0);
+                GL.Vertex3(-3.0, -1.0, -3.0);
+                GL.Vertex3(-3.0, -1.0, 3.0);
+            }
+            GL.End();
+
+            GL.Begin(PrimitiveType.Lines);
+            {
+                GL.Color3(1.0, 1.0, 1.0);
+
+                GL.Vertex3(-1.0, 1.0, 3.0);
+                GL.Vertex3(-1.0, 1.0, -3.0);
+            }
+            GL.End();
+
+            GL.Begin(PrimitiveType.Lines);
+            {
+                GL.Color3(1.0, 1.0, 1.0);
+
+                GL.Vertex3(1.0, 1.0, 3.0);
+                GL.Vertex3(1.0, 1.0, -3.0);
+            }
+            GL.End();
+
+            GL.Begin(PrimitiveType.Lines);
+            {
+                GL.Color3(1.0, 1.0, 1.0);
+
+                GL.Vertex3(-1.0, -1.0, 3.0);
+                GL.Vertex3(-1.0, -1.0, -3.0);
+            }
+            GL.End();
+
+            GL.Begin(PrimitiveType.Lines);
+            {
+                GL.Color3(1.0, 1.0, 1.0);
+
+                GL.Vertex3(1.0, -1.0, 3.0);
+                GL.Vertex3(1.0, -1.0, -3.0);
+            }
+            GL.End();
+
+            GL.Begin(PrimitiveType.Lines);
+            {
+                GL.Color3(1.0, 1.0, 1.0);
+
+                GL.Vertex3(-3.0, 1.0, 1.0);
+                GL.Vertex3(3.0, 1.0, 1.0);
+            }
+            GL.End();
+
+            GL.Begin(PrimitiveType.Lines);
+            {
+                GL.Color3(1.0, 1.0, 1.0);
+
+                GL.Vertex3(-3.0, 1.0, -1.0);
+                GL.Vertex3(3.0, 1.0, -1.0);
+            }
+            GL.End();
+
+            GL.Begin(PrimitiveType.Lines);
+            {
+                GL.Color3(1.0, 1.0, 1.0);
+
+                GL.Vertex3(-3.0, -1.0, 1.0);
+                GL.Vertex3(3.0, -1.0, 1.0);
+            }
+            GL.End();
+
+            GL.Begin(PrimitiveType.Lines);
+            {
+                GL.Color3(1.0, 1.0, 1.0);
+
+                GL.Vertex3(-3.0, -1.0, -1.0);
+                GL.Vertex3(3.0, -1.0, -1.0);
+            }
+            GL.End();
+
+            GL.Begin(PrimitiveType.Lines);
+            {
+                GL.Color3(1.0, 1.0, 1.0);
+
+                GL.Vertex3(-1.0, 3.0, 1.0);
+                GL.Vertex3(-1.0, -3.0, 1.0);
+            }
+            GL.End();
+
+            GL.Begin(PrimitiveType.Lines);
+            {
+                GL.Color3(1.0, 1.0, 1.0);
+
+                GL.Vertex3(1.0, 3.0, 1.0);
+                GL.Vertex3(1.0, -3.0, 1.0);
+            }
+            GL.End();
+
+            GL.Begin(PrimitiveType.Lines);
+            {
+                GL.Color3(1.0, 1.0, 1.0);
+
+                GL.Vertex3(-1.0, 3.0, -1.0);
+                GL.Vertex3(-1.0, -3.0, -1.0);
+            }
+            GL.End();
+
+            GL.Begin(PrimitiveType.Lines);
+            {
+                GL.Color3(1.0, 1.0, 1.0);
+
+                GL.Vertex3(1.0, 3.0, -1.0);
+                GL.Vertex3(1.0, -3.0, -1.0);
+            }
+            GL.End();
+        }
+
+        void DrawGrid(int x)
+        {
+            float edge = fov / x;
+            float half_fov = fov * 0.5f;
+            float offset;
+
+            GL.Color3(1f, 1f, 1f);
+
+            //grid y
+            GL.Begin(PrimitiveType.LineLoop);
+            {
+                GL.Vertex3(-half_fov, -half_fov, half_fov);
+                GL.Vertex3(half_fov, -half_fov, half_fov);
+                GL.Vertex3(half_fov, -half_fov, -half_fov);
+                GL.Vertex3(-half_fov, -half_fov, -half_fov);
+            }
+            GL.End();
+
+            for (int i = 1; i < x; i++)
+            {
+                offset = edge * i;
+
+                GL.Begin(PrimitiveType.Lines);
+                {
+                    GL.Vertex3(offset - half_fov, -half_fov, half_fov);
+                    GL.Vertex3(offset - half_fov, -half_fov, -half_fov);
+
+                    GL.Vertex3(-half_fov, -half_fov, offset - half_fov);
+                    GL.Vertex3(half_fov, -half_fov, offset - half_fov);
+                }
+                GL.End();
+            }
+
+            //grid x
+            GL.Begin(PrimitiveType.LineLoop);
+            {
+                GL.Vertex3(-half_fov, half_fov, half_fov);
+                GL.Vertex3(-half_fov, half_fov, -half_fov);
+                GL.Vertex3(-half_fov, -half_fov, -half_fov);
+                GL.Vertex3(-half_fov, -half_fov, half_fov);
+            }
+            GL.End();
+
+            for (int i = 1; i < x; i++)
+            {
+                offset = edge * i;
+
+                GL.Begin(PrimitiveType.Lines);
+                {
+                    GL.Vertex3(-half_fov, -half_fov, offset - half_fov);
+                    GL.Vertex3(-half_fov, half_fov, offset - half_fov);
+
+                    GL.Vertex3(-half_fov, offset - half_fov, half_fov);
+                    GL.Vertex3(-half_fov, offset - half_fov, -half_fov);
+                }
+                GL.End();
+            }
+
+            //grid z
+            GL.Begin(PrimitiveType.LineLoop);
+            {
+                GL.Vertex3(-half_fov, -half_fov, -half_fov);
+                GL.Vertex3(half_fov, -half_fov, -half_fov);
+                GL.Vertex3(half_fov, half_fov, -half_fov);
+                GL.Vertex3(-half_fov, half_fov, -half_fov);
+            }
+            GL.End();
+
+            for (int i = 1; i < x; i++)
+            {
+                offset = edge * i;
+
+                GL.Begin(PrimitiveType.Lines);
+                {
+                    GL.Vertex3(offset - half_fov, -half_fov, -half_fov);
+                    GL.Vertex3(offset - half_fov, half_fov, -half_fov);
+
+                    GL.Vertex3(-half_fov, offset - half_fov, -half_fov);
+                    GL.Vertex3(half_fov, offset - half_fov, -half_fov);
+                }
+                GL.End();
+            }
+
         }
     }
 }
