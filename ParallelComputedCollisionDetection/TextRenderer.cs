@@ -8,6 +8,15 @@ using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
 
+using GL = OpenTK.Graphics.OpenGL.GL;
+using TextureTarget = OpenTK.Graphics.OpenGL.TextureTarget;
+using TextureMinFilter = OpenTK.Graphics.OpenGL.TextureMinFilter;
+using TextureMagFilter = OpenTK.Graphics.OpenGL.TextureMagFilter;
+using TextureParameterName = OpenTK.Graphics.OpenGL.TextureParameterName;
+using PixelInternalFormat = OpenTK.Graphics.OpenGL.PixelInternalFormat;
+using PixelFormat = OpenTK.Graphics.OpenGL.PixelFormat;
+using PixelType = OpenTK.Graphics.OpenGL.PixelType;
+
 namespace ParallelComputedCollisionDetection
 {
     public class TextRenderer : IDisposable
