@@ -1,4 +1,4 @@
-﻿//#define ORTHO
+﻿#define ORTHO
 
 using System;
 using System.Collections.Generic;
@@ -31,7 +31,7 @@ namespace ParallelComputedCollisionDetection
         Matrix4 modelView;
         float scale_factor;
         float rotation_speed = 2f;
-        float fov = 10f;
+        float fov;
         int sphere_precision = 30;
         KeyboardState old_key;
         bool xRot;
@@ -44,6 +44,9 @@ namespace ParallelComputedCollisionDetection
 
         List<Sphere> spheres;
         List<Parallelepiped> paras;
+
+        float aspect_ratio;
+        Matrix4 perpective;
         #endregion
 
         public Window()
@@ -79,14 +82,17 @@ namespace ParallelComputedCollisionDetection
             old_key = OpenTK.Input.Keyboard.GetState();
 
             spheres = new List<Sphere>();
-            spheres.Add(new Sphere(new Vector3(2, 2, 2), 0.5 * Math.Sqrt(3), sphere_precision, sphere_precision));
-            spheres.Add(new Sphere(new Vector3(-1, -1, -1), Math.Sqrt(3), sphere_precision, sphere_precision));
-            spheres.Add(new Sphere(new Vector3(-2f, 2f, 0), 0.25 * Math.Sqrt(3), sphere_precision, sphere_precision));
+            spheres.Add(new Sphere(new Vector3(125, 125, 125), 25 * Math.Sqrt(3), sphere_precision, sphere_precision));
+            spheres.Add(new Sphere(new Vector3(-75, -75, -75), 50 *Math.Sqrt(3), sphere_precision, sphere_precision));
+            spheres.Add(new Sphere(new Vector3(-150, 150, 0), 12.5f * Math.Sqrt(3), sphere_precision, sphere_precision));
 
             paras = new List<Parallelepiped>();
-            paras.Add(new Parallelepiped(new Vector3(2, 2, 2), 1, 1, 1, 90));
-            paras.Add(new Parallelepiped(new Vector3(-1, -1, -1), 2, 2, 2, 90));
-            paras.Add(new Parallelepiped(new Vector3(-2f, 2f, 0), 0.5, 0.5, 0.5, 90));
+            paras.Add(new Parallelepiped(new Vector3(125, 125, 125), 50, 50, 50, 90));
+            paras.Add(new Parallelepiped(new Vector3(-75, -75, -75), 100, 100, 100, 90));
+            paras.Add(new Parallelepiped(new Vector3(-150, 150, 0), 25, 25, 25, 90));
+            GL.Viewport(0, 0, Width, Height);
+            aspect_ratio = Width / (float)Height;
+            fov = Height * 0.5f;
         }
 
         protected override void OnUnload(EventArgs e)
@@ -97,8 +103,8 @@ namespace ParallelComputedCollisionDetection
         {
             GL.Viewport(0, 0, Width, Height);
 
-            float aspect_ratio = Width / (float)Height;
-            Matrix4 perpective = Matrix4.CreatePerspectiveFieldOfView(MathHelper.PiOver4, aspect_ratio, 1, 64);
+            aspect_ratio = Width / (float)Height;
+            perpective = Matrix4.CreatePerspectiveFieldOfView(MathHelper.PiOver4, aspect_ratio, 1, 64);
             GL.MatrixMode(TK.MatrixMode.Projection);
             GL.LoadMatrix(ref perpective);
         }
@@ -132,10 +138,10 @@ namespace ParallelComputedCollisionDetection
                 CursorVisible = true;
 #if ORTHO
             scale_factor = mouse.WheelPrecise + 1f;
-            if(scale_factor > 20f)
-                scale_factor=20f;
+            if(scale_factor > 50f)
+                scale_factor = 50f;
             if(scale_factor < 1f)
-                scale_factor=1f;
+                scale_factor = 1f;
 #else
             eye.Z -= (mouse.WheelPrecise - old_mouse.WheelPrecise);
             if (eye.Z < 3)
@@ -222,7 +228,7 @@ namespace ParallelComputedCollisionDetection
             GL.Clear(TK.ClearBufferMask.DepthBufferBit | TK.ClearBufferMask.ColorBufferBit);
 
 #if ORTHO
-            modelView = Matrix4.CreateOrthographic(16, 9, -fov, fov);
+            modelView = Matrix4.CreateOrthographic(Width, Height, Height, -Height);
             GL.MatrixMode(TK.MatrixMode.Projection);
             GL.LoadMatrix(ref modelView);
             GL.Scale(scale_factor, scale_factor, scale_factor);
