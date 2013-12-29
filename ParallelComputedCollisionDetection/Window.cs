@@ -33,6 +33,7 @@ namespace ParallelComputedCollisionDetection
         float rotation_speed = 2f;
         float fov;
         int sphere_precision = 30;
+        float wp_scale_factor = 3;
         KeyboardState old_key;
         bool xRot;
         bool yRot;
@@ -41,12 +42,14 @@ namespace ParallelComputedCollisionDetection
         float[] mat_shininess = { 50.0f };
         float[] light_position = { 1.0f, 1.0f, 1.0f, 0.0f };
         float[] light_ambient = { 0.5f, 0.5f, 0.5f, 1.0f };
+        float width;
+        float height;
 
         List<Sphere> spheres;
         List<Parallelepiped> paras;
 
         float aspect_ratio;
-        Matrix4 perpective;
+        Matrix4 perspective;
         #endregion
 
         public Window()
@@ -58,12 +61,6 @@ namespace ParallelComputedCollisionDetection
         protected override void OnLoad(EventArgs e)
         {
             base.OnLoad(e);
-
-            
-            VSync = VSyncMode.On;
-            eye = new Vector3(0, 0, 20);
-            target = new Vector3(0, 0, 0);
-            up = new Vector3(0, 1, 0);
 
             GL.ClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
@@ -82,17 +79,26 @@ namespace ParallelComputedCollisionDetection
             old_key = OpenTK.Input.Keyboard.GetState();
 
             spheres = new List<Sphere>();
-            spheres.Add(new Sphere(new Vector3(125, 125, 125), 25 * Math.Sqrt(3), sphere_precision, sphere_precision));
-            spheres.Add(new Sphere(new Vector3(-75, -75, -75), 50 *Math.Sqrt(3), sphere_precision, sphere_precision));
-            spheres.Add(new Sphere(new Vector3(-150, 150, 0), 12.5f * Math.Sqrt(3), sphere_precision, sphere_precision));
+            spheres.Add(new Sphere(new Vector3(5, 5, 5), 1.5 * Math.Sqrt(3), sphere_precision, sphere_precision));
+            spheres.Add(new Sphere(new Vector3(-5, -5, -5), 2.5 * Math.Sqrt(3), sphere_precision, sphere_precision));
+            spheres.Add(new Sphere(new Vector3(-3, 3, 0), 2 * Math.Sqrt(3), sphere_precision, sphere_precision));
 
             paras = new List<Parallelepiped>();
-            paras.Add(new Parallelepiped(new Vector3(125, 125, 125), 50, 50, 50, 90));
-            paras.Add(new Parallelepiped(new Vector3(-75, -75, -75), 100, 100, 100, 90));
-            paras.Add(new Parallelepiped(new Vector3(-150, 150, 0), 25, 25, 25, 90));
+            paras.Add(new Parallelepiped(new Vector3(5, 5, 5), 3, 3, 3, 90));
+            paras.Add(new Parallelepiped(new Vector3(-5, -5, -5), 5, 5, 5, 90));
+            paras.Add(new Parallelepiped(new Vector3(-3, 3, 0), 4, 4, 4, 90));
+
             GL.Viewport(0, 0, Width, Height);
             aspect_ratio = Width / (float)Height;
-            fov = Height * 0.5f;
+            checkAspectRatio();
+            width *= wp_scale_factor;
+            height *= wp_scale_factor;
+            fov = height * 0.75f;
+
+            VSync = VSyncMode.On;
+            eye = new Vector3(0, 0, height * 1.5f);
+            target = new Vector3(0, 0, 0);
+            up = new Vector3(0, 1, 0);          
         }
 
         protected override void OnUnload(EventArgs e)
@@ -104,9 +110,9 @@ namespace ParallelComputedCollisionDetection
             GL.Viewport(0, 0, Width, Height);
 
             aspect_ratio = Width / (float)Height;
-            perpective = Matrix4.CreatePerspectiveFieldOfView(MathHelper.PiOver4, aspect_ratio, 1, 64);
+            perspective = Matrix4.CreatePerspectiveFieldOfView(MathHelper.PiOver4, aspect_ratio, 1, 64);
             GL.MatrixMode(TK.MatrixMode.Projection);
-            GL.LoadMatrix(ref perpective);
+            GL.LoadMatrix(ref perspective);
         }
 
         protected override void OnUpdateFrame(FrameEventArgs e)
@@ -228,7 +234,7 @@ namespace ParallelComputedCollisionDetection
             GL.Clear(TK.ClearBufferMask.DepthBufferBit | TK.ClearBufferMask.ColorBufferBit);
 
 #if ORTHO
-            modelView = Matrix4.CreateOrthographic(Width, Height, Height, -Height);
+            modelView = Matrix4.CreateOrthographic(width, height, -height, height);
             GL.MatrixMode(TK.MatrixMode.Projection);
             GL.LoadMatrix(ref modelView);
             GL.Scale(scale_factor, scale_factor, scale_factor);
@@ -581,6 +587,26 @@ namespace ParallelComputedCollisionDetection
                 GL.End();
             }
 
+        }
+        void checkAspectRatio()
+        {
+            if (aspect_ratio == 4 / 3f)
+            {
+                width = 4f;
+                height = 3f;
+                return;
+            }
+            if (aspect_ratio == 16 / 10f)
+            {
+                width = 16f;
+                height = 10f;
+                return;
+            }
+            else
+            {
+                width = 16f;
+                height = 9f;
+            }
         }
     }
 }
