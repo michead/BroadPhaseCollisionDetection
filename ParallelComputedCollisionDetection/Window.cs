@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Drawing;
+using System.IO;
 using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
@@ -29,10 +30,10 @@ namespace ParallelComputedCollisionDetection
         Vector3 eye, target, up;
         float mouse_sensitivity=0.2f;
         Matrix4 modelView;
-        float scale_factor;
+        float scale_factor = 1;
         float rotation_speed = 2f;
         float fov;
-        int sphere_precision = 30;
+        public int sphere_precision = 30;
         float wp_scale_factor = 3;
         KeyboardState old_key;
         bool xRot;
@@ -44,8 +45,8 @@ namespace ParallelComputedCollisionDetection
         float[] light_ambient = { 0.5f, 0.5f, 0.5f, 1.0f };
         float width;
         float height;
+        uint selectedPolyhedron;
 
-        List<Sphere> spheres;
         List<Parallelepiped> paras;
 
         float aspect_ratio;
@@ -78,15 +79,12 @@ namespace ParallelComputedCollisionDetection
             old_mouse = OpenTK.Input.Mouse.GetState();
             old_key = OpenTK.Input.Keyboard.GetState();
 
-            spheres = new List<Sphere>();
-            spheres.Add(new Sphere(new Vector3(5, 5, 5), 1.5 * Math.Sqrt(3), sphere_precision, sphere_precision));
-            spheres.Add(new Sphere(new Vector3(-5, -5, -5), 2.5 * Math.Sqrt(3), sphere_precision, sphere_precision));
-            spheres.Add(new Sphere(new Vector3(-3, 3, 0), 2 * Math.Sqrt(3), sphere_precision, sphere_precision));
-
             paras = new List<Parallelepiped>();
             paras.Add(new Parallelepiped(new Vector3(5, 5, 5), 3, 3, 3, 90));
             paras.Add(new Parallelepiped(new Vector3(-5, -5, -5), 5, 5, 5, 90));
             paras.Add(new Parallelepiped(new Vector3(-3, 3, 0), 4, 4, 4, 90));
+            paras.Add(new Parallelepiped(new Vector3(6, -4, 3), 2, 3, 4, 70));
+            paras.Add(new Parallelepiped(new Vector3(-7, 7, 4), 1.5, 1.5, 1.5, 120));
 
             GL.Viewport(0, 0, Width, Height);
             aspect_ratio = Width / (float)Height;
@@ -129,6 +127,8 @@ namespace ParallelComputedCollisionDetection
                     WindowState = WindowState.Maximized;
             checkMouseInput();
             checkKeyboardInput();
+            foreach (Parallelepiped para in paras)
+                para.calculateBoundingSphere();
         }
 
         void checkMouseInput()
@@ -143,11 +143,11 @@ namespace ParallelComputedCollisionDetection
             else
                 CursorVisible = true;
 #if ORTHO
-            scale_factor = mouse.WheelPrecise + 1f;
+            scale_factor += (mouse.WheelPrecise - old_mouse.WheelPrecise) * 0.5f;
             if(scale_factor > 50f)
                 scale_factor = 50f;
-            if(scale_factor < 1f)
-                scale_factor = 1f;
+            else if(scale_factor < 0.5f)
+                scale_factor = 0.5f;
 #else
             eye.Z -= (mouse.WheelPrecise - old_mouse.WheelPrecise);
             if (eye.Z < 3)
@@ -224,7 +224,6 @@ namespace ParallelComputedCollisionDetection
             }
             #endregion
             //old_key = OpenTK.Input.Keyboard.GetState();
-
         }
 
         protected override void OnRenderFrame(FrameEventArgs e)
@@ -255,13 +254,13 @@ namespace ParallelComputedCollisionDetection
             GL.Enable(TK.EnableCap.Light0);
             GL.Enable(TK.EnableCap.Lighting);
 
-            GL.PolygonMode(TK.MaterialFace.FrontAndBack, TK.PolygonMode.Line);
-            foreach (Sphere sphere in spheres)
-                sphere.Draw();
-
-            GL.PolygonMode(TK.MaterialFace.FrontAndBack, TK.PolygonMode.Fill);
             foreach (Parallelepiped para in paras)
+            {
+                GL.PolygonMode(TK.MaterialFace.FrontAndBack, TK.PolygonMode.Fill);
                 para.Draw();
+                GL.PolygonMode(TK.MaterialFace.FrontAndBack, TK.PolygonMode.Line);
+                para.bsphere.Draw();
+            }
 
             GL.Disable(TK.EnableCap.Lighting);
             GL.Disable(TK.EnableCap.Light0);
@@ -510,7 +509,7 @@ namespace ParallelComputedCollisionDetection
             float half_fov = fov * 0.5f;
             float offset;
 
-            GL.Color3(1f, 1f, 1f);
+            GL.Color3(1f, 0f, 0f);
 
             //grid y
             GL.Begin(PrimitiveType.LineLoop);
@@ -537,6 +536,8 @@ namespace ParallelComputedCollisionDetection
                 GL.End();
             }
 
+            GL.Color3(0f, 1f, 0f);
+
             //grid x
             GL.Begin(PrimitiveType.LineLoop);
             {
@@ -561,6 +562,8 @@ namespace ParallelComputedCollisionDetection
                 }
                 GL.End();
             }
+
+            GL.Color3(0f, 0f, 1f);
 
             //grid z
             GL.Begin(PrimitiveType.LineLoop);
@@ -588,6 +591,7 @@ namespace ParallelComputedCollisionDetection
             }
 
         }
+
         void checkAspectRatio()
         {
             if (aspect_ratio == 4 / 3f)
