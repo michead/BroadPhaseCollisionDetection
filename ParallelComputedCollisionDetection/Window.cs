@@ -24,14 +24,14 @@ namespace ParallelComputedCollisionDetection
 {
     public class Window : GameWindow
     {
-        #region GLobal Members
+        #region Global Members
         MouseState old_mouse;
         float offsetX = 0f, offsetY = 0f;
         Vector3 eye, target, up;
         float mouse_sensitivity=0.2f;
         Matrix4 modelView;
         float scale_factor = 1;
-        float rotation_speed = 2f;
+        float rotation_speed = 2;
         float fov;
         public int sphere_precision = 30;
         float wp_scale_factor = 3;
@@ -43,9 +43,17 @@ namespace ParallelComputedCollisionDetection
         float[] mat_shininess = { 50.0f };
         float[] light_position = { 1.0f, 1.0f, 1.0f, 0.0f };
         float[] light_ambient = { 0.5f, 0.5f, 0.5f, 1.0f };
+        float[][] colors = new float[][]{   new float[]{1f, 0f, 0f, 0.0f}, new float[]{0f, 1f, 0f, 0.0f}, new float[]{0f, 0f, 1f, 0.0f},
+                                            new float[]{0.8f, 0.2f, 0.2f, 0.0f}, new float[]{1f, 1f, 0f, 0.0f}, new float[]{1f, 0f, 1f, 0.0f},
+                                            new float[]{1f, 1f, 0f, 0.0f}, new float[]{0.2f, 0.8f, 0.2f, 0.0f}, new float[]{0f, 1f, 1f, 0.0f},
+                                            new float[]{1f, 0f, 1f, 0.0f}, new float[]{0f, 1f, 1f, 0.0f}, new float[]{0.2f, 0.2f, 0.8f, 0.0f}};
         float width;
         float height;
-        uint selectedPolyhedron;
+        char view = '0';
+        double gizmosOffsetX = 12;
+        double gizmosOffsetY = 11.5;
+        double gizmosOffsetZ = 12;
+        //uint selectedPolyhedron;
 
         List<Parallelepiped> paras;
 
@@ -75,6 +83,10 @@ namespace ParallelComputedCollisionDetection
             GL.Enable(TK.EnableCap.DepthTest);
             GL.ShadeModel(TK.ShadingModel.Smooth);
             GL.Enable(TK.EnableCap.ColorMaterial);
+            //GL.Enable(TK.EnableCap.AlphaTest);
+            GL.Enable(TK.EnableCap.Blend);
+            GL.BlendFunc(TK.BlendingFactorSrc.SrcAlpha, TK.BlendingFactorDest.OneMinusSrcAlpha);
+            //GL.BlendFunc(TK.BlendingFactorSrc.SrcAlpha, TK.BlendingFactorDest.OneMinusSrcAlpha);
 
             old_mouse = OpenTK.Input.Mouse.GetState();
             old_key = OpenTK.Input.Keyboard.GetState();
@@ -183,9 +195,8 @@ namespace ParallelComputedCollisionDetection
                     offsetX = 0f;
                 if (offsetY > -2f && offsetY < 2f)
                     offsetY = 0f;
-                if (offsetX == 0f && offsetY == 0f)
-                    zRot = false;
             }
+
             if (Keyboard[Key.Y] || yRot)
             {
                 yRot = true;
@@ -201,9 +212,8 @@ namespace ParallelComputedCollisionDetection
                     offsetX = 0f;
                 if (offsetY > 88f && offsetY < 92f)
                     offsetY = 90f;
-                if (offsetX == 0f && offsetY == 90f)
-                    yRot = false;
             }
+
             if (Keyboard[Key.X] || xRot)
             {
                 xRot = true;
@@ -219,9 +229,28 @@ namespace ParallelComputedCollisionDetection
                     offsetX = -90f;
                 if (offsetY > -2f && offsetY < 2f)
                     offsetY = 0f;
-                if (offsetX == -90f && offsetY == 0f)
-                    xRot = false;
             }
+
+            if (offsetX == -90f && offsetY == 0f)
+            {
+                xRot = false;
+                view = 'x';
+            }
+
+            else if (offsetX == 0f && offsetY == 90f)
+            {
+                yRot = false;
+                view = 'y';
+            }
+
+            else if (offsetX == 0f && offsetY == 0f)
+            {
+                zRot = false;
+                view = 'z';
+            }
+
+            else
+                view = '0';
             #endregion
             //old_key = OpenTK.Input.Keyboard.GetState();
         }
@@ -254,17 +283,28 @@ namespace ParallelComputedCollisionDetection
             GL.Enable(TK.EnableCap.Light0);
             GL.Enable(TK.EnableCap.Lighting);
 
+            int i = 0;
             foreach (Parallelepiped para in paras)
             {
+                colors[i][3] = 1f;
+                GL.Color4(colors[i]);
                 GL.PolygonMode(TK.MaterialFace.FrontAndBack, TK.PolygonMode.Fill);
                 para.Draw();
+                GL.Color3(0.2f, 0.5f, 1f);
                 GL.PolygonMode(TK.MaterialFace.FrontAndBack, TK.PolygonMode.Line);
                 para.bsphere.Draw();
+                i++;
             }
 
             GL.Disable(TK.EnableCap.Lighting);
             GL.Disable(TK.EnableCap.Light0);
             #endregion
+
+            //GL.BlendFunc(TK.BlendingFactorSrc.One, TK.BlendingFactorDest.OneMinusSrcAlpha);
+            #region Draw Gizmos
+            drawCollisionVectors();
+            #endregion
+
             SwapBuffers();
         }
 
@@ -509,7 +549,7 @@ namespace ParallelComputedCollisionDetection
             float half_fov = fov * 0.5f;
             float offset;
 
-            GL.Color3(1f, 0f, 0f);
+            GL.Color4(1f, 0f, 0f, 1f);
 
             //grid y
             GL.Begin(PrimitiveType.LineLoop);
@@ -536,7 +576,7 @@ namespace ParallelComputedCollisionDetection
                 GL.End();
             }
 
-            GL.Color3(0f, 1f, 0f);
+            GL.Color4(0f, 1f, 0f, 1f);
 
             //grid x
             GL.Begin(PrimitiveType.LineLoop);
@@ -563,7 +603,7 @@ namespace ParallelComputedCollisionDetection
                 GL.End();
             }
 
-            GL.Color3(0f, 0f, 1f);
+            GL.Color4(0f, 0f, 1f, 1f);
 
             //grid z
             GL.Begin(PrimitiveType.LineLoop);
@@ -611,6 +651,65 @@ namespace ParallelComputedCollisionDetection
                 width = 16f;
                 height = 9f;
             }
+        }
+
+        void drawCollisionVectors()
+        {
+            if (view == '0')
+                return;
+
+            GL.LineWidth(5.0f);
+            int i = 0;
+            float j = 0;
+
+            foreach (Parallelepiped para in paras)
+            {
+                colors[i][3] = 0.5f;
+                GL.Color4(colors[i]);
+                double paraOffset = Math.Abs(para.offsetX) + para.length * 0.5;
+
+                if (view == 'z')
+                {
+                    GL.Begin(PrimitiveType.Lines);
+                    {
+                        GL.Vertex3(para.pos.X - paraOffset, - (gizmosOffsetY + j), para.pos.Z);
+                        GL.Vertex3(para.pos.X + paraOffset, - (gizmosOffsetY + j), para.pos.Z);
+
+                        GL.Vertex3(- (gizmosOffsetX + j), para.pos.Y + para.height * 0.5, para.pos.Z);
+                        GL.Vertex3(- (gizmosOffsetX + j), para.pos.Y - para.height * 0.5, para.pos.Z);
+                    }
+                    GL.End();
+                }
+
+                else if (view == 'x')
+                {
+                    GL.Begin(PrimitiveType.Lines);
+                    {
+                        GL.Vertex3(para.pos.X, -(gizmosOffsetY + j), para.pos.Z - para.width * 0.5);
+                        GL.Vertex3(para.pos.X, -(gizmosOffsetY + j), para.pos.Z + para.width * 0.5);
+
+                        GL.Vertex3(para.pos.X, para.pos.Y + para.height * 0.5, gizmosOffsetZ + j);
+                        GL.Vertex3(para.pos.X, para.pos.Y - para.height * 0.5, gizmosOffsetZ + j);
+                    }
+                    GL.End();
+                }
+
+                else
+                {
+                    GL.Begin(PrimitiveType.Lines);
+                    {
+                        GL.Vertex3(-(gizmosOffsetX + j), para.pos.Y, para.pos.Z + para.width *0.5);
+                        GL.Vertex3(-(gizmosOffsetX + j), para.pos.Y, para.pos.Z - para.width * 0.5);
+
+                        GL.Vertex3(para.pos.X - paraOffset, para.pos.Y, gizmosOffsetZ + j);
+                        GL.Vertex3(para.pos.X + paraOffset, para.pos.Y, gizmosOffsetZ + j);
+                    }
+                    GL.End();
+                }
+                i++;
+                j += 0.2f;
+            }
+            GL.LineWidth(1.0f);
         }
     }
 }

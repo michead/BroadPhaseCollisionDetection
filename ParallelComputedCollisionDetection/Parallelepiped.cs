@@ -23,10 +23,10 @@ namespace ParallelComputedCollisionDetection
         public double height; 
         public double width;
         public float angle;
-        float angle_;
+        public float angle_;
         public Sphere bsphere;
         int sphere_precision = 30;
-        double offsetX;
+        public double offsetX;
 
         public Parallelepiped(Vector3 pos, double length, double height, double width, float angle)
         {
@@ -36,7 +36,8 @@ namespace ParallelComputedCollisionDetection
             this.width = width;
             this.angle = angle;
             this.angle_ = (float)Math.PI * 0.5f - angle;
-            this.offsetX = height / Math.Tan(MathHelper.DegreesToRadians(angle));
+            this.offsetX = (this.height / (Math.Sin(MathHelper.DegreesToRadians(this.angle_)) * 2))
+                    * Math.Cos(MathHelper.DegreesToRadians(this.angle_));
             calculateBoundingSphere();
         }
 
@@ -101,12 +102,7 @@ namespace ParallelComputedCollisionDetection
 
         public void calculateBoundingSphere()
         {
-            double offs = offsetX;
-            
-            if(angle >= 90)
-                offs = height / Math.Tan(MathHelper.DegreesToRadians(90 - (angle - 90)));
-
-            double maxFromOrigin = Math.Sqrt(Math.Pow(offs * 0.5 + length * 0.5, 2) + Math.Pow(height * 0.5, 2) + Math.Pow(width * 0.5, 2));
+            double maxFromOrigin = Math.Sqrt(Math.Pow(offsetX * 0.5 + length * 0.5, 2) + Math.Pow(height * 0.5, 2) + Math.Pow(width * 0.5, 2));
             bsphere = new Sphere(new Vector3(pos.X + (float)offsetX * 0.5f, pos.Y, pos.Z), maxFromOrigin, sphere_precision, sphere_precision);
         }
     }
