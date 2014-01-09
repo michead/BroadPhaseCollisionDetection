@@ -672,11 +672,17 @@ namespace ParallelComputedCollisionDetection
                 {
                     GL.Begin(PrimitiveType.Lines);
                     {
-                        GL.Vertex3(para.pos.X - paraOffset, - (gizmosOffsetY + j), para.pos.Z);
+                        /*GL.Vertex3(para.pos.X - paraOffset, - (gizmosOffsetY + j), para.pos.Z);
                         GL.Vertex3(para.pos.X + paraOffset, - (gizmosOffsetY + j), para.pos.Z);
 
                         GL.Vertex3(- (gizmosOffsetX + j), para.pos.Y + para.height * 0.5, para.pos.Z);
-                        GL.Vertex3(- (gizmosOffsetX + j), para.pos.Y - para.height * 0.5, para.pos.Z);
+                        GL.Vertex3(- (gizmosOffsetX + j), para.pos.Y - para.height * 0.5, para.pos.Z);*/
+
+                        GL.Vertex3(para.pos.X - para.bsphere.radius, -(gizmosOffsetY + j), para.pos.Z);
+                        GL.Vertex3(para.pos.X + para.bsphere.radius, -(gizmosOffsetY + j), para.pos.Z);
+
+                        GL.Vertex3(-(gizmosOffsetX + j), para.pos.Y + para.bsphere.radius, para.pos.Z);
+                        GL.Vertex3(-(gizmosOffsetX + j), para.pos.Y - para.bsphere.radius, para.pos.Z);
                     }
                     GL.End();
                 }
@@ -685,11 +691,17 @@ namespace ParallelComputedCollisionDetection
                 {
                     GL.Begin(PrimitiveType.Lines);
                     {
-                        GL.Vertex3(para.pos.X, -(gizmosOffsetY + j), para.pos.Z - para.width * 0.5);
+                        /*GL.Vertex3(para.pos.X, -(gizmosOffsetY + j), para.pos.Z - para.width * 0.5);
                         GL.Vertex3(para.pos.X, -(gizmosOffsetY + j), para.pos.Z + para.width * 0.5);
 
                         GL.Vertex3(para.pos.X, para.pos.Y + para.height * 0.5, gizmosOffsetZ + j);
-                        GL.Vertex3(para.pos.X, para.pos.Y - para.height * 0.5, gizmosOffsetZ + j);
+                        GL.Vertex3(para.pos.X, para.pos.Y - para.height * 0.5, gizmosOffsetZ + j);*/
+
+                        GL.Vertex3(para.pos.X, -(gizmosOffsetY + j), para.pos.Z - para.bsphere.radius);
+                        GL.Vertex3(para.pos.X, -(gizmosOffsetY + j), para.pos.Z + para.bsphere.radius);
+
+                        GL.Vertex3(para.pos.X, para.pos.Y + para.bsphere.radius, gizmosOffsetZ + j);
+                        GL.Vertex3(para.pos.X, para.pos.Y - para.bsphere.radius, gizmosOffsetZ + j);
                     }
                     GL.End();
                 }
@@ -698,11 +710,17 @@ namespace ParallelComputedCollisionDetection
                 {
                     GL.Begin(PrimitiveType.Lines);
                     {
-                        GL.Vertex3(-(gizmosOffsetX + j), para.pos.Y, para.pos.Z + para.width *0.5);
+                        /*GL.Vertex3(-(gizmosOffsetX + j), para.pos.Y, para.pos.Z + para.width *0.5);
                         GL.Vertex3(-(gizmosOffsetX + j), para.pos.Y, para.pos.Z - para.width * 0.5);
 
                         GL.Vertex3(para.pos.X - paraOffset, para.pos.Y, gizmosOffsetZ + j);
-                        GL.Vertex3(para.pos.X + paraOffset, para.pos.Y, gizmosOffsetZ + j);
+                        GL.Vertex3(para.pos.X + paraOffset, para.pos.Y, gizmosOffsetZ + j);*/
+
+                        GL.Vertex3(-(gizmosOffsetX + j), para.pos.Y, para.pos.Z + para.bsphere.radius);
+                        GL.Vertex3(-(gizmosOffsetX + j), para.pos.Y, para.pos.Z - para.bsphere.radius);
+
+                        GL.Vertex3(para.pos.X - para.bsphere.radius, para.pos.Y, gizmosOffsetZ + j);
+                        GL.Vertex3(para.pos.X + para.bsphere.radius, para.pos.Y, gizmosOffsetZ + j);
                     }
                     GL.End();
                 }
