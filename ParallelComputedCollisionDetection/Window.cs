@@ -1,6 +1,4 @@
-﻿#define ORTHO
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -39,6 +37,8 @@ namespace ParallelComputedCollisionDetection
         bool xRot;
         bool yRot;
         bool zRot;
+        bool ortho = true;
+        bool vPressed = false;
         float[] mat_specular = { 1.0f, 1.0f, 1.0f, 1.0f };
         float[] mat_shininess = { 50.0f };
         float[] light_position = { 1.0f, 1.0f, 1.0f, 0.0f };
@@ -87,6 +87,7 @@ namespace ParallelComputedCollisionDetection
             GL.Enable(TK.EnableCap.Blend);
             GL.BlendFunc(TK.BlendingFactorSrc.SrcAlpha, TK.BlendingFactorDest.OneMinusSrcAlpha);
             //GL.BlendFunc(TK.BlendingFactorSrc.SrcAlpha, TK.BlendingFactorDest.OneMinusSrcAlpha);
+            //GL.LoadIdentity();
 
             old_mouse = OpenTK.Input.Mouse.GetState();
             old_key = OpenTK.Input.Keyboard.GetState();
@@ -154,17 +155,19 @@ namespace ParallelComputedCollisionDetection
             }
             else
                 CursorVisible = true;
-#if ORTHO
-            scale_factor += (mouse.WheelPrecise - old_mouse.WheelPrecise) * 0.5f;
-            if(scale_factor > 50f)
-                scale_factor = 50f;
-            else if(scale_factor < 0.5f)
-                scale_factor = 0.5f;
-#else
-            eye.Z -= (mouse.WheelPrecise - old_mouse.WheelPrecise);
-            if (eye.Z < 3)
-                eye.Z = 3;
-#endif
+            
+            if(ortho){
+                scale_factor += (mouse.WheelPrecise - old_mouse.WheelPrecise) * 0.5f;
+                if(scale_factor > 50f)
+                    scale_factor = 50f;
+                else if(scale_factor < 0.5f)
+                    scale_factor = 0.5f;
+            }
+            else{
+                eye.Z -= (mouse.WheelPrecise - old_mouse.WheelPrecise);
+                if (eye.Z < 3)
+                    eye.Z = 3;
+            }
             old_mouse = mouse;
         }
 
@@ -178,6 +181,15 @@ namespace ParallelComputedCollisionDetection
                 offsetY += rotation_speed;
             if (Keyboard[Key.Down])
                 offsetY -= rotation_speed;
+
+            if (Keyboard[Key.V] && !vPressed)
+            {
+                if (ortho)
+                    ortho = false;
+                else
+                    ortho = true;
+                vPressed = true;
+            }
 
             #region XYZ Grid Rotations
             if (Keyboard[Key.Z] || zRot)
@@ -252,6 +264,10 @@ namespace ParallelComputedCollisionDetection
             else
                 view = '0';
             #endregion
+
+            if (!Keyboard[Key.V] && vPressed)
+                vPressed = false;
+
             //old_key = OpenTK.Input.Keyboard.GetState();
         }
 
@@ -260,17 +276,25 @@ namespace ParallelComputedCollisionDetection
             base.OnRenderFrame(e);
 
             GL.Clear(TK.ClearBufferMask.DepthBufferBit | TK.ClearBufferMask.ColorBufferBit);
+            
+            //GL.PushMatrix();
 
-#if ORTHO
-            modelView = Matrix4.CreateOrthographic(width, height, -height, height);
-            GL.MatrixMode(TK.MatrixMode.Projection);
-            GL.LoadMatrix(ref modelView);
-            GL.Scale(scale_factor, scale_factor, scale_factor);
-#else
-            modelView = Matrix4.LookAt(eye, target, up);
-            GL.MatrixMode(TK.MatrixMode.Modelview);
-            GL.LoadMatrix(ref modelView);
-#endif
+            if (ortho)
+            {
+                modelView = Matrix4.CreateOrthographic(width, height, -height, height);
+                GL.MatrixMode(TK.MatrixMode.Projection);
+                GL.PushMatrix();
+                GL.LoadMatrix(ref modelView);
+                GL.Scale(scale_factor, scale_factor, scale_factor);
+            }
+            else
+            {
+                modelView = Matrix4.LookAt(eye, target, up);
+                GL.MatrixMode(TK.MatrixMode.Modelview);
+                GL.PushMatrix();
+                GL.LoadMatrix(ref modelView);
+            }
+            GL.PushMatrix();
             GL.Rotate(offsetX, 0.0f, 1.0f, 0.0f);
             GL.Rotate(offsetY, 1.0f, 0.0f, 0.0f);
 
@@ -302,8 +326,12 @@ namespace ParallelComputedCollisionDetection
 
             //GL.BlendFunc(TK.BlendingFactorSrc.One, TK.BlendingFactorDest.OneMinusSrcAlpha);
             #region Draw Gizmos
-            drawCollisionVectors();
+            if(ortho)
+                drawCollisionVectors();
             #endregion
+
+            GL.PopMatrix();
+            GL.PopMatrix();
 
             SwapBuffers();
         }
