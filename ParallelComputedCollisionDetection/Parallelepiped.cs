@@ -102,7 +102,7 @@ namespace ParallelComputedCollisionDetection
 
         public void calculateBoundingSphere()
         {
-            double maxFromOrigin = Math.Sqrt(Math.Pow(offsetX * 0.5 + length * 0.5, 2) + Math.Pow(height * 0.5, 2) + Math.Pow(width * 0.5, 2));
+            double maxFromOrigin = Math.Sqrt(Math.Pow(Math.Abs(offsetX) * 0.5 + length * 0.5, 2) + Math.Pow(height * 0.5, 2) + Math.Pow(width * 0.5, 2));
             bsphere = new Sphere(new Vector3(pos.X + (float)offsetX * 0.5f, pos.Y, pos.Z), maxFromOrigin, sphere_precision, sphere_precision);
         }
     }

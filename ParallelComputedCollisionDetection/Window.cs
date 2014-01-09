@@ -44,9 +44,9 @@ namespace ParallelComputedCollisionDetection
         float[] light_position = { 1.0f, 1.0f, 1.0f, 0.0f };
         float[] light_ambient = { 0.5f, 0.5f, 0.5f, 1.0f };
         float[][] colors = new float[][]{   new float[]{1f, 0f, 0f, 0.0f}, new float[]{0f, 1f, 0f, 0.0f}, new float[]{0f, 0f, 1f, 0.0f},
-                                            new float[]{0.8f, 0.2f, 0.2f, 0.0f}, new float[]{1f, 1f, 0f, 0.0f}, new float[]{1f, 0f, 1f, 0.0f},
-                                            new float[]{1f, 1f, 0f, 0.0f}, new float[]{0.2f, 0.8f, 0.2f, 0.0f}, new float[]{0f, 1f, 1f, 0.0f},
-                                            new float[]{1f, 0f, 1f, 0.0f}, new float[]{0f, 1f, 1f, 0.0f}, new float[]{0.2f, 0.2f, 0.8f, 0.0f}};
+                                            new float[]{1f, 1f, 1f, 0.0f}, new float[]{1f, 1f, 0f, 0.0f}, new float[]{1f, 0f, 1f, 0.0f},
+                                            new float[]{1f, 1f, 0f, 0.0f}, new float[]{0.4f, 0.6f, 0.4f, 0.0f}, new float[]{0f, 1f, 1f, 0.0f},
+                                            new float[]{1f, 0f, 1f, 0.0f}, new float[]{0f, 1f, 1f, 0.0f}, new float[]{0.4f, 0.4f, 0.6f, 0.0f}};
         float width;
         float height;
         char view = '0';
