@@ -15,8 +15,11 @@ using System.Data;
 using System.Windows.Forms;
 using OpenTK.Platform;
 using System.Diagnostics;
+
+#region Assembly Collisions
 using TK = OpenTK.Graphics.OpenGL;
 using GL = OpenTK.Graphics.OpenGL.GL;
+#endregion
 
 namespace ParallelComputedCollisionDetection
 {
@@ -29,9 +32,10 @@ namespace ParallelComputedCollisionDetection
         float mouse_sensitivity=0.2f;
         Matrix4 modelView;
         float scale_factor = 1;
-        float rotation_speed = 2;
+        float rotation_speed = 2.5f;
         float fov;
         public int sphere_precision = 30;
+        float coord_transf = 28.5f;
         float wp_scale_factor = 3;
         KeyboardState old_key;
         bool xRot;
@@ -39,10 +43,13 @@ namespace ParallelComputedCollisionDetection
         bool zRot;
         bool ortho = true;
         bool vPressed = false;
+        int picked = -1;
+        MouseState mouse;
         float[] mat_specular = { 1.0f, 1.0f, 1.0f, 1.0f };
         float[] mat_shininess = { 50.0f };
         float[] light_position = { 1.0f, 1.0f, 1.0f, 0.0f };
         float[] light_ambient = { 0.5f, 0.5f, 0.5f, 1.0f };
+        float oldX, oldY; 
         float[][] colors = new float[][]{   new float[]{1f, 0f, 0f, 0.0f}, new float[]{0f, 1f, 0f, 0.0f}, new float[]{0f, 0f, 1f, 0.0f},
                                             new float[]{1f, 1f, 1f, 0.0f}, new float[]{1f, 1f, 0f, 0.0f}, new float[]{1f, 0f, 1f, 0.0f},
                                             new float[]{1f, 1f, 0f, 0.0f}, new float[]{0.4f, 0.6f, 0.4f, 0.0f}, new float[]{0f, 1f, 1f, 0.0f},
@@ -109,7 +116,9 @@ namespace ParallelComputedCollisionDetection
             VSync = VSyncMode.On;
             eye = new Vector3(0, 0, height * 1.5f);
             target = new Vector3(0, 0, 0);
-            up = new Vector3(0, 1, 0);          
+            up = new Vector3(0, 1, 0);
+
+            mouse = OpenTK.Input.Mouse.GetState();
         }
 
         protected override void OnUnload(EventArgs e)
@@ -146,7 +155,19 @@ namespace ParallelComputedCollisionDetection
 
         void checkMouseInput()
         {
-            var mouse = OpenTK.Input.Mouse.GetState();
+            mouse = OpenTK.Input.Mouse.GetState();
+
+            if (mouse.IsButtonDown(MouseButton.Left) && picked < 0)
+                pickBody();
+            else if (!mouse.IsButtonDown(MouseButton.Left))
+                picked = -1;
+            else if (mouse.IsButtonDown(MouseButton.Left) && old_mouse.IsButtonDown(MouseButton.Left) && picked >= 0)
+            {
+                float deltaX = Cursor.Position.X - oldX;
+                float deltaY = Cursor.Position.Y - oldY;
+                moveBody(deltaX, deltaY);
+            }
+
             if (mouse.IsButtonDown(MouseButton.Right))
             {
                 CursorVisible = false;
@@ -169,6 +190,8 @@ namespace ParallelComputedCollisionDetection
                     eye.Z = 3;
             }
             old_mouse = mouse;
+            oldX = Cursor.Position.X;
+            oldY = Cursor.Position.Y;
         }
 
         void checkKeyboardInput()
@@ -276,8 +299,6 @@ namespace ParallelComputedCollisionDetection
             base.OnRenderFrame(e);
 
             GL.Clear(TK.ClearBufferMask.DepthBufferBit | TK.ClearBufferMask.ColorBufferBit);
-            
-            //GL.PushMatrix();
 
             if (ortho)
             {
@@ -326,8 +347,7 @@ namespace ParallelComputedCollisionDetection
 
             //GL.BlendFunc(TK.BlendingFactorSrc.One, TK.BlendingFactorDest.OneMinusSrcAlpha);
             #region Draw Gizmos
-            if(ortho)
-                drawCollisionVectors();
+            drawCollisionVectors();
             #endregion
 
             GL.PopMatrix();
@@ -706,11 +726,11 @@ namespace ParallelComputedCollisionDetection
                         GL.Vertex3(- (gizmosOffsetX + j), para.pos.Y + para.height * 0.5, para.pos.Z);
                         GL.Vertex3(- (gizmosOffsetX + j), para.pos.Y - para.height * 0.5, para.pos.Z);*/
 
-                        GL.Vertex3(para.pos.X - para.bsphere.radius, -(gizmosOffsetY + j), para.pos.Z);
-                        GL.Vertex3(para.pos.X + para.bsphere.radius, -(gizmosOffsetY + j), para.pos.Z);
+                        GL.Vertex3(para.pos.X - para.bsphere.radius, -(gizmosOffsetY + j), 10);
+                        GL.Vertex3(para.pos.X + para.bsphere.radius, -(gizmosOffsetY + j), 10);
 
-                        GL.Vertex3(-(gizmosOffsetX + j), para.pos.Y + para.bsphere.radius, para.pos.Z);
-                        GL.Vertex3(-(gizmosOffsetX + j), para.pos.Y - para.bsphere.radius, para.pos.Z);
+                        GL.Vertex3(-(gizmosOffsetX + j), para.pos.Y + para.bsphere.radius, 10);
+                        GL.Vertex3(-(gizmosOffsetX + j), para.pos.Y - para.bsphere.radius, 10);
                     }
                     GL.End();
                 }
@@ -725,11 +745,11 @@ namespace ParallelComputedCollisionDetection
                         GL.Vertex3(para.pos.X, para.pos.Y + para.height * 0.5, gizmosOffsetZ + j);
                         GL.Vertex3(para.pos.X, para.pos.Y - para.height * 0.5, gizmosOffsetZ + j);*/
 
-                        GL.Vertex3(para.pos.X, -(gizmosOffsetY + j), para.pos.Z - para.bsphere.radius);
-                        GL.Vertex3(para.pos.X, -(gizmosOffsetY + j), para.pos.Z + para.bsphere.radius);
+                        GL.Vertex3(10, -(gizmosOffsetY + j), para.pos.Z - para.bsphere.radius);
+                        GL.Vertex3(10, -(gizmosOffsetY + j), para.pos.Z + para.bsphere.radius);
 
-                        GL.Vertex3(para.pos.X, para.pos.Y + para.bsphere.radius, gizmosOffsetZ + j);
-                        GL.Vertex3(para.pos.X, para.pos.Y - para.bsphere.radius, gizmosOffsetZ + j);
+                        GL.Vertex3(10, para.pos.Y + para.bsphere.radius, gizmosOffsetZ + j);
+                        GL.Vertex3(10, para.pos.Y - para.bsphere.radius, gizmosOffsetZ + j);
                     }
                     GL.End();
                 }
@@ -744,11 +764,11 @@ namespace ParallelComputedCollisionDetection
                         GL.Vertex3(para.pos.X - paraOffset, para.pos.Y, gizmosOffsetZ + j);
                         GL.Vertex3(para.pos.X + paraOffset, para.pos.Y, gizmosOffsetZ + j);*/
 
-                        GL.Vertex3(-(gizmosOffsetX + j), para.pos.Y, para.pos.Z + para.bsphere.radius);
-                        GL.Vertex3(-(gizmosOffsetX + j), para.pos.Y, para.pos.Z - para.bsphere.radius);
+                        GL.Vertex3(-(gizmosOffsetX + j), 10, para.pos.Z + para.bsphere.radius);
+                        GL.Vertex3(-(gizmosOffsetX + j), 10, para.pos.Z - para.bsphere.radius);
 
-                        GL.Vertex3(para.pos.X - para.bsphere.radius, para.pos.Y, gizmosOffsetZ + j);
-                        GL.Vertex3(para.pos.X + para.bsphere.radius, para.pos.Y, gizmosOffsetZ + j);
+                        GL.Vertex3(para.pos.X - para.bsphere.radius, 10, gizmosOffsetZ + j);
+                        GL.Vertex3(para.pos.X + para.bsphere.radius, 10, gizmosOffsetZ + j);
                     }
                     GL.End();
                 }
@@ -756,6 +776,76 @@ namespace ParallelComputedCollisionDetection
                 j += 0.2f;
             }
             GL.LineWidth(1.0f);
+        }
+
+        void moveBody(float deltaX, float deltaY)
+        {
+            Parallelepiped[] paras_ = paras.ToArray();
+            switch (view)
+            {
+                case 'x':
+                    paras_[picked].pos.Z -= deltaX / coord_transf;
+                    paras_[picked].pos.Y -= deltaY / coord_transf;
+                    break;
+                case 'y':
+                    paras_[picked].pos.X += deltaX / coord_transf;
+                    paras_[picked].pos.Z += deltaY / coord_transf;
+                    break;
+                case 'z':
+                    paras_[picked].pos.X += deltaX / coord_transf;
+                    paras_[picked].pos.Y -= deltaY / coord_transf;
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        void pickBody()
+        {
+            int depthTest = -300;
+            Parallelepiped[] paras_ = paras.ToArray();
+            switch (view)
+            {
+                case 'x':
+                    for (int i = 0; i < paras_.Count(); i++)
+                    {
+                        if (Math.Abs(((Cursor.Position.X - Screen.PrimaryScreen.Bounds.Width * 0.5) / coord_transf)
+                            - paras_[i].pos.Z) < paras_[i].bsphere.radius
+                            && Math.Abs(((-(Cursor.Position.Y - Screen.PrimaryScreen.Bounds.Height * 0.5)) / coord_transf)
+                            - paras_[i].pos.Y) < paras_[i].bsphere.radius
+                            && paras_[i].pos.X > depthTest)
+                            picked = i;
+                    }
+                    break;
+
+                case 'y':
+                    for (int i = 0; i < paras_.Count(); i++)
+                    {
+                        if (Math.Abs(((Cursor.Position.X - Screen.PrimaryScreen.Bounds.Width * 0.5) / coord_transf)
+                            - paras_[i].pos.X) < paras_[i].bsphere.radius
+                            && Math.Abs(((-(Cursor.Position.Y - Screen.PrimaryScreen.Bounds.Height * 0.5)) / coord_transf)
+                            - paras_[i].pos.Z) < paras_[i].bsphere.radius
+                            && paras_[i].pos.X > depthTest)
+                            picked = i;
+                    }
+                    break;
+
+                case 'z':
+                    for (int i = 0; i < paras_.Count(); i++)
+                    {
+                        if (Math.Abs(((Cursor.Position.X - Screen.PrimaryScreen.Bounds.Width * 0.5) / coord_transf) 
+                            - paras_[i].pos.X) < paras_[i].bsphere.radius
+                            && Math.Abs(((-(Cursor.Position.Y - Screen.PrimaryScreen.Bounds.Height * 0.5)) / coord_transf) 
+                            - paras_[i].pos.Y) < paras_[i].bsphere.radius
+                            && paras_[i].pos.X > depthTest)
+                            picked = i;
+                    }
+                    break;
+
+                default:
+                    picked = -1;
+                    break;
+            }
         }
     }
 }
