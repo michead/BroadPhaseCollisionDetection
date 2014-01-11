@@ -35,7 +35,7 @@ namespace ParallelComputedCollisionDetection
         float rotation_speed = 2.5f;
         float fov;
         public int sphere_precision = 30;
-        float coord_transf = 28.5f;
+        float coord_transf;
         float wp_scale_factor = 3;
         KeyboardState old_key;
         bool xRot;
@@ -119,6 +119,7 @@ namespace ParallelComputedCollisionDetection
             up = new Vector3(0, 1, 0);
 
             mouse = OpenTK.Input.Mouse.GetState();
+            coord_transf = Screen.PrimaryScreen.Bounds.Height / 30f;
         }
 
         protected override void OnUnload(EventArgs e)
