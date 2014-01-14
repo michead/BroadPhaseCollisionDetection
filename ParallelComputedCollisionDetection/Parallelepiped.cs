@@ -25,7 +25,7 @@ namespace ParallelComputedCollisionDetection
         public float angle;
         public float angle_;
         public Sphere bsphere;
-        int sphere_precision = 30;
+        int sphere_precision = 20;
         public double offsetX;
 
         public Parallelepiped(Vector3 pos, double length, double height, double width, float angle)
