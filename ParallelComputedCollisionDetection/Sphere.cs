@@ -14,7 +14,7 @@ using MaterialFace = OpenTK.Graphics.OpenGL.MaterialFace;
 
 namespace ParallelComputedCollisionDetection
 {
-    class Sphere
+    public class Sphere
     {      
         public IntPtr quad;
         public Vector3 pos;

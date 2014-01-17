@@ -54,14 +54,6 @@ namespace ParallelComputedCollisionDetection
         float[][] colors = new float[][]{   new float[]{1f, 0f, 0f, 0.0f}, new float[]{0f, 1f, 0f, 0.0f}, new float[]{0f, 0f, 1f, 0.0f},
                                             new float[]{1f, 1f, 1f, 0.0f}, new float[]{1f, 1f, 0f, 0.0f}, new float[]{1f, 0f, 1f, 0.0f},
                                             new float[]{1f, 1f, 0f, 0.0f}, new float[]{0.4f, 0.6f, 0.4f, 0.0f}, new float[]{0f, 1f, 1f, 0.0f},
-                                            new float[]{1f, 0f, 1f, 0.0f}, new float[]{0f, 1f, 1f, 0.0f}, new float[]{0.4f, 0.4f, 0.6f, 0.0f},
-                                            new float[]{1f, 0f, 0f, 0.0f}, new float[]{0f, 1f, 0f, 0.0f}, new float[]{0f, 0f, 1f, 0.0f},
-                                            new float[]{1f, 1f, 1f, 0.0f}, new float[]{1f, 1f, 0f, 0.0f}, new float[]{1f, 0f, 1f, 0.0f},
-                                            new float[]{1f, 1f, 0f, 0.0f}, new float[]{0.4f, 0.6f, 0.4f, 0.0f}, new float[]{0f, 1f, 1f, 0.0f},
-                                            new float[]{1f, 0f, 1f, 0.0f}, new float[]{0f, 1f, 1f, 0.0f}, new float[]{0.4f, 0.4f, 0.6f, 0.0f},
-                                            new float[]{1f, 0f, 0f, 0.0f}, new float[]{0f, 1f, 0f, 0.0f}, new float[]{0f, 0f, 1f, 0.0f},
-                                            new float[]{1f, 1f, 1f, 0.0f}, new float[]{1f, 1f, 0f, 0.0f}, new float[]{1f, 0f, 1f, 0.0f},
-                                            new float[]{1f, 1f, 0f, 0.0f}, new float[]{0.4f, 0.6f, 0.4f, 0.0f}, new float[]{0f, 1f, 1f, 0.0f},
                                             new float[]{1f, 0f, 1f, 0.0f}, new float[]{0f, 1f, 1f, 0.0f}, new float[]{0.4f, 0.4f, 0.6f, 0.0f}};
         float width;
         float height;
@@ -70,7 +62,7 @@ namespace ParallelComputedCollisionDetection
         double gizmosOffsetY = 10.5;
         double gizmosOffsetZ = 10.5;
 
-        List<Parallelepiped> paras;
+        List<Body> bodies;
 
         float aspect_ratio;
         Matrix4 perspective;
@@ -104,13 +96,13 @@ namespace ParallelComputedCollisionDetection
             old_mouse = OpenTK.Input.Mouse.GetState();
             old_key = OpenTK.Input.Keyboard.GetState();
 
-            paras = new List<Parallelepiped>();
-            /*paras.Add(new Parallelepiped(new Vector3(5, 5, 5), 3, 3, 3, 90));
-            paras.Add(new Parallelepiped(new Vector3(-5, -5, -5), 5, 5, 5, 90));
-            paras.Add(new Parallelepiped(new Vector3(-3, 3, 0), 4, 4, 4, 90));
-            paras.Add(new Parallelepiped(new Vector3(6, -4, 3), 2, 3, 4, 70));
-            paras.Add(new Parallelepiped(new Vector3(-7, 7, 4), 1.5, 1.5, 1.5, 120));*/
-            generateRandomBodies(number_of_bodies);
+            bodies = new List<Body>();
+            bodies.Add(new Parallelepiped(new Vector3(5, 5, 5), 2, 2, 2, 90));
+            bodies.Add(new Parallelepiped(new Vector3(-5, -5, -5), 3.5, 3.5, 3.5, 90));
+            bodies.Add(new Parallelepiped(new Vector3(-3, 3, 0), 3, 3, 3, 90));
+            bodies.Add(new Parallelepiped(new Vector3(6, -4, 3), 1, 2, 3, 70));
+            bodies.Add(new Parallelepiped(new Vector3(-7, 7, 4), 1.5, 1.5, 1.5, 120));
+            //generateRandomBodies(number_of_bodies);
 
             GL.Viewport(0, 0, Width, Height);
             aspect_ratio = Width / (float)Height;
@@ -156,8 +148,8 @@ namespace ParallelComputedCollisionDetection
                     WindowState = WindowState.Maximized;
             checkMouseInput();
             checkKeyboardInput();
-            foreach (Parallelepiped para in paras)
-                para.calculateBoundingSphere();
+            foreach (Body body in bodies)
+                body.calculateBoundingSphere();
         }
 
         void checkMouseInput()
@@ -334,15 +326,15 @@ namespace ParallelComputedCollisionDetection
             GL.Enable(TK.EnableCap.Lighting);
 
             int i = 0;
-            foreach (Parallelepiped para in paras)
+            foreach (Body body in bodies)
             {
                 colors[i%colors.Count()][3] = 1f;
                 GL.Color4(colors[i % colors.Count()]);
                 GL.PolygonMode(TK.MaterialFace.FrontAndBack, TK.PolygonMode.Fill);
-                para.Draw();
+                body.Draw();
                 GL.Color3(0.2f, 0.5f, 1f);
                 GL.PolygonMode(TK.MaterialFace.FrontAndBack, TK.PolygonMode.Line);
-                para.bsphere.Draw();
+                body.getBSphere().Draw();
                 i++;
             }
 
@@ -714,21 +706,22 @@ namespace ParallelComputedCollisionDetection
             int i = 0;
             float j = 0;
 
-            foreach (Parallelepiped para in paras)
+            foreach (Body body in bodies)
             {
                 colors[i][3] = 0.5f;
                 GL.Color4(colors[i]);
-                double paraOffset = Math.Abs(para.offsetX) + para.length * 0.5;
+                Vector3 pos = body.getPos();
+                Sphere bsphere = body.getBSphere();
 
                 if (view == 'z')
                 {
                     GL.Begin(PrimitiveType.Lines);
                     {
-                        GL.Vertex3(para.pos.X - para.bsphere.radius, -(gizmosOffsetY + j), 10);
-                        GL.Vertex3(para.pos.X + para.bsphere.radius, -(gizmosOffsetY + j), 10);
+                        GL.Vertex3(pos.X - bsphere.radius, -(gizmosOffsetY + j), 10);
+                        GL.Vertex3(pos.X + bsphere.radius, -(gizmosOffsetY + j), 10);
 
-                        GL.Vertex3(-(gizmosOffsetX + j), para.pos.Y + para.bsphere.radius, 10);
-                        GL.Vertex3(-(gizmosOffsetX + j), para.pos.Y - para.bsphere.radius, 10);
+                        GL.Vertex3(-(gizmosOffsetX + j), pos.Y + bsphere.radius, 10);
+                        GL.Vertex3(-(gizmosOffsetX + j), pos.Y - bsphere.radius, 10);
                     }
                     GL.End();
                 }
@@ -737,11 +730,11 @@ namespace ParallelComputedCollisionDetection
                 {
                     GL.Begin(PrimitiveType.Lines);
                     {
-                        GL.Vertex3(10, -(gizmosOffsetY + j), para.pos.Z - para.bsphere.radius);
-                        GL.Vertex3(10, -(gizmosOffsetY + j), para.pos.Z + para.bsphere.radius);
+                        GL.Vertex3(10, -(gizmosOffsetY + j), pos.Z - bsphere.radius);
+                        GL.Vertex3(10, -(gizmosOffsetY + j), pos.Z + bsphere.radius);
 
-                        GL.Vertex3(10, para.pos.Y + para.bsphere.radius, gizmosOffsetZ + j);
-                        GL.Vertex3(10, para.pos.Y - para.bsphere.radius, gizmosOffsetZ + j);
+                        GL.Vertex3(10, pos.Y + bsphere.radius, gizmosOffsetZ + j);
+                        GL.Vertex3(10, pos.Y - bsphere.radius, gizmosOffsetZ + j);
                     }
                     GL.End();
                 }
@@ -750,11 +743,11 @@ namespace ParallelComputedCollisionDetection
                 {
                     GL.Begin(PrimitiveType.Lines);
                     {
-                        GL.Vertex3(-(gizmosOffsetX + j), 10, para.pos.Z + para.bsphere.radius);
-                        GL.Vertex3(-(gizmosOffsetX + j), 10, para.pos.Z - para.bsphere.radius);
+                        GL.Vertex3(-(gizmosOffsetX + j), 10, pos.Z + bsphere.radius);
+                        GL.Vertex3(-(gizmosOffsetX + j), 10, pos.Z - bsphere.radius);
 
-                        GL.Vertex3(para.pos.X - para.bsphere.radius, 10, gizmosOffsetZ + j);
-                        GL.Vertex3(para.pos.X + para.bsphere.radius, 10, gizmosOffsetZ + j);
+                        GL.Vertex3(pos.X - bsphere.radius, 10, gizmosOffsetZ + j);
+                        GL.Vertex3(pos.X + bsphere.radius, 10, gizmosOffsetZ + j);
                     }
                     GL.End();
                 }
@@ -766,64 +759,72 @@ namespace ParallelComputedCollisionDetection
 
         void moveBody(float deltaX, float deltaY)
         {
-            Parallelepiped[] paras_ = paras.ToArray();
+            Body[] bodies_ = bodies.ToArray();
+            Vector3 pos = bodies_[picked].getPos();
             switch (view)
             {
                 case 'x':
-                    paras_[picked].pos.Z -= deltaX / coord_transf;
-                    paras_[picked].pos.Y -= deltaY / coord_transf;
+                    pos.Z -= deltaX / coord_transf;
+                    pos.Y -= deltaY / coord_transf;
                     break;
                 case 'y':
-                    paras_[picked].pos.X += deltaX / coord_transf;
-                    paras_[picked].pos.Z += deltaY / coord_transf;
+                    pos.X += deltaX / coord_transf;
+                    pos.Z += deltaY / coord_transf;
                     break;
                 case 'z':
-                    paras_[picked].pos.X += deltaX / coord_transf;
-                    paras_[picked].pos.Y -= deltaY / coord_transf;
+                    pos.X += deltaX / coord_transf;
+                    pos.Y -= deltaY / coord_transf;
                     break;
                 default:
                     break;
             }
+            bodies_[picked].setPos(pos);
         }
 
         void pickBody()
         {
             int depthTest = -300;
-            Parallelepiped[] paras_ = paras.ToArray();
+            Body[] bodies_ = bodies.ToArray();
             switch (view)
             {
                 case 'x':
-                    for (int i = 0; i < paras_.Count(); i++)
+                    for (int i = 0; i < bodies_.Count(); i++)
                     {
+                        Sphere bsphere = bodies_[i].getBSphere();
+                        Vector3 pos = bodies_[i].getPos();
                         if (Math.Abs(((Cursor.Position.X - Screen.PrimaryScreen.Bounds.Width * 0.5) / coord_transf)
-                            - paras_[i].pos.Z) < paras_[i].bsphere.radius
+                            - pos.Z) < bsphere.radius
                             && Math.Abs(((-(Cursor.Position.Y - Screen.PrimaryScreen.Bounds.Height * 0.5)) / coord_transf)
-                            - paras_[i].pos.Y) < paras_[i].bsphere.radius
-                            && paras_[i].pos.X > depthTest)
+                            - pos.Y) < bsphere.radius
+                            && pos.X > depthTest)
                             picked = i;
                     }
                     break;
 
                 case 'y':
-                    for (int i = 0; i < paras_.Count(); i++)
+                    for (int i = 0; i < bodies_.Count(); i++)
                     {
+                        Sphere bsphere = bodies_[i].getBSphere();
+                        Vector3 pos = bodies_[i].getPos();
                         if (Math.Abs(((Cursor.Position.X - Screen.PrimaryScreen.Bounds.Width * 0.5) / coord_transf)
-                            - paras_[i].pos.X) < paras_[i].bsphere.radius
+                            - pos.X) < bsphere.radius
                             && Math.Abs(((-(Cursor.Position.Y - Screen.PrimaryScreen.Bounds.Height * 0.5)) / coord_transf)
-                            - paras_[i].pos.Z) < paras_[i].bsphere.radius
-                            && paras_[i].pos.X > depthTest)
+                            - pos.Z) < bsphere.radius
+                            && pos.X > depthTest)
                             picked = i;
                     }
                     break;
 
                 case 'z':
-                    for (int i = 0; i < paras_.Count(); i++)
+                    for (int i = 0; i < bodies_.Count(); i++)
                     {
+                        Sphere bsphere = bodies_[i].getBSphere();
+                        Vector3 pos = bodies_[i].getPos();
                         if (Math.Abs(((Cursor.Position.X - Screen.PrimaryScreen.Bounds.Width * 0.5) / coord_transf) 
-                            - paras_[i].pos.X) < paras_[i].bsphere.radius
+                            - pos.X) < bsphere.radius
                             && Math.Abs(((-(Cursor.Position.Y - Screen.PrimaryScreen.Bounds.Height * 0.5)) / coord_transf) 
-                            - paras_[i].pos.Y) < paras_[i].bsphere.radius
-                            && paras_[i].pos.X > depthTest)
+                            - pos.Y) < bsphere.radius
+                            && pos.X > depthTest)
                             picked = i;
                     }
                     break;
@@ -836,7 +837,7 @@ namespace ParallelComputedCollisionDetection
 
         void generateRandomBodies(int n)
         {
-            paras.Clear();
+            bodies.Clear();
             Random rand1 = new Random((int)DateTime.Now.TimeOfDay.TotalMilliseconds);
             Random rand2 = new Random((int)DateTime.Now.TimeOfDay.TotalMilliseconds + 1);
             Random rand3 = new Random((int)DateTime.Now.TimeOfDay.TotalMilliseconds + 1);
@@ -873,7 +874,7 @@ namespace ParallelComputedCollisionDetection
                 height = height * rand2.Next(1, (int)Math.Sqrt(10 / grid_edge)) * 2;
                 float width = (float)rand3.NextDouble();
                 width = width * rand3.Next(1, (int)Math.Sqrt(10 / grid_edge)) * 2;
-                paras.Add(new Parallelepiped(new Vector3(x, y, z), length, height, width, 90f));
+                bodies.Add(new Parallelepiped(new Vector3(x, y, z), length, height, width, 90f));
             }
         }
     }

@@ -16,17 +16,18 @@ using MaterialFace = OpenTK.Graphics.OpenGL.MaterialFace;
 
 namespace ParallelComputedCollisionDetection
 {
-    class Parallelepiped
+    class Parallelepiped : Body
     {
-        public Vector3 pos;
+        Vector3 pos;
         public double length; 
         public double height; 
         public double width;
         public float angle;
         public float angle_;
-        public Sphere bsphere;
+        Sphere bsphere;
         int sphere_precision = 20;
         public double offsetX;
+        double radius;
 
         public Parallelepiped(Vector3 pos, double length, double height, double width, float angle)
         {
@@ -38,6 +39,8 @@ namespace ParallelComputedCollisionDetection
             this.angle_ = (float)Math.PI * 0.5f - angle;
             this.offsetX = (this.height / (Math.Sin(MathHelper.DegreesToRadians(this.angle_)) * 2))
                     * Math.Cos(MathHelper.DegreesToRadians(this.angle_));
+            this.radius = 
+                Math.Sqrt(Math.Pow(Math.Abs(offsetX) * 0.5 + length * 0.5, 2) + Math.Pow(height * 0.5, 2) + Math.Pow(width * 0.5, 2));
             calculateBoundingSphere();
         }
 
@@ -102,8 +105,27 @@ namespace ParallelComputedCollisionDetection
 
         public void calculateBoundingSphere()
         {
-            double maxFromOrigin = Math.Sqrt(Math.Pow(Math.Abs(offsetX) * 0.5 + length * 0.5, 2) + Math.Pow(height * 0.5, 2) + Math.Pow(width * 0.5, 2));
-            bsphere = new Sphere(new Vector3(pos.X + (float)offsetX * 0.5f, pos.Y, pos.Z), maxFromOrigin, sphere_precision, sphere_precision);
+            bsphere = new Sphere(new Vector3(pos.X + (float)offsetX * 0.5f, pos.Y, pos.Z), radius, sphere_precision, sphere_precision);
+        }
+
+        public double getRadius()
+        {
+            return radius;
+        }
+
+        public Vector3 getPos()
+        {
+            return pos;
+        }
+
+        public Sphere getBSphere()
+        {
+            return bsphere;
+        }
+
+        public void setPos(Vector3 pos)
+        {
+            this.pos = pos;
         }
     }
 }

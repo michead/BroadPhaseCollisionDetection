@@ -58,6 +58,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Body.cs" />
+    <Compile Include="Octahedron.cs" />
+    <Compile Include="Tetrahedron.cs" />
     <Compile Include="Parallelepiped.cs" />
     <Compile Include="Dodecahedron.cs" />
     <Compile Include="Program.cs" />
