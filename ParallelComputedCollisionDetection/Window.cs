@@ -92,16 +92,17 @@ namespace ParallelComputedCollisionDetection
             GL.Enable(TK.EnableCap.ColorMaterial);
             GL.Enable(TK.EnableCap.Blend);
             GL.BlendFunc(TK.BlendingFactorSrc.SrcAlpha, TK.BlendingFactorDest.OneMinusSrcAlpha);
+            GL.PolygonMode(TK.MaterialFace.FrontAndBack, TK.PolygonMode.Fill);
 
             old_mouse = OpenTK.Input.Mouse.GetState();
             old_key = OpenTK.Input.Keyboard.GetState();
 
             bodies = new List<Body>();
-            bodies.Add(new Parallelepiped(new Vector3(5, 5, 5), 2, 2, 2, 90));
-            bodies.Add(new Parallelepiped(new Vector3(-5, -5, -5), 3.5, 3.5, 3.5, 90));
-            bodies.Add(new Parallelepiped(new Vector3(-3, 3, 0), 3, 3, 3, 90));
-            bodies.Add(new Parallelepiped(new Vector3(6, -4, 3), 1, 2, 3, 70));
-            bodies.Add(new Parallelepiped(new Vector3(-7, 7, 4), 1.5, 1.5, 1.5, 120));
+            bodies.Add(new Parallelepiped(new Vector3(5, 5, 5), 2));
+            bodies.Add(new Parallelepiped(new Vector3(-5, -5, -5), 3.5));
+            bodies.Add(new Parallelepiped(new Vector3(-3, 3, 0), 3));
+            bodies.Add(new Parallelepiped(new Vector3(6, -4, 3), 2));
+            bodies.Add(new Parallelepiped(new Vector3(-7, 7, 4), 1.5));
             //generateRandomBodies(number_of_bodies);
 
             GL.Viewport(0, 0, Width, Height);
@@ -328,12 +329,12 @@ namespace ParallelComputedCollisionDetection
             int i = 0;
             foreach (Body body in bodies)
             {
-                colors[i%colors.Count()][3] = 1f;
-                GL.Color4(colors[i % colors.Count()]);
-                GL.PolygonMode(TK.MaterialFace.FrontAndBack, TK.PolygonMode.Fill);
+                float[] color = colors[i % colors.Count()];
+                color[3] = 1f;
+                GL.Color4(color);
                 body.Draw();
-                GL.Color3(0.2f, 0.5f, 1f);
-                GL.PolygonMode(TK.MaterialFace.FrontAndBack, TK.PolygonMode.Line);
+                color[3] = 0.25f;
+                GL.Color4(color);
                 body.getBSphere().Draw();
                 i++;
             }
@@ -874,7 +875,7 @@ namespace ParallelComputedCollisionDetection
                 height = height * rand2.Next(1, (int)Math.Sqrt(10 / grid_edge)) * 2;
                 float width = (float)rand3.NextDouble();
                 width = width * rand3.Next(1, (int)Math.Sqrt(10 / grid_edge)) * 2;
-                bodies.Add(new Parallelepiped(new Vector3(x, y, z), length, height, width, 90f));
+                bodies.Add(new Parallelepiped(new Vector3(x, y, z), length, height, width, 0f));
             }
         }
     }

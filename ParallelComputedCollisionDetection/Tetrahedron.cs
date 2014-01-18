@@ -41,7 +41,7 @@ namespace ParallelComputedCollisionDetection
             vertices[0][2] = radius;
             the = 0.0;
             edge = 1.6329932 * radius;
-            pos = new Vector3((float)vertices[0][0], (float)vertices[0][1], (float)(vertices[0][2] - (Math.Sqrt(6) * edge) / 4));
+            pos = new Vector3((float)vertices[0][0], (float)vertices[0][1], (float)(vertices[0][2] - ((Math.Sqrt(6) * edge) / 4)));
             setPos(pos);
         }
 
