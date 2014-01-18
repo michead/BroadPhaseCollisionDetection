@@ -784,7 +784,7 @@ namespace ParallelComputedCollisionDetection
 
         void pickBody()
         {
-            int depthTest = -300;
+            float depthTest = -300;
             Body[] bodies_ = bodies.ToArray();
             switch (view)
             {
@@ -794,11 +794,14 @@ namespace ParallelComputedCollisionDetection
                         Sphere bsphere = bodies_[i].getBSphere();
                         Vector3 pos = bodies_[i].getPos();
                         if (Math.Abs(((Cursor.Position.X - Screen.PrimaryScreen.Bounds.Width * 0.5) / coord_transf)
-                            - pos.Z) < bsphere.radius
+                            + pos.Z) < bsphere.radius
                             && Math.Abs(((-(Cursor.Position.Y - Screen.PrimaryScreen.Bounds.Height * 0.5)) / coord_transf)
                             - pos.Y) < bsphere.radius
                             && pos.X > depthTest)
+                        {
+                            depthTest = pos.X;
                             picked = i;
+                        }
                     }
                     break;
 
@@ -810,9 +813,12 @@ namespace ParallelComputedCollisionDetection
                         if (Math.Abs(((Cursor.Position.X - Screen.PrimaryScreen.Bounds.Width * 0.5) / coord_transf)
                             - pos.X) < bsphere.radius
                             && Math.Abs(((-(Cursor.Position.Y - Screen.PrimaryScreen.Bounds.Height * 0.5)) / coord_transf)
-                            - pos.Z) < bsphere.radius
-                            && pos.X > depthTest)
+                            + pos.Z) < bsphere.radius
+                            && pos.Y > depthTest)
+                        {
+                            depthTest = pos.Y;
                             picked = i;
+                        }
                     }
                     break;
 
@@ -821,12 +827,15 @@ namespace ParallelComputedCollisionDetection
                     {
                         Sphere bsphere = bodies_[i].getBSphere();
                         Vector3 pos = bodies_[i].getPos();
-                        if (Math.Abs(((Cursor.Position.X - Screen.PrimaryScreen.Bounds.Width * 0.5) / coord_transf) 
+                        if (Math.Abs(((Cursor.Position.X - Screen.PrimaryScreen.Bounds.Width * 0.5) / coord_transf)
                             - pos.X) < bsphere.radius
-                            && Math.Abs(((-(Cursor.Position.Y - Screen.PrimaryScreen.Bounds.Height * 0.5)) / coord_transf) 
+                            && Math.Abs(((-(Cursor.Position.Y - Screen.PrimaryScreen.Bounds.Height * 0.5)) / coord_transf)
                             - pos.Y) < bsphere.radius
-                            && pos.X > depthTest)
+                            && pos.Z > depthTest)
+                        {
+                            depthTest = pos.Z;
                             picked = i;
+                        }
                     }
                     break;
 
