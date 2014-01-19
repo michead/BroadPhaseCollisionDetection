@@ -33,12 +33,13 @@ namespace ParallelComputedCollisionDetection
         Matrix4 modelView;
         float scale_factor = 1;
         float rotation_speed = 2.5f;
-        float fov;
+        int fov;
         //public int sphere_precision = 20;
         float coord_transf;
         float wp_scale_factor = 3;
-        int grid_edge = 3;
-        int number_of_bodies = 7;
+        double grid_edge = 3;
+        int number_of_bodies = 5;
+        int tiles;
         KeyboardState old_key;
         bool xRot;
         bool yRot;
@@ -48,7 +49,7 @@ namespace ParallelComputedCollisionDetection
         MouseState mouse;
         float[] mat_specular = { 1.0f, 1.0f, 1.0f, 1.0f };
         float[] mat_shininess = { 50.0f };
-        float[] light_position = { 1.0f, 1.0f, 1.0f, 0.0f };
+        float[] light_position = { 1f, 5f, 0.1f, 0.0f };
         float[] light_ambient = { 0.5f, 0.5f, 0.5f, 1.0f };
         float oldX, oldY; 
         float[][] colors = new float[][]{   new float[]{1f, 0f, 0f, 0.0f}, new float[]{0f, 1f, 0f, 0.0f}, new float[]{0f, 0f, 1f, 0.0f},
@@ -93,29 +94,30 @@ namespace ParallelComputedCollisionDetection
             GL.Enable(TK.EnableCap.Blend);
             GL.BlendFunc(TK.BlendingFactorSrc.SrcAlpha, TK.BlendingFactorDest.OneMinusSrcAlpha);
             GL.PolygonMode(TK.MaterialFace.FrontAndBack, TK.PolygonMode.Fill);
-
-            old_mouse = OpenTK.Input.Mouse.GetState();
-            old_key = OpenTK.Input.Keyboard.GetState();
-
-            bodies = new List<Body>();
-            bodies.Add(new Parallelepiped(new Vector3(5, 5, 5), 2));
-            bodies.Add(new Parallelepiped(new Vector3(-5, -5, -5), 3.5));
-            bodies.Add(new Parallelepiped(new Vector3(-3, 3, 0), 3));
-            bodies.Add(new Parallelepiped(new Vector3(6, -4, 3), 2));
-            bodies.Add(new Parallelepiped(new Vector3(-7, 7, 4), 1.5));
-            //generateRandomBodies(number_of_bodies);
-
+            
             GL.Viewport(0, 0, Width, Height);
             aspect_ratio = Width / (float)Height;
             checkAspectRatio();
             width *= wp_scale_factor;
             height *= wp_scale_factor;
-            fov = height * 0.75f;
 
             VSync = VSyncMode.On;
             eye = new Vector3(0, 0, height * 1.5f);
             target = new Vector3(0, 0, 0);
             up = new Vector3(0, 1, 0);
+            fov = (int)Math.Round(height * 0.75f);
+
+            old_mouse = OpenTK.Input.Mouse.GetState();
+            old_key = OpenTK.Input.Keyboard.GetState();
+
+            bodies = new List<Body>();
+            /*bodies.Add(new Parallelepiped(new Vector3(5, 5, 5), 2));
+            bodies.Add(new Parallelepiped(new Vector3(-5, -5, -5), 3.5));
+            bodies.Add(new Parallelepiped(new Vector3(-3, 3, 0), 3));
+            bodies.Add(new Parallelepiped(new Vector3(6, -4, 3), 2));
+            bodies.Add(new Parallelepiped(new Vector3(-7, 7, 4), 1.5));*/
+            generateRandomBodies(number_of_bodies, true);
+            calculateGridEdge();
 
             mouse = OpenTK.Input.Mouse.GetState();
             coord_transf = Screen.PrimaryScreen.Bounds.Height / 30f;
@@ -197,7 +199,7 @@ namespace ParallelComputedCollisionDetection
         void checkKeyboardInput()
         {
             if (Keyboard[Key.R] && !old_key.IsKeyDown(Key.R))
-                generateRandomBodies(number_of_bodies);
+                generateRandomBodies(number_of_bodies, true);
             if (Keyboard[Key.Left])
                 offsetX -= rotation_speed;
             if (Keyboard[Key.Right])
@@ -317,7 +319,7 @@ namespace ParallelComputedCollisionDetection
             GL.Rotate(offsetX, 0.0f, 1.0f, 0.0f);
             GL.Rotate(offsetY, 1.0f, 0.0f, 0.0f);
 
-            DrawGrid(grid_edge);
+            DrawGrid();
 
             #region Draw 3D Polyhedrons
             
@@ -332,9 +334,11 @@ namespace ParallelComputedCollisionDetection
                 float[] color = colors[i % colors.Count()];
                 color[3] = 1f;
                 GL.Color4(color);
+                //GL.PolygonMode(TK.MaterialFace.FrontAndBack, TK.PolygonMode.Fill);
                 body.Draw();
                 color[3] = 0.25f;
                 GL.Color4(color);
+                //GL.PolygonMode(TK.MaterialFace.FrontAndBack, TK.PolygonMode.Line);
                 body.getBSphere().Draw();
                 i++;
             }
@@ -344,7 +348,7 @@ namespace ParallelComputedCollisionDetection
             #endregion
 
             #region Draw Gizmos
-            drawCollisionVectors();
+            drawCollisionIntervals();
             #endregion
 
             GL.PopMatrix();
@@ -588,10 +592,9 @@ namespace ParallelComputedCollisionDetection
             GL.End();
         }
 
-        void DrawGrid(int x)
+        void DrawGrid()
         {
-            float edge = fov / x;
-            float half_fov = fov * 0.5f;
+            int half_fov = fov / 2;
             float offset;
 
             GL.Color4(1f, 0f, 0f, 1f);
@@ -606,9 +609,9 @@ namespace ParallelComputedCollisionDetection
             }
             GL.End();
 
-            for (int i = 1; i < x; i++)
+            for (int i = 1; i < tiles; i++)
             {
-                offset = edge * i;
+                offset = (float)grid_edge * i;
 
                 GL.Begin(PrimitiveType.Lines);
                 {
@@ -633,9 +636,9 @@ namespace ParallelComputedCollisionDetection
             }
             GL.End();
 
-            for (int i = 1; i < x; i++)
+            for (int i = 1; i < tiles; i++)
             {
-                offset = edge * i;
+                offset = (float)grid_edge * i;
 
                 GL.Begin(PrimitiveType.Lines);
                 {
@@ -660,9 +663,9 @@ namespace ParallelComputedCollisionDetection
             }
             GL.End();
 
-            for (int i = 1; i < x; i++)
+            for (int i = 1; i < tiles; i++)
             {
-                offset = edge * i;
+                offset = (float)grid_edge * i;
 
                 GL.Begin(PrimitiveType.Lines);
                 {
@@ -698,7 +701,7 @@ namespace ParallelComputedCollisionDetection
             }
         }
 
-        void drawCollisionVectors()
+        void drawCollisionIntervals()
         {
             if (view == '0')
                 return;
@@ -845,47 +848,44 @@ namespace ParallelComputedCollisionDetection
             }
         }
 
-        void generateRandomBodies(int n)
+        void generateRandomBodies(int n, bool cube)
         {
             bodies.Clear();
-            Random rand1 = new Random((int)DateTime.Now.TimeOfDay.TotalMilliseconds);
-            Random rand2 = new Random((int)DateTime.Now.TimeOfDay.TotalMilliseconds + 1);
-            Random rand3 = new Random((int)DateTime.Now.TimeOfDay.TotalMilliseconds + 1);
-            float safe_border = 15 / grid_edge;
+            Random rand = new Random((int)DateTime.Now.TimeOfDay.TotalMilliseconds);
+            int safe_area = (int)(fov * 0.5 - grid_edge * 0.5);
             for (int i = 0; i < n; i++)
             {
-                float x = (float)rand1.NextDouble();
-                x = x * rand1.Next(-15, 15);
-                if (x < 0)
-                    x += safe_border;
+                float x = rand.Next(-safe_area, safe_area);
+                float y = rand.Next(-safe_area, safe_area);
+                float z = rand.Next(-safe_area, safe_area);
+                //float length = rand.Next(2, 3);
+                float length = 1.75f;
+                float height, width;
+                if (cube)
+                {
+                    height = length;
+                    width = length;
+                }
                 else
-                    x -= safe_border;
-                if (x < -10 || x > 10)
-                    x %= 10;
-                float y = (float)rand2.NextDouble();
-                y = y * rand2.Next(-15, 15);
-                if (y < 0)
-                    y += safe_border;
-                else
-                    y -= safe_border;
-                if (y < -10 || y > 10)
-                    y %= 10;
-                float z = (float)rand3.NextDouble();
-                z = z * rand3.Next(-15, 15);
-                if (z < 0)
-                    z += safe_border;
-                else
-                    z -= safe_border;
-                if (z < -10 || z > 10)
-                    z %= 10;
-                float length = (float)rand1.NextDouble();
-                length = length * rand1.Next(1, (int)Math.Sqrt(10 / grid_edge)) * 2;
-                float height = (float)rand2.NextDouble();
-                height = height * rand2.Next(1, (int)Math.Sqrt(10 / grid_edge)) * 2;
-                float width = (float)rand3.NextDouble();
-                width = width * rand3.Next(1, (int)Math.Sqrt(10 / grid_edge)) * 2;
+                {
+                    height = rand.Next(2, 3);
+                    width = rand.Next(2, 3);
+                }
                 bodies.Add(new Parallelepiped(new Vector3(x, y, z), length, height, width, 0f));
             }
+            calculateGridEdge();
+        }
+
+        void calculateGridEdge()
+        {
+            double maxRadius = 0;
+            foreach (Body body in bodies)
+                if (maxRadius < body.getBSphere().radius)
+                    maxRadius = body.getBSphere().radius;
+            grid_edge = maxRadius * 3;
+            tiles = (int)(fov / grid_edge);
+            grid_edge = fov / (double)tiles;
+            Console.Write("\nfov: " + fov.ToString() +", tiles: " + tiles.ToString() + ", grid_edge: " + grid_edge.ToString() + "\n");
         }
     }
 }
