@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Drawing;
 using System.IO;
+using System.Windows.Forms;
 using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL;
@@ -142,7 +143,10 @@ namespace ParallelComputedCollisionDetection
             base.OnUpdateFrame(e);
 
             if (Keyboard[OpenTK.Input.Key.Escape])
+            {
+                Program.t.Abort();
                 this.Exit();
+            }
 
             if (Keyboard[OpenTK.Input.Key.Space])
                 if (WindowState != WindowState.Fullscreen)
@@ -783,6 +787,7 @@ namespace ParallelComputedCollisionDetection
                     break;
             }
             bodies_[picked].setPos(pos);
+            showInfo();
         }
 
         void pickBody()
@@ -846,6 +851,8 @@ namespace ParallelComputedCollisionDetection
                     picked = -1;
                     return;
             }
+
+            showInfo();
         }
 
         void generateRandomBodies(int n, bool cube)
@@ -888,6 +895,27 @@ namespace ParallelComputedCollisionDetection
             tiles = (int)(fov / grid_edge);
             grid_edge = fov / (double)tiles;
             //Console.Write("\nfov: " + fov.ToString() + ", tiles: " + tiles.ToString() + ", grid_edge: " + grid_edge.ToString() + "\n");
+        }
+
+        void showInfo()
+        {
+            {
+                MethodInvoker mi = delegate
+                {
+                    if (picked == -1)
+                        Program.db.getRTB().Text = "";
+                    else
+                    {
+                        Body pBody = bodies.ElementAt(picked);
+                        Program.db.getRTB().Text = "Body[" + picked + "]:\n\tposition: (" + pBody.getPos().X.ToString("0.00")
+                                                    + ", " + pBody.getPos().Y.ToString("0.00") + ", " + pBody.getPos().Z.ToString("0.00") + ")"
+                                                    + "\n\tradius: " + pBody.getBSphere().radius.ToString("0.00")
+                                                    + "\n\thCell: " + pBody.getBSphere().hCell.ToString();
+                    }
+                };
+                Program.db.getRTB().BeginInvoke(mi);
+            }
+
         }
     }
 }

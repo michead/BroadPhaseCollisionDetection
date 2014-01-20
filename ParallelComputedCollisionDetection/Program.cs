@@ -17,13 +17,24 @@ namespace ParallelComputedCollisionDetection
 {
     class Program
     {
+        public static Window window;
+        public static DebugBox db;
+        public static Thread t;
+
         [STAThread]
         public static void Main(string[] args)
         {
-            using (Window window = new Window())
-            {
-                window.Run(60.0);
-            }
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+            window = new Window();
+            t = new Thread(RunForm);
+            t.Start();
+            window.Run(60.0);
+        }
+
+        public static void RunForm()
+        {
+            Application.Run(db = new DebugBox());
         }
     }
 }

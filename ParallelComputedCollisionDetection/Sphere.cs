@@ -75,6 +75,7 @@ namespace ParallelComputedCollisionDetection
 
             for (int i = 0; i < 8; i++)
                 cellArray[i] |= bodyIndex << 5;
+            checkHomeCellType();
         }
 
         public void Draw()

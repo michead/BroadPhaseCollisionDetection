@@ -60,6 +60,12 @@
   <ItemGroup>
     <Compile Include="Body.cs" />
     <Compile Include="CollisionDetection.cs" />
+    <Compile Include="DebugBox.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="DebugBox.Designer.cs">
+      <DependentUpon>DebugBox.cs</DependentUpon>
+    </Compile>
     <Compile Include="Octahedron.cs" />
     <Compile Include="Tetrahedron.cs" />
     <Compile Include="Parallelepiped.cs" />
@@ -72,6 +78,11 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="DebugBox.resx">
+      <DependentUpon>DebugBox.cs</DependentUpon>
+    </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
