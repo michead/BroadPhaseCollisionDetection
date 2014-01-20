@@ -59,6 +59,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Body.cs" />
+    <Compile Include="CollisionDetection.cs" />
     <Compile Include="Octahedron.cs" />
     <Compile Include="Tetrahedron.cs" />
     <Compile Include="Parallelepiped.cs" />

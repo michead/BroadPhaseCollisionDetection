@@ -16,7 +16,7 @@ namespace ParallelComputedCollisionDetection
 {
     public class Sphere
     {
-        [Flags]
+        /*[Flags]
         public enum HomeCellType
         {
             One = 1,
@@ -27,7 +27,7 @@ namespace ParallelComputedCollisionDetection
             Six = 6,
             Seven = 7,
             Eight = 8
-        }
+        }*/
 
         public IntPtr quad;
         public Vector3 pos;
@@ -40,10 +40,25 @@ namespace ParallelComputedCollisionDetection
         public float bottom;
         public float front;
         public float back;
-        public HomeCellType homeCellType;
+        //public HomeCellType homeCellType;
+        public uint hCell;
         public uint cellTypesIntersected;
+        public uint bodyIndex;
+        public uint[] cellArray = new uint[8];
 
-        public Sphere(Vector3 pos, double radius, int slices, int stacks)
+        public const uint XSHIFT = 0;
+        public const uint YSHIFT = 3;
+        public const uint ZSHIFT = 6;
+        public const uint intersectCType0 = 1 << 1;
+        public const uint intersectCType1 = 2 << 1;
+        public const uint intersectCType2 = 4 << 1;
+        public const uint intersectCType3 = 8 << 1;
+        public const uint intersectCType4 = 16 << 1;
+        public const uint intersectCType5 = 32 << 1;
+        public const uint intersectCType6 = 64 << 1;
+        public const uint intersectCType7 = 128 << 1;
+
+        public Sphere(Vector3 pos, double radius, int slices, int stacks, uint bodyIndex)
         {
             this.pos = pos;
             this.radius = radius;
@@ -56,6 +71,10 @@ namespace ParallelComputedCollisionDetection
             this.bottom = pos.Y - (float)radius;
             this.front = pos.Z + (float)radius;
             this.back = pos.Z - (float)radius;
+            this.bodyIndex = bodyIndex;
+
+            for (int i = 0; i < 8; i++)
+                cellArray[i] |= bodyIndex << 5;
         }
 
         public void Draw()
@@ -65,7 +84,7 @@ namespace ParallelComputedCollisionDetection
             GL.Translate(-pos);
         }
 
-        public void checkHomeCellType(){
+        /*public void checkHomeCellType(){
             double half_fov = Window.fov * 0.5;
 
             if ((int)(-(pos.Z - half_fov) / Window.grid_edge) % 2 == 0)
@@ -110,6 +129,78 @@ namespace ParallelComputedCollisionDetection
                         homeCellType = HomeCellType.Seven;
                 }
             }
+        }*/
+
+        public void checkHomeCellType()
+        {
+            double half_fov = Window.fov * 0.5;
+            cellArray[0] |= 1;
+
+            if ((int)(-(pos.Z - half_fov) / Window.grid_edge) % 2 == 0)
+            {
+                if ((int)(-(pos.X - half_fov) / Window.grid_edge) % 2 == 0)
+                {
+                    if ((int)(-(pos.Y - half_fov) / Window.grid_edge) % 2 == 0)
+                    {
+                        hCell = 0;
+                        cellArray[0] |= intersectCType0;
+                    }
+                    else
+                    {
+                        hCell = 2;
+                        cellArray[0] |= intersectCType2;
+                    }
+                }
+                else
+                {
+                    if ((int)(-(pos.Y - half_fov) / Window.grid_edge) % 2 == 0)
+                    {
+                        hCell = 1;
+                        cellArray[0] |= intersectCType1;
+                    }
+                    else
+                    {
+                        hCell = 3;
+                        cellArray[0] |= intersectCType3;
+                    }
+                }
+            }
+            else
+            {
+                if ((int)(-(pos.X - half_fov) / Window.grid_edge) % 2 == 0)
+                {
+                    if ((int)(-(pos.Y - half_fov) / Window.grid_edge) % 2 == 0)
+                    {
+                        hCell = 4;
+                        cellArray[0] |= intersectCType4;
+                    }
+                    else
+                    {
+                        hCell = 6;
+                        cellArray[0] |= intersectCType6;
+                    }
+                }
+                else
+                {
+                    if ((int)(-(pos.Y - half_fov) / Window.grid_edge) % 2 == 0)
+                    {
+                        hCell = 5;
+                        cellArray[0] |= intersectCType5;
+                    }
+                    else
+                    {
+                        hCell = 7;
+                        cellArray[0] |= intersectCType7;
+                    }
+                }
+            }
         }
+
+        /*public void hashHCell()
+        {
+            hCell = ((uint)(pos.X / Window.grid_edge) << XSHIFT) |
+                    ((uint)(pos.Y / Window.grid_edge) << YSHIFT) |
+                    ((uint)(pos.Z / Window.grid_edge) << ZSHIFT);
+        }*/
     }
 }

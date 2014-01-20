@@ -38,7 +38,7 @@ namespace ParallelComputedCollisionDetection
         float coord_transf;
         float wp_scale_factor = 3;
         public static double grid_edge = 3;
-        int number_of_bodies = 5;
+        int number_of_bodies = 12;
         int tiles;
         KeyboardState old_key;
         bool xRot;
@@ -54,8 +54,8 @@ namespace ParallelComputedCollisionDetection
         float oldX, oldY; 
         float[][] colors = new float[][]{   new float[]{1f, 0f, 0f, 0.0f}, new float[]{0f, 1f, 0f, 0.0f}, new float[]{0f, 0f, 1f, 0.0f},
                                             new float[]{1f, 1f, 1f, 0.0f}, new float[]{1f, 1f, 0f, 0.0f}, new float[]{1f, 0f, 1f, 0.0f},
-                                            new float[]{1f, 1f, 0f, 0.0f}, new float[]{0.4f, 0.6f, 0.4f, 0.0f}, new float[]{0f, 1f, 1f, 0.0f},
-                                            new float[]{1f, 0f, 1f, 0.0f}, new float[]{0f, 1f, 1f, 0.0f}, new float[]{0.4f, 0.4f, 0.6f, 0.0f}};
+                                            new float[]{1f, 1f, 0f, 0.0f}, new float[]{0.9f, 0.5f, 0.1f, 0.0f}, new float[]{0f, 1f, 1f, 0.0f},
+                                            new float[]{1f, 0f, 1f, 0.0f}, new float[]{0f, 1f, 1f, 0.0f}, new float[]{0.7f, 0.5f, 0.4f, 0.0f}};
         float width;
         float height;
         char view = '0';
@@ -63,7 +63,7 @@ namespace ParallelComputedCollisionDetection
         double gizmosOffsetY = 10.5;
         double gizmosOffsetZ = 10.5;
 
-        List<Body> bodies;
+        public static List<Body> bodies;
 
         float aspect_ratio;
         Matrix4 perspective;
@@ -332,7 +332,7 @@ namespace ParallelComputedCollisionDetection
             foreach (Body body in bodies)
             {
                 float[] color = colors[i % colors.Count()];
-                color[3] = 1f;
+                color[3] = 0.9f;
                 GL.Color4(color);
                 //GL.PolygonMode(TK.MaterialFace.FrontAndBack, TK.PolygonMode.Fill);
                 body.Draw();
@@ -712,8 +712,8 @@ namespace ParallelComputedCollisionDetection
 
             foreach (Body body in bodies)
             {
-                colors[i][3] = 0.5f;
-                GL.Color4(colors[i]);
+                colors[i % (colors.Count())][3] = 0.5f;
+                GL.Color4(colors[i % (colors.Count())]);
                 Vector3 pos = body.getPos();
                 Sphere bsphere = body.getBSphere();
 
@@ -858,8 +858,7 @@ namespace ParallelComputedCollisionDetection
                 float x = rand.Next(-safe_area, safe_area);
                 float y = rand.Next(-safe_area, safe_area);
                 float z = rand.Next(-safe_area, safe_area);
-                //float length = rand.Next(2, 3);
-                float length = 1.75f;
+                float length = rand.Next(7, 10) * 0.25f;
                 float height, width;
                 if (cube)
                 {
@@ -868,10 +867,12 @@ namespace ParallelComputedCollisionDetection
                 }
                 else
                 {
-                    height = rand.Next(2, 3);
-                    width = rand.Next(2, 3);
+                    height = rand.Next(7, 10) * 0.25f;
+                    width = rand.Next(7, 10) * 0.25f;
                 }
-                bodies.Add(new Parallelepiped(new Vector3(x, y, z), length, height, width, 0f));
+                uint nBodies = (uint)bodies.Count;
+                //Console.Write(nBodies + "\n");
+                bodies.Add(new Parallelepiped(new Vector3(x, y, z), length, height, width, 0f, nBodies));
             }
             calculateGridEdge();
         }
@@ -882,7 +883,8 @@ namespace ParallelComputedCollisionDetection
             foreach (Body body in bodies)
                 if (maxRadius < body.getBSphere().radius)
                     maxRadius = body.getBSphere().radius;
-            grid_edge = maxRadius * 3;
+            //grid_edge = Math.Sqrt(maxRadius * 2) * 1.5;
+            grid_edge = maxRadius * 2;
             tiles = (int)(fov / grid_edge);
             grid_edge = fov / (double)tiles;
             //Console.Write("\nfov: " + fov.ToString() + ", tiles: " + tiles.ToString() + ", grid_edge: " + grid_edge.ToString() + "\n");

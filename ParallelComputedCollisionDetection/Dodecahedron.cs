@@ -218,7 +218,7 @@ namespace ParallelComputedCollisionDetection
 
         public void calculateBoundingSphere()
         {
-            bsphere = new Sphere(Vector3.Zero, radius, sphere_precision, sphere_precision);
+            bsphere = new Sphere(Vector3.Zero, radius, sphere_precision, sphere_precision, 0);
         }
 
         public Sphere getBSphere()

@@ -25,24 +25,26 @@ namespace ParallelComputedCollisionDetection
         public float angle;
         public float angle_;
         Sphere bsphere;
-        int sphere_precision = 20;
+        int sphere_precision = 30;
         public double offsetX;
         double radius;
+        public uint index;
 
-        public Parallelepiped(Vector3 pos, double edge) {
+        public Parallelepiped(Vector3 pos, double edge, uint index) {
             this.angle = 0f;
             this.angle_ = MathHelper.PiOver2;
             this.length = edge;
             this.height = edge;
             this.width = edge;
             this.pos = pos;
+            this.index = index;
             this.offsetX = 0;
             this.radius =
                 Math.Sqrt(Math.Pow(length * 0.5, 2) + Math.Pow(height * 0.5, 2) + Math.Pow(width * 0.5, 2));
             calculateBoundingSphere();
         }
 
-        public Parallelepiped(Vector3 pos, double length, double height, double width, float angle)
+        public Parallelepiped(Vector3 pos, double length, double height, double width, float angle, uint index)
         {
             this.pos = pos;
             this.length = length;
@@ -50,6 +52,7 @@ namespace ParallelComputedCollisionDetection
             this.width = width;
             this.angle = angle;
             this.angle_ = MathHelper.DegreesToRadians(90f - angle);
+            this.index = index;
             this.offsetX = (this.height / (Math.Sin(this.angle_) * 2))
                     * Math.Cos(this.angle_);
             this.radius = 
@@ -118,7 +121,7 @@ namespace ParallelComputedCollisionDetection
 
         public void calculateBoundingSphere()
         {
-            bsphere = new Sphere(new Vector3(pos.X + (float)offsetX * 0.5f, pos.Y, pos.Z), radius, sphere_precision, sphere_precision);
+            bsphere = new Sphere(new Vector3(pos.X + (float)offsetX * 0.5f, pos.Y, pos.Z), radius, sphere_precision, sphere_precision, index);
         }
 
         public double getRadius()
@@ -140,7 +143,13 @@ namespace ParallelComputedCollisionDetection
         {
             this.pos = pos;
             bsphere.checkHomeCellType();
-            Console.Write(pos.ToString() + " " + bsphere.homeCellType + "\n");
+            /*string binValue = Convert.ToString(bsphere.cellArray[0], 2);
+            char[] bits = binValue.PadLeft(16, '0').ToCharArray();
+            binValue = "";
+            for (int i = 0; i < bits.Count(); i++)
+                binValue += bits[i] + " ";
+            binValue += "\n";
+            Console.Write(binValue + "\n");*/
         }
     }
 }
