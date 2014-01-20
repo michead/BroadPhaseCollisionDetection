@@ -33,11 +33,11 @@ namespace ParallelComputedCollisionDetection
         Matrix4 modelView;
         float scale_factor = 1;
         float rotation_speed = 2.5f;
-        int fov;
+        public static int fov;
         //public int sphere_precision = 20;
         float coord_transf;
         float wp_scale_factor = 3;
-        double grid_edge = 3;
+        public static double grid_edge = 3;
         int number_of_bodies = 5;
         int tiles;
         KeyboardState old_key;
@@ -885,7 +885,7 @@ namespace ParallelComputedCollisionDetection
             grid_edge = maxRadius * 3;
             tiles = (int)(fov / grid_edge);
             grid_edge = fov / (double)tiles;
-            Console.Write("\nfov: " + fov.ToString() +", tiles: " + tiles.ToString() + ", grid_edge: " + grid_edge.ToString() + "\n");
+            //Console.Write("\nfov: " + fov.ToString() + ", tiles: " + tiles.ToString() + ", grid_edge: " + grid_edge.ToString() + "\n");
         }
     }
 }

@@ -40,8 +40,8 @@ namespace ParallelComputedCollisionDetection
         public float bottom;
         public float front;
         public float back;
-        HomeCellType homeCellType;
-        uint cellTypesIntersected;
+        public HomeCellType homeCellType;
+        public uint cellTypesIntersected;
 
         public Sphere(Vector3 pos, double radius, int slices, int stacks)
         {
@@ -63,6 +63,53 @@ namespace ParallelComputedCollisionDetection
             GL.Translate(pos);
             Glu.Sphere(quad, radius, slices, stacks);
             GL.Translate(-pos);
+        }
+
+        public void checkHomeCellType(){
+            double half_fov = Window.fov * 0.5;
+
+            if ((int)(-(pos.Z - half_fov) / Window.grid_edge) % 2 == 0)
+            {
+                if ((int)(-(pos.X - half_fov) / Window.grid_edge) % 2 == 0)
+                {
+                    if ((int)(-(pos.Y - half_fov) / Window.grid_edge) % 2 == 0)
+                    {
+                        homeCellType = HomeCellType.Two;
+                    }
+                    else
+                        homeCellType = HomeCellType.Four;
+                }
+                else
+                {
+                    if ((int)(-(pos.Y - half_fov) / Window.grid_edge) % 2 == 0)
+                    {
+                        homeCellType = HomeCellType.One;
+                    }
+                    else
+                        homeCellType = HomeCellType.Three;
+                }
+            }
+            else
+            {
+                if ((int)(-(pos.X - half_fov) / Window.grid_edge) % 2 == 0)
+                {
+                    if ((int)(-(pos.Y - half_fov) / Window.grid_edge) % 2 == 0)
+                    {
+                        homeCellType = HomeCellType.Six;
+                    }
+                    else
+                        homeCellType = HomeCellType.Eight;
+                }
+                else
+                {
+                    if ((int)(-(pos.Y - half_fov) / Window.grid_edge) % 2 == 0)
+                    {
+                        homeCellType = HomeCellType.Five;
+                    }
+                    else
+                        homeCellType = HomeCellType.Seven;
+                }
+            }
         }
     }
 }

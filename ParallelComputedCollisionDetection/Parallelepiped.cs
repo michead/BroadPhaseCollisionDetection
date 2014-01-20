@@ -139,6 +139,8 @@ namespace ParallelComputedCollisionDetection
         public void setPos(Vector3 pos)
         {
             this.pos = pos;
+            bsphere.checkHomeCellType();
+            Console.Write(pos.ToString() + " " + bsphere.homeCellType + "\n");
         }
     }
 }
