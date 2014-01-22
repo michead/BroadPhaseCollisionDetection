@@ -121,7 +121,7 @@ namespace ParallelComputedCollisionDetection
             calculateGridEdge();
 
             mouse = OpenTK.Input.Mouse.GetState();
-            coord_transf = Screen.PrimaryScreen.Bounds.Height / 30f;
+            coord_transf = Screen.PrimaryScreen.Bounds.Height / 27f;
         }
 
         protected override void OnUnload(EventArgs e)
@@ -907,10 +907,17 @@ namespace ParallelComputedCollisionDetection
                     else
                     {
                         Body pBody = bodies.ElementAt(picked);
+                        string binValue = Convert.ToString(pBody.getBSphere().cellArray[0], 2);
+                        char[] bits = binValue.PadLeft(16, '0').ToCharArray();
+                        binValue = "";
+                        for (int i = 0; i < bits.Count(); i++)
+                            binValue += bits[i] + " ";
+                        binValue += "\n";
                         Program.db.getRTB().Text = "Body[" + picked + "]:\n\tposition: (" + pBody.getPos().X.ToString("0.00")
                                                     + ", " + pBody.getPos().Y.ToString("0.00") + ", " + pBody.getPos().Z.ToString("0.00") + ")"
                                                     + "\n\tradius: " + pBody.getBSphere().radius.ToString("0.00")
-                                                    + "\n\thCell: " + pBody.getBSphere().hCell.ToString();
+                                                    + "\n\thCell: " + pBody.getBSphere().hCell.ToString()
+                                                    + "\n\tcellArray[0]: " + binValue;
                     }
                 };
                 Program.db.getRTB().BeginInvoke(mi);

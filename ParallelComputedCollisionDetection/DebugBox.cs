@@ -20,7 +20,7 @@ namespace ParallelComputedCollisionDetection
 
         private void DebugBox_Load(object sender, EventArgs e)
         {
-            this.SetBounds(Screen.PrimaryScreen.Bounds.Width - 250, 0, 250, 150);
+            this.SetBounds(Screen.PrimaryScreen.Bounds.Width - 300, 0, 300, 150);
             rtb.Anchor = AnchorStyles.Right | AnchorStyles.Top;
             rtb.ReadOnly = true;
         }

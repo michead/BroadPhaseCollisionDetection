@@ -49,14 +49,14 @@ namespace ParallelComputedCollisionDetection
         public const uint XSHIFT = 0;
         public const uint YSHIFT = 3;
         public const uint ZSHIFT = 6;
-        public const uint intersectCType0 = 1 << 1;
-        public const uint intersectCType1 = 2 << 1;
-        public const uint intersectCType2 = 4 << 1;
-        public const uint intersectCType3 = 8 << 1;
-        public const uint intersectCType4 = 16 << 1;
-        public const uint intersectCType5 = 32 << 1;
-        public const uint intersectCType6 = 64 << 1;
-        public const uint intersectCType7 = 128 << 1;
+        public const uint intersectCType1 = 1 << 1;
+        public const uint intersectCType2 = 2 << 1;
+        public const uint intersectCType3 = 4 << 1;
+        public const uint intersectCType4 = 8 << 1;
+        public const uint intersectCType5 = 16 << 1;
+        public const uint intersectCType6 = 32 << 1;
+        public const uint intersectCType7 = 64 << 1;
+        public const uint intersectCType8 = 128 << 1;
 
         public Sphere(Vector3 pos, double radius, int slices, int stacks, uint bodyIndex)
         {
@@ -144,12 +144,12 @@ namespace ParallelComputedCollisionDetection
                     if ((int)(-(pos.Y - half_fov) / Window.grid_edge) % 2 == 0)
                     {
                         hCell = 0;
-                        cellArray[0] |= intersectCType0;
+                        cellArray[0] |= intersectCType1;
                     }
                     else
                     {
                         hCell = 2;
-                        cellArray[0] |= intersectCType2;
+                        cellArray[0] |= intersectCType3;
                     }
                 }
                 else
@@ -157,12 +157,12 @@ namespace ParallelComputedCollisionDetection
                     if ((int)(-(pos.Y - half_fov) / Window.grid_edge) % 2 == 0)
                     {
                         hCell = 1;
-                        cellArray[0] |= intersectCType1;
+                        cellArray[0] |= intersectCType2;
                     }
                     else
                     {
                         hCell = 3;
-                        cellArray[0] |= intersectCType3;
+                        cellArray[0] |= intersectCType4;
                     }
                 }
             }
@@ -173,12 +173,12 @@ namespace ParallelComputedCollisionDetection
                     if ((int)(-(pos.Y - half_fov) / Window.grid_edge) % 2 == 0)
                     {
                         hCell = 4;
-                        cellArray[0] |= intersectCType4;
+                        cellArray[0] |= intersectCType5;
                     }
                     else
                     {
                         hCell = 6;
-                        cellArray[0] |= intersectCType6;
+                        cellArray[0] |= intersectCType7;
                     }
                 }
                 else
@@ -186,12 +186,12 @@ namespace ParallelComputedCollisionDetection
                     if ((int)(-(pos.Y - half_fov) / Window.grid_edge) % 2 == 0)
                     {
                         hCell = 5;
-                        cellArray[0] |= intersectCType5;
+                        cellArray[0] |= intersectCType6;
                     }
                     else
                     {
                         hCell = 7;
-                        cellArray[0] |= intersectCType7;
+                        cellArray[0] |= intersectCType8;
                     }
                 }
             }
