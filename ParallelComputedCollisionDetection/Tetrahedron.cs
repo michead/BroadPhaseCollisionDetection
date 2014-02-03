@@ -117,5 +117,7 @@ namespace ParallelComputedCollisionDetection
         {
             return bsphere;
         }
+
+        public void updateBoundingSphere() { }
     }
 }

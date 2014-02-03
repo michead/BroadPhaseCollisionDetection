@@ -47,6 +47,11 @@ namespace ParallelComputedCollisionDetection
         bool zRot;
         bool ortho = true;
         int picked = -1;
+
+        public static long elaspedTime;
+        public static int fps;
+        public static string fps_string;
+
         MouseState mouse;
         float[] mat_specular = { 1.0f, 1.0f, 1.0f, 1.0f };
         float[] mat_shininess = { 50.0f };
@@ -122,6 +127,9 @@ namespace ParallelComputedCollisionDetection
 
             mouse = OpenTK.Input.Mouse.GetState();
             coord_transf = Screen.PrimaryScreen.Bounds.Height / 27f;
+
+            elaspedTime = System.DateTime.Now.Millisecond;
+            fps_string = "";
         }
 
         protected override void OnUnload(EventArgs e)
@@ -156,7 +164,7 @@ namespace ParallelComputedCollisionDetection
             checkMouseInput();
             checkKeyboardInput();
             foreach (Body body in bodies)
-                body.calculateBoundingSphere();
+                body.updateBoundingSphere();
         }
 
         void checkMouseInput()
@@ -359,6 +367,9 @@ namespace ParallelComputedCollisionDetection
             GL.PopMatrix();
 
             SwapBuffers();
+
+            //showFPS();
+            //showInfo();
         }
 
         void DrawGrid3x3()
@@ -787,6 +798,7 @@ namespace ParallelComputedCollisionDetection
                     break;
             }
             bodies_[picked].setPos(pos);
+            //bodies_[picked].getBSphere().checkForCellIntersection();
             showInfo();
         }
 
@@ -852,6 +864,7 @@ namespace ParallelComputedCollisionDetection
                     return;
             }
 
+            //bodies_[picked].getBSphere().checkForCellIntersection();
             showInfo();
         }
 
@@ -913,16 +926,34 @@ namespace ParallelComputedCollisionDetection
                         for (int i = 0; i < bits.Count(); i++)
                             binValue += bits[i] + " ";
                         binValue += "\n";
-                        Program.db.getRTB().Text = "Body[" + picked + "]:\n\tposition: (" + pBody.getPos().X.ToString("0.00")
-                                                    + ", " + pBody.getPos().Y.ToString("0.00") + ", " + pBody.getPos().Z.ToString("0.00") + ")"
+                        Program.db.getRTB().Text =  "Body[" + picked + "]:"
+                                                    + "\n\tposition: (" + pBody.getPos().X.ToString("0.00")
+                                                    + ", " + pBody.getPos().Y.ToString("0.00") 
+                                                    + ", " + pBody.getPos().Z.ToString("0.00") + ")"
+                                                    + "\n\tbsphere pos: (" + pBody.getBSphere().pos.X.ToString("0.00")
+                                                    + ", " + pBody.getBSphere().pos.Y.ToString("0.00") 
+                                                    + ", " + pBody.getBSphere().pos.Z.ToString("0.00") + ")"
                                                     + "\n\tradius: " + pBody.getBSphere().radius.ToString("0.00")
                                                     + "\n\thCell: " + pBody.getBSphere().hCell.ToString()
+                                                    + "\n\thCell pos: " + pBody.getBSphere().cellPos.ToString()
+                                                    + "\n\tcolliding with cell types: "
                                                     + "\n\tcellArray[0]: " + binValue;
                     }
                 };
                 Program.db.getRTB().BeginInvoke(mi);
             }
+        }
 
+        public static void showFPS()
+        {
+            int now = System.DateTime.Now.Millisecond;
+            if ((now - elaspedTime) > 250)
+            {
+                fps_string = "FPS: " + fps * 4 + "\n";
+                fps = 0;
+                elaspedTime = now;
+            }
+            fps++;
         }
     }
 }

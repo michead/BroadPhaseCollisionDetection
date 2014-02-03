@@ -42,6 +42,7 @@ namespace ParallelComputedCollisionDetection
             this.radius =
                 Math.Sqrt(Math.Pow(length * 0.5, 2) + Math.Pow(height * 0.5, 2) + Math.Pow(width * 0.5, 2));
             calculateBoundingSphere();
+            bsphere.checkForCellIntersection();
         }
 
         public Parallelepiped(Vector3 pos, double length, double height, double width, float angle, uint index)
@@ -58,6 +59,7 @@ namespace ParallelComputedCollisionDetection
             this.radius = 
                 Math.Sqrt(Math.Pow(Math.Abs(offsetX) * 0.5 + length * 0.5, 2) + Math.Pow(height * 0.5, 2) + Math.Pow(width * 0.5, 2));
             calculateBoundingSphere();
+            bsphere.checkForCellIntersection();
         }
 
         public void Draw()
@@ -124,6 +126,15 @@ namespace ParallelComputedCollisionDetection
             bsphere = new Sphere(new Vector3(pos.X + (float)offsetX * 0.5f, pos.Y, pos.Z), radius, sphere_precision, sphere_precision, index);
         }
 
+        public void updateBoundingSphere()
+        {
+            bsphere.pos = new Vector3(pos.X + (float)offsetX * 0.5f, pos.Y, pos.Z);
+            bsphere.radius = radius;
+            bsphere.slices = sphere_precision;
+            bsphere.stacks = sphere_precision;
+            bsphere.bodyIndex = index;
+        }
+
         public double getRadius()
         {
             return radius;
@@ -143,6 +154,7 @@ namespace ParallelComputedCollisionDetection
         {
             this.pos = pos;
             bsphere.checkHomeCellType();
+            bsphere.checkForCellIntersection();
             /*string binValue = Convert.ToString(bsphere.cellArray[0], 2);
             char[] bits = binValue.PadLeft(16, '0').ToCharArray();
             binValue = "";

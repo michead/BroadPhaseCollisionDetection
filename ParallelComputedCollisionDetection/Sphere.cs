@@ -31,6 +31,7 @@ namespace ParallelComputedCollisionDetection
 
         public IntPtr quad;
         public Vector3 pos;
+        public Vector3 cellPos;
         public double radius; 
         public int slices;
         public int stacks;
@@ -45,6 +46,7 @@ namespace ParallelComputedCollisionDetection
         public uint cellTypesIntersected;
         public uint bodyIndex;
         public uint[] cellArray = new uint[8];
+        public bool[] cellsIntersected = new bool[8];
 
         public const uint XSHIFT = 0;
         public const uint YSHIFT = 3;
@@ -72,6 +74,7 @@ namespace ParallelComputedCollisionDetection
             this.front = pos.Z + (float)radius;
             this.back = pos.Z - (float)radius;
             this.bodyIndex = bodyIndex;
+            this.cellPos = Vector3.Zero;
 
             for (int i = 0; i < 8; i++)
                 cellArray[i] |= bodyIndex << 5;
@@ -194,6 +197,37 @@ namespace ParallelComputedCollisionDetection
                         cellArray[0] |= intersectCType8;
                     }
                 }
+            }
+            cellsIntersected[hCell] = true;
+        }
+
+        public void checkForCellIntersection()
+        {
+            float grid_edge = (float)Window.grid_edge;
+            if(pos.X>=0)
+                cellPos.X = ((int)((this.pos.X + grid_edge * 0.5f) / grid_edge)) * grid_edge;
+            else
+                cellPos.X = ((int)((this.pos.X - grid_edge * 0.5f) / grid_edge)) * grid_edge;
+            if (pos.Y >= 0)
+                cellPos.Y = ((int)((this.pos.Y + grid_edge * 0.5f) / grid_edge)) * grid_edge;
+            else
+                cellPos.Y = ((int)((this.pos.Y - grid_edge * 0.5f) / grid_edge)) * grid_edge;
+            if (pos.Z >= 0)
+                cellPos.Z = ((int)((this.pos.Z + grid_edge * 0.5f) / grid_edge)) * grid_edge;
+            else
+                cellPos.Z = ((int)((this.pos.Z - grid_edge * 0.5f) / grid_edge)) * grid_edge;
+
+            /*Vector3 pos = Window.bodies.ElementAt<Body>((int)bodyIndex).getPos();
+            cellPos.X = (int)(pos.X / grid_edge) * grid_edge + grid_edge * 0.5f;
+            cellPos.Y = (int)(pos.Y / grid_edge) * grid_edge + grid_edge * 0.5f;
+            cellPos.Z = (int)(pos.Z / grid_edge) * grid_edge + grid_edge * 0.5f;*/
+
+            //TODO
+            switch (hCell)
+            {
+                
+
+
             }
         }
 

@@ -16,6 +16,8 @@ namespace ParallelComputedCollisionDetection
 
         void calculateBoundingSphere();
 
+        void updateBoundingSphere();
+
         Sphere getBSphere();
 
         void Draw();

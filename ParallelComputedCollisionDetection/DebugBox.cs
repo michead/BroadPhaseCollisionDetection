@@ -20,9 +20,9 @@ namespace ParallelComputedCollisionDetection
 
         private void DebugBox_Load(object sender, EventArgs e)
         {
-            this.SetBounds(Screen.PrimaryScreen.Bounds.Width - 300, 0, 300, 150);
-            rtb.Anchor = AnchorStyles.Right | AnchorStyles.Top;
-            rtb.ReadOnly = true;
+            this.SetBounds(Screen.PrimaryScreen.Bounds.Width - 340, 0, 340, Screen.PrimaryScreen.Bounds.Height);
+            rtb2.SetBounds(rtb.Location.X, 165, this.Width, 580);
+            rtb2.Text = CollisionDetection.deviceInfo();
         }
 
         public RichTextBox getRTB()

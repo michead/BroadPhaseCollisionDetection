@@ -34,7 +34,7 @@ namespace ParallelComputedCollisionDetection
 
         public static void RunForm()
         {
-            Thread.Sleep(500);
+            //Thread.Sleep(5);
             Application.Run(db = new DebugBox());
         }
     }

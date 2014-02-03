@@ -35,6 +35,9 @@
     <Reference Include="Cloo">
       <HintPath>..\..\..\..\XNA\Cloo-0.9.1\Cloo\bin\Debug\Cloo.dll</HintPath>
     </Reference>
+    <Reference Include="OpenCLTemplate">
+      <HintPath>..\..\..\..\..\Downloads\OpenCLTemplate\OpenCLTemplate\OpenCLTemplate.dll</HintPath>
+    </Reference>
     <Reference Include="OpenTK, Version=1.1.0.0, Culture=neutral, PublicKeyToken=bad199fe84eb3df4, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\OpenTK\1.1\Binaries\OpenTK\Release\OpenTK.dll</HintPath>
