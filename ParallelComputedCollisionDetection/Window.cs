@@ -346,13 +346,20 @@ namespace ParallelComputedCollisionDetection
                 float[] color = colors[i % colors.Count()];
                 color[3] = 0.9f;
                 GL.Color4(color);
-                //GL.PolygonMode(TK.MaterialFace.FrontAndBack, TK.PolygonMode.Fill);
                 body.Draw();
                 color[3] = 0.25f;
                 GL.Color4(color);
-                //GL.PolygonMode(TK.MaterialFace.FrontAndBack, TK.PolygonMode.Line);
                 body.getBSphere().Draw();
                 i++;
+            }
+
+            if (picked != -1)
+            {
+                GL.Color3(colors[picked % colors.Count()]);
+                GL.PolygonMode(TK.MaterialFace.FrontAndBack, TK.PolygonMode.Line);
+                foreach (Body body in bodies.ElementAt(picked).getBSphere().cells)
+                    body.Draw();
+                GL.PolygonMode(TK.MaterialFace.FrontAndBack, TK.PolygonMode.Fill);
             }
 
             GL.Disable(TK.EnableCap.Lighting);
@@ -864,6 +871,8 @@ namespace ParallelComputedCollisionDetection
                     return;
             }
 
+            //if (picked != -1)
+                //bodies.ElementAt(picked).getBSphere().checkForCellIntersection();
             //bodies_[picked].getBSphere().checkForCellIntersection();
             showInfo();
         }
@@ -890,7 +899,7 @@ namespace ParallelComputedCollisionDetection
                     height = rand.Next(7, 10) * 0.25f;
                     width = rand.Next(7, 10) * 0.25f;
                 }
-                uint nBodies = (uint)bodies.Count;
+                int nBodies = bodies.Count;
                 //Console.Write(nBodies + "\n");
                 bodies.Add(new Parallelepiped(new Vector3(x, y, z), length, height, width, 0f, nBodies));
             }
@@ -926,18 +935,19 @@ namespace ParallelComputedCollisionDetection
                         for (int i = 0; i < bits.Count(); i++)
                             binValue += bits[i] + " ";
                         binValue += "\n";
-                        Program.db.getRTB().Text =  "Body[" + picked + "]:"
+                        Program.db.getRTB().Text = "Body[" + picked + "]:"
                                                     + "\n\tposition: (" + pBody.getPos().X.ToString("0.00")
-                                                    + ", " + pBody.getPos().Y.ToString("0.00") 
+                                                    + ", " + pBody.getPos().Y.ToString("0.00")
                                                     + ", " + pBody.getPos().Z.ToString("0.00") + ")"
                                                     + "\n\tbsphere pos: (" + pBody.getBSphere().pos.X.ToString("0.00")
-                                                    + ", " + pBody.getBSphere().pos.Y.ToString("0.00") 
+                                                    + ", " + pBody.getBSphere().pos.Y.ToString("0.00")
                                                     + ", " + pBody.getBSphere().pos.Z.ToString("0.00") + ")"
                                                     + "\n\tradius: " + pBody.getBSphere().radius.ToString("0.00")
                                                     + "\n\thCell: " + pBody.getBSphere().hCell.ToString()
                                                     + "\n\thCell pos: " + pBody.getBSphere().cellPos.ToString()
                                                     + "\n\tcolliding with cell types: "
-                                                    + "\n\tcellArray[0]: " + binValue;
+                                                    + "\n\tcellArray[0]: " + binValue
+                                                    + "\tcells count: " + pBody.getBSphere().cells.Count.ToString();
                     }
                 };
                 Program.db.getRTB().BeginInvoke(mi);

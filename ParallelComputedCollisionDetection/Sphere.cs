@@ -44,9 +44,10 @@ namespace ParallelComputedCollisionDetection
         //public HomeCellType homeCellType;
         public uint hCell;
         public uint cellTypesIntersected;
-        public uint bodyIndex;
+        public int bodyIndex;
         public uint[] cellArray = new uint[8];
         public bool[] cellsIntersected = new bool[8];
+        public List<Body> cells;
 
         public const uint XSHIFT = 0;
         public const uint YSHIFT = 3;
@@ -60,7 +61,7 @@ namespace ParallelComputedCollisionDetection
         public const uint intersectCType7 = 64 << 1;
         public const uint intersectCType8 = 128 << 1;
 
-        public Sphere(Vector3 pos, double radius, int slices, int stacks, uint bodyIndex)
+        public Sphere(Vector3 pos, double radius, int slices, int stacks, int bodyIndex)
         {
             this.pos = pos;
             this.radius = radius;
@@ -75,9 +76,10 @@ namespace ParallelComputedCollisionDetection
             this.back = pos.Z - (float)radius;
             this.bodyIndex = bodyIndex;
             this.cellPos = Vector3.Zero;
+            cells = new List<Body>();
 
             for (int i = 0; i < 8; i++)
-                cellArray[i] |= bodyIndex << 5;
+                cellArray[i] |= (uint)bodyIndex << 5;
             checkHomeCellType();
         }
 
@@ -203,6 +205,8 @@ namespace ParallelComputedCollisionDetection
 
         public void checkForCellIntersection()
         {
+            cells.Clear();
+
             float grid_edge = (float)Window.grid_edge;
             if(pos.X>=0)
                 cellPos.X = ((int)((this.pos.X + grid_edge * 0.5f) / grid_edge)) * grid_edge;
@@ -217,18 +221,52 @@ namespace ParallelComputedCollisionDetection
             else
                 cellPos.Z = ((int)((this.pos.Z - grid_edge * 0.5f) / grid_edge)) * grid_edge;
 
+            cells.Add(new Parallelepiped(cellPos, grid_edge, -1));
+
             /*Vector3 pos = Window.bodies.ElementAt<Body>((int)bodyIndex).getPos();
             cellPos.X = (int)(pos.X / grid_edge) * grid_edge + grid_edge * 0.5f;
             cellPos.Y = (int)(pos.Y / grid_edge) * grid_edge + grid_edge * 0.5f;
             cellPos.Z = (int)(pos.Z / grid_edge) * grid_edge + grid_edge * 0.5f;*/
+            
+            if (cellPos.X < (10 - grid_edge) && (cellPos.X + grid_edge * 0.5 < pos.X + radius)/*checkForSphereCubeIntersection(
+                                new Vector3(cellPos.X + grid_edge * 0.5f, cellPos.Y - grid_edge * 0.5f, cellPos.Z + grid_edge * 0.5f),
+                                new Vector3(cellPos.X + grid_edge * 1.5f, cellPos.Y + grid_edge * 0.5f, cellPos.Z - grid_edge * 0.5f),
+                                pos, (float)radius)*/)
+                    cells.Add(new Parallelepiped(Vector3.Add(cellPos, new Vector3(grid_edge, 0f, 0f)), grid_edge, -1));
 
-            //TODO
-            switch (hCell)
-            {
-                
+            if (cellPos.X > (-10 + grid_edge) && (cellPos.X - grid_edge * 0.5 > pos.X - radius)/*checkForSphereCubeIntersection(
+                                new Vector3(cellPos.X - grid_edge * 1.5f, cellPos.Y - grid_edge * 0.5f, cellPos.Z + grid_edge * 0.5f),
+                                new Vector3(cellPos.X - grid_edge * 0.5f, cellPos.Y + grid_edge * 0.5f, cellPos.Z - grid_edge * 0.5f),
+                                pos, (float)radius)*/)
+                cells.Add(new Parallelepiped(Vector3.Add(cellPos, new Vector3(-grid_edge, 0f, 0f)), grid_edge, -1));
 
 
-            }
+            if (cellPos.Y < (10 - grid_edge) && (cellPos.Y + grid_edge * 0.5 < pos.Y + radius)/*checkForSphereCubeIntersection(
+                                new Vector3(cellPos.X - grid_edge * 0.5f, cellPos.Y + grid_edge * 0.5f, cellPos.Z + grid_edge * 0.5f),
+                                new Vector3(cellPos.X + grid_edge * 0.5f, cellPos.Y + grid_edge * 1.5f, cellPos.Z - grid_edge * 0.5f),
+                                pos, (float)radius)*/)
+                cells.Add(new Parallelepiped(Vector3.Add(cellPos, new Vector3(0f, grid_edge, 0f)), grid_edge, -1));
+
+
+            if (cellPos.Y > (-10 + grid_edge) && (cellPos.Y - grid_edge * 0.5 > pos.Y - radius)/*checkForSphereCubeIntersection(
+                                new Vector3(cellPos.X - grid_edge * 0.5f, cellPos.Y - grid_edge * 1.5f, cellPos.Z + grid_edge * 0.5f),
+                                new Vector3(cellPos.X + grid_edge * 0.5f, cellPos.Y - grid_edge * 0.5f, cellPos.Z - grid_edge * 0.5f),
+                                pos, (float)radius)*/)
+                cells.Add(new Parallelepiped(Vector3.Add(cellPos, new Vector3(0f, -grid_edge, 0f)), grid_edge, -1));
+
+            
+            if (cellPos.Z > (-10 + grid_edge) && (cellPos.Z - grid_edge * 0.5 > pos.Z - radius)/*checkForSphereCubeIntersection(
+                                new Vector3(cellPos.X - grid_edge * 0.5f, cellPos.Y - grid_edge * 0.5f, cellPos.Z - grid_edge * 0.5f),
+                                new Vector3(cellPos.X + grid_edge * 0.5f, cellPos.Y + grid_edge * 0.5f, cellPos.Z - grid_edge * 1.5f),
+                                pos, (float)radius)*/)
+                cells.Add(new Parallelepiped(Vector3.Add(cellPos, new Vector3(0f, 0f, -grid_edge)), grid_edge, -1));
+
+
+            if (cellPos.Z < (10 - grid_edge) && (cellPos.Z + grid_edge * 0.5 < pos.Z + radius)/*checkForSphereCubeIntersection(
+                                new Vector3(cellPos.X - grid_edge * 0.5f, cellPos.Y - grid_edge * 0.5f, cellPos.Z + grid_edge * 1.5f),
+                                new Vector3(cellPos.X + grid_edge * 0.5f, cellPos.Y + grid_edge * 0.5f, cellPos.Z + grid_edge * 0.5f),
+                                pos, (float)radius)*/)
+                cells.Add(new Parallelepiped(Vector3.Add(cellPos, new Vector3(0f, 0f, grid_edge)), grid_edge, -1));
         }
 
         /*public void hashHCell()
@@ -237,5 +275,17 @@ namespace ParallelComputedCollisionDetection
                     ((uint)(pos.Y / Window.grid_edge) << YSHIFT) |
                     ((uint)(pos.Z / Window.grid_edge) << ZSHIFT);
         }*/
+
+        bool checkForSphereCubeIntersection(Vector3 c1,  Vector3 c2, Vector3 sPos, float radius)
+        {
+            float dist_squared = radius * radius;
+            if (sPos.X < c1.X) dist_squared -= (float)Math.Pow(sPos.X - c1.X, 2);
+            else if (sPos.X > c2.X) dist_squared -= (float)Math.Pow(sPos.X - c2.X, 2);
+            if (sPos.Y < c1.Y) dist_squared -= (float)Math.Pow(sPos.Y - c1.Y, 2);
+            else if (sPos.Y > c2.Y) dist_squared -= (float)Math.Pow(sPos.Y - c2.Y, 2);
+            if (sPos.Z < c1.Z) dist_squared -= (float)Math.Pow(sPos.Z - c1.Z, 2);
+            else if (sPos.Z > c2.Z) dist_squared -= (float)Math.Pow(sPos.Z - c2.Z, 2);
+            return dist_squared > 0;
+        }
     }
 }

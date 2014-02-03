@@ -28,9 +28,9 @@ namespace ParallelComputedCollisionDetection
         int sphere_precision = 30;
         public double offsetX;
         double radius;
-        public uint index;
+        public int index;
 
-        public Parallelepiped(Vector3 pos, double edge, uint index) {
+        public Parallelepiped(Vector3 pos, double edge, int index) {
             this.angle = 0f;
             this.angle_ = MathHelper.PiOver2;
             this.length = edge;
@@ -41,11 +41,14 @@ namespace ParallelComputedCollisionDetection
             this.offsetX = 0;
             this.radius =
                 Math.Sqrt(Math.Pow(length * 0.5, 2) + Math.Pow(height * 0.5, 2) + Math.Pow(width * 0.5, 2));
-            calculateBoundingSphere();
-            bsphere.checkForCellIntersection();
+            if (index != -1)
+            {
+                calculateBoundingSphere();
+                bsphere.checkForCellIntersection();
+            }
         }
 
-        public Parallelepiped(Vector3 pos, double length, double height, double width, float angle, uint index)
+        public Parallelepiped(Vector3 pos, double length, double height, double width, float angle, int index)
         {
             this.pos = pos;
             this.length = length;
@@ -58,8 +61,11 @@ namespace ParallelComputedCollisionDetection
                     * Math.Cos(this.angle_);
             this.radius = 
                 Math.Sqrt(Math.Pow(Math.Abs(offsetX) * 0.5 + length * 0.5, 2) + Math.Pow(height * 0.5, 2) + Math.Pow(width * 0.5, 2));
-            calculateBoundingSphere();
-            bsphere.checkForCellIntersection();
+            if (index != -1)
+            {
+                calculateBoundingSphere();
+                bsphere.checkForCellIntersection();
+            }
         }
 
         public void Draw()
