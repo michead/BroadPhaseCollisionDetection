@@ -30,6 +30,7 @@
         {
             this.rtb = new System.Windows.Forms.RichTextBox();
             this.rtb2 = new System.Windows.Forms.RichTextBox();
+            this.fps_rtb = new System.Windows.Forms.RichTextBox();
             this.SuspendLayout();
             // 
             // rtb
@@ -59,12 +60,26 @@
             this.rtb2.TabStop = false;
             this.rtb2.Text = "";
             // 
+            // fps_rtb
+            // 
+            this.fps_rtb.BackColor = System.Drawing.SystemColors.InfoText;
+            this.fps_rtb.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.fps_rtb.ForeColor = System.Drawing.SystemColors.Info;
+            this.fps_rtb.Location = new System.Drawing.Point(0, 12);
+            this.fps_rtb.Name = "fps_rtb";
+            this.fps_rtb.ReadOnly = true;
+            this.fps_rtb.Size = new System.Drawing.Size(133, 24);
+            this.fps_rtb.TabIndex = 2;
+            this.fps_rtb.TabStop = false;
+            this.fps_rtb.Text = "";
+            // 
             // DebugBox
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.ActiveCaptionText;
             this.ClientSize = new System.Drawing.Size(312, 199);
+            this.Controls.Add(this.fps_rtb);
             this.Controls.Add(this.rtb2);
             this.Controls.Add(this.rtb);
             this.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
@@ -83,5 +98,6 @@
 
         private System.Windows.Forms.RichTextBox rtb;
         private System.Windows.Forms.RichTextBox rtb2;
+        private System.Windows.Forms.RichTextBox fps_rtb;
     }
 }

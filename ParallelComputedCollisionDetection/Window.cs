@@ -13,7 +13,6 @@ using OpenTK.Graphics.OpenGL;
 using OpenTK.Input;
 using System.ComponentModel;
 using System.Data;
-using System.Windows.Forms;
 using OpenTK.Platform;
 using System.Diagnostics;
 
@@ -48,9 +47,11 @@ namespace ParallelComputedCollisionDetection
         bool ortho = true;
         int picked = -1;
 
-        public static long elaspedTime;
-        public static int fps;
-        public static string fps_string;
+        long elaspedTime;
+        int frames;
+        float updateInterval = 250f;
+        float timeLeft;
+        Stopwatch timeSinceStart;
 
         MouseState mouse;
         float[] mat_specular = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -128,8 +129,9 @@ namespace ParallelComputedCollisionDetection
             mouse = OpenTK.Input.Mouse.GetState();
             coord_transf = Screen.PrimaryScreen.Bounds.Height / 27f;
 
-            elaspedTime = System.DateTime.Now.Millisecond;
-            fps_string = "";
+            timeSinceStart = new Stopwatch();
+            timeSinceStart.Start();
+            elaspedTime = timeSinceStart.ElapsedMilliseconds;
         }
 
         protected override void OnUnload(EventArgs e)
@@ -375,7 +377,7 @@ namespace ParallelComputedCollisionDetection
 
             SwapBuffers();
 
-            //showFPS();
+            showFPS();
             //showInfo();
         }
 
@@ -955,16 +957,40 @@ namespace ParallelComputedCollisionDetection
             }
         }
 
-        public static void showFPS()
+        public void showFPS()
         {
-            int now = System.DateTime.Now.Millisecond;
+            /*int now = System.DateTime.Now.Millisecond;
             if ((now - elaspedTime) > 250)
             {
                 fps_string = "FPS: " + fps * 4 + "\n";
                 fps = 0;
                 elaspedTime = now;
             }
-            fps++;
+            fps++;*/
+            long deltaTime = timeSinceStart.ElapsedMilliseconds - elaspedTime;
+            ++frames;
+
+            if (deltaTime >= updateInterval)
+            {
+                elaspedTime = timeSinceStart.ElapsedMilliseconds;
+                float fps = (frames * 1000f) / deltaTime;
+                frames = 0;
+                string format = System.String.Format("{0:F2} FPS", fps);
+                {
+                    MethodInvoker mi = delegate
+                    {
+                        Program.db.getRTB_FPS().Text = format;
+
+                        if (fps < 30)
+                            Program.db.getRTB_FPS().ForeColor = Color.Yellow;
+                        else if (fps < 10)
+                            Program.db.getRTB_FPS().ForeColor = Color.Red;
+                        else
+                            Program.db.getRTB_FPS().ForeColor = Color.Green;
+                    };
+                    Program.db.getRTB_FPS().BeginInvoke(mi);
+                }
+            }
         }
     }
 }

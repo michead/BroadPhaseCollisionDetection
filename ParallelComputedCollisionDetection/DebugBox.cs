@@ -29,5 +29,10 @@ namespace ParallelComputedCollisionDetection
         {
             return rtb;
         }
+
+        public RichTextBox getRTB_FPS()
+        {
+            return fps_rtb;
+        }
     }
 }
