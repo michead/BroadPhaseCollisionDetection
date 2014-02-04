@@ -171,10 +171,10 @@ namespace ParallelComputedCollisionDetection
         {
             mouse = OpenTK.Input.Mouse.GetState();
 
-            if (mouse.IsButtonDown(MouseButton.Left) && picked < 0)
+            if (mouse.IsButtonDown(MouseButton.Left) && !old_mouse.IsButtonDown(MouseButton.Left))
                 pickBody();
-            else if (!mouse.IsButtonDown(MouseButton.Left))
-                picked = -1;
+            /*else if (!mouse.IsButtonDown(MouseButton.Left))
+                picked = -1;*/
             else if (mouse.IsButtonDown(MouseButton.Left) && old_mouse.IsButtonDown(MouseButton.Left) && picked >= 0)
             {
                 float deltaX = Cursor.Position.X - oldX;
@@ -811,7 +811,8 @@ namespace ParallelComputedCollisionDetection
 
         void pickBody()
         {
-            float depthTest = -300;
+            picked = -1;
+            float depthTest = -15;
             Body[] bodies_ = bodies.ToArray();
             switch (view)
             {
