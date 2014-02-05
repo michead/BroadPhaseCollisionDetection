@@ -973,17 +973,17 @@ namespace ParallelComputedCollisionDetection
             if (deltaTime >= updateInterval)
             {
                 elaspedTime = timeSinceStart.ElapsedMilliseconds;
-                float fps = (frames * 1000f) / deltaTime;
+                int fps = (int)((frames * 1000f) / deltaTime);
                 frames = 0;
-                string format = System.String.Format("{0:F2} FPS", fps);
+                string format = System.String.Format("fps: " + fps);
                 {
                     MethodInvoker mi = delegate
                     {
                         Program.db.getRTB_FPS().Text = format;
 
-                        if (fps < 30)
+                        if (fps < 60)
                             Program.db.getRTB_FPS().ForeColor = Color.Yellow;
-                        else if (fps < 10)
+                        else if (fps < 30)
                             Program.db.getRTB_FPS().ForeColor = Color.Red;
                         else
                             Program.db.getRTB_FPS().ForeColor = Color.Green;
