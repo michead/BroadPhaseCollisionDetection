@@ -938,19 +938,26 @@ namespace ParallelComputedCollisionDetection
                         for (int i = 0; i < bits.Count(); i++)
                             binValue += bits[i] + " ";
                         binValue += "\n";
+                        string cellTypesIntersected = "";
+                        Sphere s = pBody.getBSphere();
+                        for(int i=0; i<8; i++){
+                            if(s.cellsIntersected[i])
+                                cellTypesIntersected += i + " ";
+                        }
                         Program.db.getRTB().Text = "Body[" + picked + "]:"
                                                     + "\n\tposition: (" + pBody.getPos().X.ToString("0.00")
                                                     + ", " + pBody.getPos().Y.ToString("0.00")
                                                     + ", " + pBody.getPos().Z.ToString("0.00") + ")"
-                                                    + "\n\tbsphere pos: (" + pBody.getBSphere().pos.X.ToString("0.00")
-                                                    + ", " + pBody.getBSphere().pos.Y.ToString("0.00")
-                                                    + ", " + pBody.getBSphere().pos.Z.ToString("0.00") + ")"
-                                                    + "\n\tradius: " + pBody.getBSphere().radius.ToString("0.00")
-                                                    + "\n\thCell: " + pBody.getBSphere().hCell.ToString()
-                                                    + "\n\thCell pos: " + pBody.getBSphere().cellPos.ToString()
+                                                    /*+ "\n\tbsphere pos: (" + s.pos.X.ToString("0.00")
+                                                    + ", " + s.pos.Y.ToString("0.00")
+                                                    + ", " + s.pos.Z.ToString("0.00") + ")"*/
+                                                    + "\n\tradius: " + s.radius.ToString("0.00")
+                                                    + "\n\thCell: " + s.hCell.ToString()
+                                                    + "\n\thCell pos: " + s.cellPos.ToString()
                                                     + "\n\tcolliding with cell types: "
                                                     + "\n\tcellArray[0]: " + binValue
-                                                    + "\tcells count: " + pBody.getBSphere().cells.Count.ToString();
+                                                    + "\tcells count: " + s.cells.Count.ToString()
+                                                    +"\n\t cell types intersected: " + cellTypesIntersected;
                     }
                 };
                 Program.db.getRTB().BeginInvoke(mi);
@@ -981,9 +988,9 @@ namespace ParallelComputedCollisionDetection
                     {
                         Program.db.getRTB_FPS().Text = format;
 
-                        if (fps < 60)
+                        if (fps < 30 && fps >=10)
                             Program.db.getRTB_FPS().ForeColor = Color.Yellow;
-                        else if (fps < 30)
+                        else if (fps < 10)
                             Program.db.getRTB_FPS().ForeColor = Color.Red;
                         else
                             Program.db.getRTB_FPS().ForeColor = Color.Green;

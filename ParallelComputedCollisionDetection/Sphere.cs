@@ -399,9 +399,9 @@ namespace ParallelComputedCollisionDetection
             }
 
             //top_right_far
-            if (cellPos.X < (10 - grid_edge) && cellPos.Y < (10 - grid_edge) && cellPos.Z < (-10 + grid_edge) && checkForSphereCubeIntersection(
-                                new Vector3(cellPos.X + grid_edge * 0.5f, cellPos.Y + grid_edge * 1.5f, cellPos.Z - grid_edge * 1.5f),
-                                new Vector3(cellPos.X + grid_edge * 1.5f, cellPos.Y + grid_edge * 0.5f, cellPos.Z - grid_edge * 0.5f),
+            if (cellPos.X < (10 - grid_edge) && cellPos.Y < (10 - grid_edge) && cellPos.Z > (-10 + grid_edge) && checkForSphereCubeIntersection(
+                                new Vector3(cellPos.X + grid_edge * 0.5f, cellPos.Y + grid_edge * 0.5f, cellPos.Z - grid_edge * 1.5f),
+                                new Vector3(cellPos.X + grid_edge * 1.5f, cellPos.Y + grid_edge * 1.5f, cellPos.Z - grid_edge * 0.5f),
                                 pos, (float)radius))
             {
                 cells.Add(new Parallelepiped(Vector3.Add(cellPos, new Vector3(grid_edge, grid_edge, -grid_edge)), grid_edge, -1));
@@ -504,6 +504,8 @@ namespace ParallelComputedCollisionDetection
                     return;
             }
 #endregion
+
+            checkCellType();
         }
 
         /*public void hashHCell()
@@ -523,6 +525,68 @@ namespace ParallelComputedCollisionDetection
             if (sPos.Z < c1.Z) dist_squared -= (float)Math.Pow(sPos.Z - c1.Z, 2);
             else if (sPos.Z > c2.Z) dist_squared -= (float)Math.Pow(sPos.Z - c2.Z, 2);
             return dist_squared > 0;
+        }
+
+        public void checkCellType()
+        {
+            cellsIntersected = new bool[8];
+            double half_fov = Window.fov * 0.5;
+            foreach (Body cell in cells)
+            {
+                Vector3 pos = cell.getPos();
+                double half_fov_ = Window.fov * 0.5;
+
+                if ((int)(-(pos.Z - half_fov_) / Window.grid_edge) % 2 == 0)
+                {
+                    if ((int)(-(pos.X - half_fov_) / Window.grid_edge) % 2 == 0)
+                    {
+                        if ((int)(-(pos.Y - half_fov_) / Window.grid_edge) % 2 == 0)
+                        {
+                            cellsIntersected[0] = true;
+                        }
+                        else
+                        {
+                            cellsIntersected[2] = true;
+                        }
+                    }
+                    else
+                    {
+                        if ((int)(-(pos.Y - half_fov_) / Window.grid_edge) % 2 == 0)
+                        {
+                            cellsIntersected[1] = true;
+                        }
+                        else
+                        {
+                            cellsIntersected[3] = true;
+                        }
+                    }
+                }
+                else
+                {
+                    if ((int)(-(pos.X - half_fov_) / Window.grid_edge) % 2 == 0)
+                    {
+                        if ((int)(-(pos.Y - half_fov_) / Window.grid_edge) % 2 == 0)
+                        {
+                            cellsIntersected[4] = true;
+                        }
+                        else
+                        {
+                            cellsIntersected[6] = true;
+                        }
+                    }
+                    else
+                    {
+                        if ((int)(-(pos.Y - half_fov_) / Window.grid_edge) % 2 == 0)
+                        {
+                            cellsIntersected[5] = true;
+                        }
+                        else
+                        {
+                            cellsIntersected[7] = true;
+                        }
+                    }
+                }
+            }
         }
     }
 }
