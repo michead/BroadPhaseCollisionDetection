@@ -12,6 +12,8 @@ using OpenTK.Input;
 using System.ComponentModel;
 using System.Data;
 using System.Windows.Forms;
+using Cloo;
+using Cloo.Bindings;
 
 namespace ParallelComputedCollisionDetection
 {

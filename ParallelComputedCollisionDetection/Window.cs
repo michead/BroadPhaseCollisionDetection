@@ -37,8 +37,8 @@ namespace ParallelComputedCollisionDetection
         //public int sphere_precision = 20;
         float coord_transf;
         float wp_scale_factor = 3;
-        public static double grid_edge = 3;
-        int number_of_bodies = 12;
+        public double grid_edge = 3;
+        public int number_of_bodies = 12;
         int tiles;
         KeyboardState old_key;
         bool xRot;
@@ -70,7 +70,7 @@ namespace ParallelComputedCollisionDetection
         double gizmosOffsetY = 10.5;
         double gizmosOffsetZ = 10.5;
 
-        public static List<Body> bodies;
+        public List<Body> bodies;
 
         float aspect_ratio;
         Matrix4 perspective;
@@ -932,32 +932,50 @@ namespace ParallelComputedCollisionDetection
                     else
                     {
                         Body pBody = bodies.ElementAt(picked);
-                        string binValue = Convert.ToString(pBody.getBSphere().cellArray[0], 2);
+                        /*string binValue = Convert.ToString(pBody.getBSphere().cellArray[0], 2);
                         char[] bits = binValue.PadLeft(16, '0').ToCharArray();
                         binValue = "";
                         for (int i = 0; i < bits.Count(); i++)
-                            binValue += bits[i] + " ";
+                            binValue += bits[i];
+                        binValue += "\n";*/
+                        string binValue = Convert.ToString(pBody.getBSphere().cTypesIntersected, 2);
+                        char[] bits = binValue.PadLeft(8, '0').ToCharArray();
+                        binValue = "";
+                        for (int i = 0; i < bits.Count(); i++)
+                            binValue += bits[i];
                         binValue += "\n";
                         string cellTypesIntersected = "";
                         Sphere s = pBody.getBSphere();
-                        for(int i=0; i<8; i++){
-                            if(s.cellsIntersected[i])
-                                cellTypesIntersected += i + " ";
-                        }
+                        if ((s.cTypesIntersected & 1) == 1)
+                            cellTypesIntersected += "1 ";
+                        if ((s.cTypesIntersected & 2) == 2)
+                            cellTypesIntersected += "2 ";
+                        if ((s.cTypesIntersected & 4) == 4)
+                            cellTypesIntersected += "3 ";
+                        if ((s.cTypesIntersected & 8) == 8)
+                            cellTypesIntersected += "4 ";
+                        if ((s.cTypesIntersected & 16) == 16)
+                            cellTypesIntersected += "5 ";
+                        if ((s.cTypesIntersected & 32) == 32)
+                            cellTypesIntersected += "6 ";
+                        if ((s.cTypesIntersected & 64) == 64)
+                            cellTypesIntersected += "7 ";
+                        if ((s.cTypesIntersected & 128) == 128)
+                            cellTypesIntersected += "8 ";
                         Program.db.getRTB().Text = "Body[" + picked + "]:"
                                                     + "\n\tposition: (" + pBody.getPos().X.ToString("0.00")
                                                     + ", " + pBody.getPos().Y.ToString("0.00")
                                                     + ", " + pBody.getPos().Z.ToString("0.00") + ")"
-                                                    /*+ "\n\tbsphere pos: (" + s.pos.X.ToString("0.00")
-                                                    + ", " + s.pos.Y.ToString("0.00")
-                                                    + ", " + s.pos.Z.ToString("0.00") + ")"*/
+                            /*+ "\n\tbsphere pos: (" + s.pos.X.ToString("0.00")
+                            + ", " + s.pos.Y.ToString("0.00")
+                            + ", " + s.pos.Z.ToString("0.00") + ")"*/
                                                     + "\n\tradius: " + s.radius.ToString("0.00")
                                                     + "\n\thCell: " + s.hCell.ToString()
                                                     + "\n\thCell pos: " + s.cellPos.ToString()
-                                                    + "\n\tcolliding with cell types: "
-                                                    + "\n\tcellArray[0]: " + binValue
+                            //+ "\n\tcellArray[0]: " + binValue
+                                                    + "\n\tcellTypesIntersected: " + binValue
                                                     + "\tcells count: " + s.cells.Count.ToString()
-                                                    +"\n\t cell types intersected: " + cellTypesIntersected;
+                                                    + "\n\t cell types intersected: " + cellTypesIntersected;
                     }
                 };
                 Program.db.getRTB().BeginInvoke(mi);

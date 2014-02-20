@@ -43,23 +43,23 @@ namespace ParallelComputedCollisionDetection
         public float back;
         //public HomeCellType homeCellType;
         public uint hCell;
-        public uint cellTypesIntersected;
+        public uint cTypesIntersected;
         public int bodyIndex;
         public uint[] cellArray = new uint[8];
-        public bool[] cellsIntersected = new bool[8];
+        //public bool[] cellsIntersected = new bool[8];
         public List<Body> cells;
 
         public const uint XSHIFT = 0;
         public const uint YSHIFT = 3;
         public const uint ZSHIFT = 6;
-        public const uint intersectCType1 = 1 << 1;
-        public const uint intersectCType2 = 2 << 1;
-        public const uint intersectCType3 = 4 << 1;
-        public const uint intersectCType4 = 8 << 1;
-        public const uint intersectCType5 = 16 << 1;
-        public const uint intersectCType6 = 32 << 1;
-        public const uint intersectCType7 = 64 << 1;
-        public const uint intersectCType8 = 128 << 1;
+        public const uint intersectCType1 = 1;
+        public const uint intersectCType2 = 2;
+        public const uint intersectCType3 = 4;
+        public const uint intersectCType4 = 8;
+        public const uint intersectCType5 = 16;
+        public const uint intersectCType6 = 32;
+        public const uint intersectCType7 = 64;
+        public const uint intersectCType8 = 128;
 
         public Sphere(Vector3 pos, double radius, int slices, int stacks, int bodyIndex)
         {
@@ -80,7 +80,7 @@ namespace ParallelComputedCollisionDetection
 
             for (int i = 0; i < 8; i++)
                 cellArray[i] |= (uint)bodyIndex << 5;
-            checkHomeCellType();
+            checkCellTypes();
         }
 
         public void Draw()
@@ -137,16 +137,16 @@ namespace ParallelComputedCollisionDetection
             }
         }*/
 
-        public void checkHomeCellType()
+        /*public void checkHomeCellType()
         {
             double half_fov = Window.fov * 0.5;
             cellArray[0] |= 1;
 
-            if ((int)(-(pos.Z - half_fov) / Window.grid_edge) % 2 == 0)
+            if ((int)(-(pos.Z - half_fov) / Program.window.grid_edge) % 2 == 0)
             {
-                if ((int)(-(pos.X - half_fov) / Window.grid_edge) % 2 == 0)
+                if ((int)(-(pos.X - half_fov) / Program.window.grid_edge) % 2 == 0)
                 {
-                    if ((int)(-(pos.Y - half_fov) / Window.grid_edge) % 2 == 0)
+                    if ((int)(-(pos.Y - half_fov) / Program.window.grid_edge) % 2 == 0)
                     {
                         hCell = 0;
                         cellArray[0] |= intersectCType1;
@@ -159,7 +159,7 @@ namespace ParallelComputedCollisionDetection
                 }
                 else
                 {
-                    if ((int)(-(pos.Y - half_fov) / Window.grid_edge) % 2 == 0)
+                    if ((int)(-(pos.Y - half_fov) / Program.window.grid_edge) % 2 == 0)
                     {
                         hCell = 1;
                         cellArray[0] |= intersectCType2;
@@ -173,9 +173,9 @@ namespace ParallelComputedCollisionDetection
             }
             else
             {
-                if ((int)(-(pos.X - half_fov) / Window.grid_edge) % 2 == 0)
+                if ((int)(-(pos.X - half_fov) / Program.window.grid_edge) % 2 == 0)
                 {
-                    if ((int)(-(pos.Y - half_fov) / Window.grid_edge) % 2 == 0)
+                    if ((int)(-(pos.Y - half_fov) / Program.window.grid_edge) % 2 == 0)
                     {
                         hCell = 4;
                         cellArray[0] |= intersectCType5;
@@ -188,7 +188,7 @@ namespace ParallelComputedCollisionDetection
                 }
                 else
                 {
-                    if ((int)(-(pos.Y - half_fov) / Window.grid_edge) % 2 == 0)
+                    if ((int)(-(pos.Y - half_fov) / Program.window.grid_edge) % 2 == 0)
                     {
                         hCell = 5;
                         cellArray[0] |= intersectCType6;
@@ -201,13 +201,14 @@ namespace ParallelComputedCollisionDetection
                 }
             }
             cellsIntersected[hCell] = true;
-        }
+        }*/
 
         public void checkForCellIntersection()
         {
             cells.Clear();
+            cTypesIntersected = 0;
 
-            float grid_edge = (float)Window.grid_edge;
+            float grid_edge = (float)Program.window.grid_edge;
             if(pos.X>=0)
                 cellPos.X = ((int)((this.pos.X + grid_edge * 0.5f) / grid_edge)) * grid_edge;
             else
@@ -223,6 +224,8 @@ namespace ParallelComputedCollisionDetection
 
             //hCell
             cells.Add(new Parallelepiped(cellPos, grid_edge, -1));
+            checkCellType(cellPos.X, cellPos.Y, cellPos.Z, true);
+
 
             /*Vector3 pos = Window.bodies.ElementAt<Body>((int)bodyIndex).getPos();
             cellPos.X = (int)(pos.X / grid_edge) * grid_edge + grid_edge * 0.5f;
@@ -233,7 +236,7 @@ namespace ParallelComputedCollisionDetection
             
             #region Check For Collisions
             //right
-            if (cellPos.X < (10 - grid_edge) && /*(cellPos.X + grid_edge * 0.5 < pos.X + radius)*/checkForSphereCubeIntersection(
+            if (checkForSphereCubeIntersection(
                                 new Vector3(cellPos.X + grid_edge * 0.5f, cellPos.Y - grid_edge * 0.5f, cellPos.Z - grid_edge * 0.5f),
                                 new Vector3(cellPos.X + grid_edge * 1.5f, cellPos.Y + grid_edge * 0.5f, cellPos.Z + grid_edge * 0.5f),
                                 pos, (float)radius))
@@ -243,7 +246,7 @@ namespace ParallelComputedCollisionDetection
             }
 
             //left
-            if (cellPos.X > (-10 + grid_edge) && /*(cellPos.X - grid_edge * 0.5 > pos.X - radius)*/checkForSphereCubeIntersection(
+            if (checkForSphereCubeIntersection(
                                 new Vector3(cellPos.X - grid_edge * 1.5f, cellPos.Y - grid_edge * 0.5f, cellPos.Z - grid_edge * 0.5f),
                                 new Vector3(cellPos.X - grid_edge * 0.5f, cellPos.Y + grid_edge * 0.5f, cellPos.Z + grid_edge * 0.5f),
                                 pos, (float)radius))
@@ -253,7 +256,7 @@ namespace ParallelComputedCollisionDetection
             }
 
             //top
-            if (cellPos.Y < (10 - grid_edge) && /*(cellPos.Y + grid_edge * 0.5 < pos.Y + radius)*/checkForSphereCubeIntersection(
+            if (checkForSphereCubeIntersection(
                                 new Vector3(cellPos.X - grid_edge * 0.5f, cellPos.Y + grid_edge * 0.5f, cellPos.Z - grid_edge * 0.5f),
                                 new Vector3(cellPos.X + grid_edge * 0.5f, cellPos.Y + grid_edge * 1.5f, cellPos.Z + grid_edge * 0.5f),
                                 pos, (float)radius))
@@ -263,7 +266,7 @@ namespace ParallelComputedCollisionDetection
             }
 
             //bottom
-            if (cellPos.Y > (-10 + grid_edge) && /*(cellPos.Y - grid_edge * 0.5 > pos.Y - radius)*/checkForSphereCubeIntersection(
+            if (checkForSphereCubeIntersection(
                                 new Vector3(cellPos.X - grid_edge * 0.5f, cellPos.Y - grid_edge * 1.5f, cellPos.Z - grid_edge * 0.5f),
                                 new Vector3(cellPos.X + grid_edge * 0.5f, cellPos.Y - grid_edge * 0.5f, cellPos.Z + grid_edge * 0.5f),
                                 pos, (float)radius))
@@ -273,7 +276,7 @@ namespace ParallelComputedCollisionDetection
             }
 
             //near
-            if (cellPos.Z < (10 - grid_edge) && /*(cellPos.Z - grid_edge * 0.5 > pos.Z - radius)*/checkForSphereCubeIntersection(
+            if (checkForSphereCubeIntersection(
                                 new Vector3(cellPos.X - grid_edge * 0.5f, cellPos.Y - grid_edge * 0.5f, cellPos.Z + grid_edge * 0.5f),
                                 new Vector3(cellPos.X + grid_edge * 0.5f, cellPos.Y + grid_edge * 0.5f, cellPos.Z + grid_edge * 1.5f),
                                 pos, (float)radius))
@@ -283,7 +286,7 @@ namespace ParallelComputedCollisionDetection
             }
 
             //far
-            if (cellPos.Z > (-10 + grid_edge) && /*(cellPos.Z + grid_edge * 0.5 < pos.Z + radius)*/checkForSphereCubeIntersection(
+            if (checkForSphereCubeIntersection(
                                 new Vector3(cellPos.X - grid_edge * 0.5f, cellPos.Y - grid_edge * 0.5f, cellPos.Z - grid_edge * 1.5f),
                                 new Vector3(cellPos.X + grid_edge * 0.5f, cellPos.Y + grid_edge * 0.5f, cellPos.Z - grid_edge * 0.5f),
                                 pos, (float)radius))
@@ -293,7 +296,7 @@ namespace ParallelComputedCollisionDetection
             }
 
             //bottom_left
-            if (cellPos.X > (-10 + grid_edge) && cellPos.Y > (-10 + grid_edge) && checkForSphereCubeIntersection(
+            if (checkForSphereCubeIntersection(
                                 new Vector3(cellPos.X - grid_edge * 1.5f, cellPos.Y - grid_edge * 1.5f, cellPos.Z - grid_edge * 0.5f),
                                 new Vector3(cellPos.X - grid_edge * 0.5f, cellPos.Y - grid_edge * 0.5f, cellPos.Z + grid_edge * 0.5f),
                                 pos, (float)radius))
@@ -302,7 +305,7 @@ namespace ParallelComputedCollisionDetection
                 count++;
             }
             //bottom_left_near
-            if (cellPos.X > (-10 + grid_edge) && cellPos.Y > (-10 + grid_edge) && cellPos.Z < (10 - grid_edge) && checkForSphereCubeIntersection(
+            if (checkForSphereCubeIntersection(
                                 new Vector3(cellPos.X - grid_edge * 1.5f, cellPos.Y - grid_edge * 1.5f, cellPos.Z + grid_edge * 0.5f),
                                 new Vector3(cellPos.X - grid_edge * 0.5f, cellPos.Y - grid_edge * 0.5f, cellPos.Z + grid_edge * 1.5f),
                                 pos, (float)radius))
@@ -312,7 +315,7 @@ namespace ParallelComputedCollisionDetection
             }
 
             //bottom_left_far
-            if (cellPos.X > (-10 + grid_edge) && cellPos.Y > (-10 + grid_edge) && cellPos.Z > (-10 + grid_edge) && checkForSphereCubeIntersection(
+            if (checkForSphereCubeIntersection(
                                 new Vector3(cellPos.X - grid_edge * 1.5f, cellPos.Y - grid_edge * 1.5f, cellPos.Z - grid_edge * 1.5f),
                                 new Vector3(cellPos.X - grid_edge * 0.5f, cellPos.Y - grid_edge * 0.5f, cellPos.Z - grid_edge * 0.5f),
                                 pos, (float)radius))
@@ -322,7 +325,7 @@ namespace ParallelComputedCollisionDetection
             }
 
             //bottom_right
-            if (cellPos.X > (-10 + grid_edge) && cellPos.Y > (-10 + grid_edge) && checkForSphereCubeIntersection(
+            if (checkForSphereCubeIntersection(
                                 new Vector3(cellPos.X + grid_edge * 0.5f, cellPos.Y - grid_edge * 1.5f, cellPos.Z - grid_edge * 0.5f),
                                 new Vector3(cellPos.X + grid_edge * 1.5f, cellPos.Y - grid_edge * 0.5f, cellPos.Z + grid_edge * 0.5f),
                                 pos, (float)radius))
@@ -332,14 +335,14 @@ namespace ParallelComputedCollisionDetection
             }
 
             //bottom_right_near
-            if (cellPos.X > (-10 + grid_edge) && cellPos.Y > (-10 + grid_edge) && cellPos.Z < (10 - grid_edge) && checkForSphereCubeIntersection(
+            if (checkForSphereCubeIntersection(
                                 new Vector3(cellPos.X + grid_edge * 0.5f, cellPos.Y - grid_edge * 1.5f, cellPos.Z + grid_edge * 0.5f),
                                 new Vector3(cellPos.X + grid_edge * 1.5f, cellPos.Y - grid_edge * 0.5f, cellPos.Z + grid_edge * 1.5f),
                                 pos, (float)radius))
                 cells.Add(new Parallelepiped(Vector3.Add(cellPos, new Vector3(grid_edge, -grid_edge, grid_edge)), grid_edge, -1));
 
             //bottom_right_far
-            if (cellPos.X < (10 - grid_edge) && cellPos.Y > (-10 + grid_edge) && cellPos.Z > (-10 + grid_edge) && checkForSphereCubeIntersection(
+            if (checkForSphereCubeIntersection(
                                 new Vector3(cellPos.X + grid_edge * 0.5f, cellPos.Y - grid_edge * 1.5f, cellPos.Z - grid_edge * 1.5f),
                                 new Vector3(cellPos.X + grid_edge * 1.5f, cellPos.Y - grid_edge * 0.5f, cellPos.Z - grid_edge * 0.5f),
                                 pos, (float)radius))
@@ -349,7 +352,7 @@ namespace ParallelComputedCollisionDetection
             }
 
             //top_left
-            if (cellPos.X > (-10 + grid_edge) && cellPos.Y < (10 - grid_edge) && checkForSphereCubeIntersection(
+            if (checkForSphereCubeIntersection(
                                 new Vector3(cellPos.X - grid_edge * 1.5f, cellPos.Y + grid_edge * 0.5f, cellPos.Z - grid_edge * 0.5f),
                                 new Vector3(cellPos.X - grid_edge * 0.5f, cellPos.Y + grid_edge * 1.5f, cellPos.Z + grid_edge * 0.5f),
                                 pos, (float)radius))
@@ -359,7 +362,7 @@ namespace ParallelComputedCollisionDetection
             }
 
             //top_left_near
-            if (cellPos.X > (-10 + grid_edge) && cellPos.Y > (-10 + grid_edge) && cellPos.Z < (10 - grid_edge) && checkForSphereCubeIntersection(
+            if (checkForSphereCubeIntersection(
                                 new Vector3(cellPos.X - grid_edge * 1.5f, cellPos.Y + grid_edge * 0.5f, cellPos.Z + grid_edge * 0.5f),
                                 new Vector3(cellPos.X - grid_edge * 0.5f, cellPos.Y + grid_edge * 1.5f, cellPos.Z + grid_edge * 1.5f),
                                 pos, (float)radius))
@@ -369,7 +372,7 @@ namespace ParallelComputedCollisionDetection
             }
 
             //top_left_far
-            if (cellPos.X > (-10 + grid_edge) && cellPos.Y < (10 - grid_edge) && cellPos.Z > (-10 + grid_edge) && checkForSphereCubeIntersection(
+            if (checkForSphereCubeIntersection(
                                 new Vector3(cellPos.X - grid_edge * 1.5f, cellPos.Y + grid_edge * 0.5f, cellPos.Z - grid_edge * 1.5f),
                                 new Vector3(cellPos.X - grid_edge * 0.5f, cellPos.Y + grid_edge * 1.5f, cellPos.Z - grid_edge * 0.5f),
                                 pos, (float)radius))
@@ -379,7 +382,7 @@ namespace ParallelComputedCollisionDetection
             }
 
             //top_right
-            if (cellPos.X < (10 - grid_edge) && cellPos.Y < (10 - grid_edge) && checkForSphereCubeIntersection(
+            if (checkForSphereCubeIntersection(
                                 new Vector3(cellPos.X + grid_edge * 0.5f, cellPos.Y + grid_edge * 0.5f, cellPos.Z - grid_edge * 0.5f),
                                 new Vector3(cellPos.X + grid_edge * 1.5f, cellPos.Y + grid_edge * 1.5f, cellPos.Z + grid_edge * 0.5f),
                                 pos, (float)radius))
@@ -389,7 +392,7 @@ namespace ParallelComputedCollisionDetection
             }
 
             //top_right_near
-            if (cellPos.X < (10 - grid_edge) && cellPos.Y < (10 - grid_edge) && cellPos.Z < (10 - grid_edge) && checkForSphereCubeIntersection(
+            if (checkForSphereCubeIntersection(
                                 new Vector3(cellPos.X + grid_edge * 0.5f, cellPos.Y + grid_edge * 0.5f, cellPos.Z + grid_edge * 0.5f),
                                 new Vector3(cellPos.X + grid_edge * 1.5f, cellPos.Y + grid_edge * 1.5f, cellPos.Z + grid_edge * 1.5f),
                                 pos, (float)radius))
@@ -399,7 +402,7 @@ namespace ParallelComputedCollisionDetection
             }
 
             //top_right_far
-            if (cellPos.X < (10 - grid_edge) && cellPos.Y < (10 - grid_edge) && cellPos.Z > (-10 + grid_edge) && checkForSphereCubeIntersection(
+            if (checkForSphereCubeIntersection(
                                 new Vector3(cellPos.X + grid_edge * 0.5f, cellPos.Y + grid_edge * 0.5f, cellPos.Z - grid_edge * 1.5f),
                                 new Vector3(cellPos.X + grid_edge * 1.5f, cellPos.Y + grid_edge * 1.5f, cellPos.Z - grid_edge * 0.5f),
                                 pos, (float)radius))
@@ -409,7 +412,7 @@ namespace ParallelComputedCollisionDetection
             }
 
             //top_near
-            if (cellPos.Y < (10 - grid_edge) && cellPos.Z < (10 - grid_edge) && checkForSphereCubeIntersection(
+            if (checkForSphereCubeIntersection(
                                 new Vector3(cellPos.X - grid_edge * 0.5f, cellPos.Y + grid_edge * 0.5f, cellPos.Z + grid_edge * 0.5f),
                                 new Vector3(cellPos.X + grid_edge * 0.5f, cellPos.Y + grid_edge * 1.5f, cellPos.Z + grid_edge * 1.5f),
                                 pos, (float)radius))
@@ -421,7 +424,7 @@ namespace ParallelComputedCollisionDetection
             }
 
             //bottom_near
-            if (cellPos.Y > (-10 + grid_edge) && cellPos.Z < (10 - grid_edge) && checkForSphereCubeIntersection(
+            if (checkForSphereCubeIntersection(
                                 new Vector3(cellPos.X - grid_edge * 0.5f, cellPos.Y - grid_edge * 1.5f, cellPos.Z + grid_edge * 0.5f),
                                 new Vector3(cellPos.X + grid_edge * 0.5f, cellPos.Y - grid_edge * 0.5f, cellPos.Z + grid_edge * 1.5f),
                                 pos, (float)radius))
@@ -433,7 +436,7 @@ namespace ParallelComputedCollisionDetection
             }
 
             //top_far
-            if (cellPos.Y < (10 - grid_edge) && cellPos.Z > (-10 + grid_edge) && checkForSphereCubeIntersection(
+            if (checkForSphereCubeIntersection(
                                 new Vector3(cellPos.X - grid_edge * 0.5f, cellPos.Y + grid_edge * 0.5f, cellPos.Z - grid_edge * 1.5f),
                                 new Vector3(cellPos.X + grid_edge * 0.5f, cellPos.Y + grid_edge * 1.5f, cellPos.Z - grid_edge * 0.5f),
                                 pos, (float)radius))
@@ -445,7 +448,7 @@ namespace ParallelComputedCollisionDetection
             }
 
             //bottom_far
-            if (cellPos.Y > (-10 + grid_edge) && cellPos.Z > (-10 + grid_edge) && checkForSphereCubeIntersection(
+            if (checkForSphereCubeIntersection(
                                 new Vector3(cellPos.X - grid_edge * 0.5f, cellPos.Y - grid_edge * 1.5f, cellPos.Z - grid_edge * 1.5f),
                                 new Vector3(cellPos.X + grid_edge * 0.5f, cellPos.Y - grid_edge * 0.5f, cellPos.Z - grid_edge * 0.5f),
                                 pos, (float)radius))
@@ -457,7 +460,7 @@ namespace ParallelComputedCollisionDetection
             }
 
             //left_far
-            if (cellPos.X > (-10 + grid_edge) && cellPos.Z > (-10 + grid_edge) && checkForSphereCubeIntersection(
+            if (checkForSphereCubeIntersection(
                                 new Vector3(cellPos.X - grid_edge * 1.5f, cellPos.Y - grid_edge * 0.5f, cellPos.Z - grid_edge * 1.5f),
                                 new Vector3(cellPos.X - grid_edge * 0.5f, cellPos.Y + grid_edge * 0.5f, cellPos.Z - grid_edge * 0.5f),
                                 pos, (float)radius))
@@ -469,7 +472,7 @@ namespace ParallelComputedCollisionDetection
             }
 
             //right_far
-            if (cellPos.X < (10 - grid_edge) && cellPos.Z > (-10 + grid_edge) && checkForSphereCubeIntersection(
+            if (checkForSphereCubeIntersection(
                                 new Vector3(cellPos.X + grid_edge * 0.5f, cellPos.Y - grid_edge * 0.5f, cellPos.Z - grid_edge * 1.5f),
                                 new Vector3(cellPos.X + grid_edge * 1.5f, cellPos.Y + grid_edge * 0.5f, cellPos.Z - grid_edge * 0.5f),
                                 pos, (float)radius))
@@ -481,7 +484,7 @@ namespace ParallelComputedCollisionDetection
             }
 
             //left_near
-            if (cellPos.X > (-10 + grid_edge) && cellPos.Z < (10 - grid_edge) && checkForSphereCubeIntersection(
+            if (checkForSphereCubeIntersection(
                                 new Vector3(cellPos.X - grid_edge * 1.5f, cellPos.Y - grid_edge * 0.5f, cellPos.Z + grid_edge * 0.5f),
                                 new Vector3(cellPos.X - grid_edge * 0.5f, cellPos.Y + grid_edge * 0.5f, cellPos.Z + grid_edge * 1.5f),
                                 pos, (float)radius))
@@ -493,7 +496,7 @@ namespace ParallelComputedCollisionDetection
             }
 
             //right_near
-            if (cellPos.X < (10 - grid_edge) && cellPos.Z < (10 - grid_edge) && checkForSphereCubeIntersection(
+            if (checkForSphereCubeIntersection(
                                 new Vector3(cellPos.X + grid_edge * 0.5f, cellPos.Y - grid_edge * 0.5f, cellPos.Z + grid_edge * 0.5f),
                                 new Vector3(cellPos.X + grid_edge * 1.5f, cellPos.Y + grid_edge * 0.5f, cellPos.Z + grid_edge * 1.5f),
                                 pos, (float)radius))
@@ -505,7 +508,7 @@ namespace ParallelComputedCollisionDetection
             }
 #endregion
 
-            checkCellType();
+            checkCellTypes();
         }
 
         /*public void hashHCell()
@@ -527,7 +530,7 @@ namespace ParallelComputedCollisionDetection
             return dist_squared > 0;
         }
 
-        public void checkCellType()
+        /*public void checkCellType()
         {
             cellsIntersected = new bool[8];
             double half_fov = Window.fov * 0.5;
@@ -535,12 +538,12 @@ namespace ParallelComputedCollisionDetection
             {
                 Vector3 pos = cell.getPos();
                 double half_fov_ = Window.fov * 0.5;
-
-                if ((int)(-(pos.Z - half_fov_) / Window.grid_edge) % 2 == 0)
+                double grid_edge = Program.window.grid_edge;
+                if ((int)(-(pos.Z - half_fov_) / grid_edge) % 2 == 0)
                 {
-                    if ((int)(-(pos.X - half_fov_) / Window.grid_edge) % 2 == 0)
+                    if ((int)(-(pos.X - half_fov_) / grid_edge) % 2 == 0)
                     {
-                        if ((int)(-(pos.Y - half_fov_) / Window.grid_edge) % 2 == 0)
+                        if ((int)(-(pos.Y - half_fov_) / grid_edge) % 2 == 0)
                         {
                             cellsIntersected[0] = true;
                         }
@@ -551,7 +554,7 @@ namespace ParallelComputedCollisionDetection
                     }
                     else
                     {
-                        if ((int)(-(pos.Y - half_fov_) / Window.grid_edge) % 2 == 0)
+                        if ((int)(-(pos.Y - half_fov_) / grid_edge) % 2 == 0)
                         {
                             cellsIntersected[1] = true;
                         }
@@ -563,9 +566,9 @@ namespace ParallelComputedCollisionDetection
                 }
                 else
                 {
-                    if ((int)(-(pos.X - half_fov_) / Window.grid_edge) % 2 == 0)
+                    if ((int)(-(pos.X - half_fov_) / grid_edge) % 2 == 0)
                     {
-                        if ((int)(-(pos.Y - half_fov_) / Window.grid_edge) % 2 == 0)
+                        if ((int)(-(pos.Y - half_fov_) / grid_edge) % 2 == 0)
                         {
                             cellsIntersected[4] = true;
                         }
@@ -576,7 +579,7 @@ namespace ParallelComputedCollisionDetection
                     }
                     else
                     {
-                        if ((int)(-(pos.Y - half_fov_) / Window.grid_edge) % 2 == 0)
+                        if ((int)(-(pos.Y - half_fov_) / grid_edge) % 2 == 0)
                         {
                             cellsIntersected[5] = true;
                         }
@@ -587,6 +590,74 @@ namespace ParallelComputedCollisionDetection
                     }
                 }
             }
+        }*/
+
+        public void checkCellTypes()
+        {
+            foreach (Body cell in cells)
+            {
+                checkCellType(cell.getPos().X, cell.getPos().Y, cell.getPos().Z, false);
+            }
+        }
+
+        public void checkCellType(float posX, float posY, float posZ, bool homeCell)
+        {
+            double grid_edge = Program.window.grid_edge;
+            uint index;
+            posX += 10;
+            posY = -(posY - 10);
+            posZ = -(posZ - 10);
+
+            //case 1
+            if (posX % (2 * grid_edge) <= grid_edge && posY % (2 * grid_edge) <= grid_edge && posZ % (2 * grid_edge) <= grid_edge)
+            {
+                cTypesIntersected |= intersectCType1;
+                index = 1;
+            }
+            //case 2
+            else if (posX % (2 * grid_edge) > grid_edge && posY % (2 * grid_edge) <= grid_edge && posZ % (2 * grid_edge) <= grid_edge)
+            {
+                cTypesIntersected |= intersectCType2;
+                index = 2;
+            }
+            //case 3
+            else if (posX % (2 * grid_edge) <= grid_edge && posY % (2 * grid_edge) > grid_edge && posZ % (2 * grid_edge) <= grid_edge)
+            {
+                cTypesIntersected |= intersectCType3;
+                index = 3;
+            }
+            //case 4
+            else if (posX % (2 * grid_edge) > grid_edge && posY % (2 * grid_edge) > grid_edge && posZ % (2 * grid_edge) <= grid_edge)
+            {
+                cTypesIntersected |= intersectCType4;
+                index = 4;
+            }
+            //case 5
+            else if (posX % (2 * grid_edge) <= grid_edge && posY % (2 * grid_edge) <= grid_edge && posZ % (2 * grid_edge) > grid_edge)
+            {
+                cTypesIntersected |= intersectCType5;
+                index = 5;
+            }
+            //case 6
+            else if (posX % (2 * grid_edge) > grid_edge && posY % (2 * grid_edge) <= grid_edge && posZ % (2 * grid_edge) > grid_edge)
+            {
+                cTypesIntersected |= intersectCType6;
+                index = 6;
+            }
+            //case 7
+            else if (posX % (2 * grid_edge) <= grid_edge && posY % (2 * grid_edge) > grid_edge && posZ % (2 * grid_edge) > grid_edge)
+            {
+                cTypesIntersected |= intersectCType7;
+                index = 7;
+            }
+            //case 8
+            else
+            {
+                cTypesIntersected |= intersectCType8;
+                index = 8;
+            }
+            if (homeCell)
+                hCell = index;
         }
     }
 }

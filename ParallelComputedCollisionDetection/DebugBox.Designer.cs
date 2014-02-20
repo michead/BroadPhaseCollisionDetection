@@ -37,6 +37,7 @@
             // 
             this.rtb.BackColor = System.Drawing.SystemColors.InfoText;
             this.rtb.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.rtb.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.rtb.ForeColor = System.Drawing.SystemColors.Info;
             this.rtb.Location = new System.Drawing.Point(0, 33);
             this.rtb.Name = "rtb";
@@ -50,6 +51,7 @@
             // 
             this.rtb2.Anchor = System.Windows.Forms.AnchorStyles.Right;
             this.rtb2.BackColor = System.Drawing.SystemColors.InfoText;
+            this.rtb2.BorderStyle = System.Windows.Forms.BorderStyle.None;
             this.rtb2.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.rtb2.ForeColor = System.Drawing.SystemColors.Info;
             this.rtb2.Location = new System.Drawing.Point(209, 101);

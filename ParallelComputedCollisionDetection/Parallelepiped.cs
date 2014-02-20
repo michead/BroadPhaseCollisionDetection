@@ -159,7 +159,6 @@ namespace ParallelComputedCollisionDetection
         public void setPos(Vector3 pos)
         {
             this.pos = pos;
-            bsphere.checkHomeCellType();
             bsphere.checkForCellIntersection();
             /*string binValue = Convert.ToString(bsphere.cellArray[0], 2);
             char[] bits = binValue.PadLeft(16, '0').ToCharArray();
