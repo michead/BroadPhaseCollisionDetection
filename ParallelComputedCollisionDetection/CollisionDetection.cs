@@ -94,8 +94,7 @@ namespace ParallelComputedCollisionDetection
                 array[i].pos = new float[3];
                 array[i].cellIDs = new int[8];
             }
-            System.IO.StreamReader kernelStream = new System.IO.StreamReader
-                (@"C:\Users\simone\Documents\Visual Studio 2013\Projects\ParallelComputedCollisionDetection\ParallelComputedCollisionDetection");
+            System.IO.StreamReader kernelStream = new System.IO.StreamReader("Arvo.cl");
             Arvo = kernelStream.ReadToEnd();
             kernelStream.Close();
             int nob = Program.window.number_of_bodies;
@@ -104,6 +103,8 @@ namespace ParallelComputedCollisionDetection
             double ge = Program.window.grid_edge;
             double* addr_grid_edge = &ge;
             IntPtr age = (IntPtr)addr_grid_edge;
+
+            //setup
             ComputeBuffer<ObjectProperties> objArray = new ComputeBuffer<ObjectProperties>
                 (context, ComputeMemoryFlags.ReadWrite | ComputeMemoryFlags.UseHostPointer, array);
             ComputeBuffer<int> numOfBodies = new ComputeBuffer<int>
@@ -115,6 +116,16 @@ namespace ParallelComputedCollisionDetection
             ComputeKernel kernelArvo = program.CreateKernel("Arvo");
             kernelArvo.SetMemoryArgument(0, objArray);
             kernelArvo.SetMemoryArgument(1, numOfBodies);
+            kernelArvo.SetMemoryArgument(2, gridEdge);
+
+            //execution
+            ComputeCommandQueue queue = 
+                new ComputeCommandQueue(context, ComputePlatform.Platforms[0].Devices[0], ComputeCommandQueueFlags.None);
+            queue.Execute(kernelArvo, null, new long[] { 0 }, null, null);
+
+            //read from buffer
+            ObjectProperties[] result = new ObjectProperties[Program.window.number_of_bodies];
+            queue.ReadFromBuffer<ObjectProperties>(objArray, ref result, false, null);
         }
 
     }

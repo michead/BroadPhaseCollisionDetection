@@ -231,280 +231,239 @@ namespace ParallelComputedCollisionDetection
             cellPos.X = (int)(pos.X / grid_edge) * grid_edge + grid_edge * 0.5f;
             cellPos.Y = (int)(pos.Y / grid_edge) * grid_edge + grid_edge * 0.5f;
             cellPos.Z = (int)(pos.Z / grid_edge) * grid_edge + grid_edge * 0.5f;*/
-
-            int count = 0;
             
             #region Check For Collisions
             //right
-            if (checkForSphereCubeIntersection(
+            if (checkForSphereBoxIntersection(
                                 new Vector3(cellPos.X + grid_edge * 0.5f, cellPos.Y - grid_edge * 0.5f, cellPos.Z - grid_edge * 0.5f),
                                 new Vector3(cellPos.X + grid_edge * 1.5f, cellPos.Y + grid_edge * 0.5f, cellPos.Z + grid_edge * 0.5f),
                                 pos, (float)radius))
             {
                 cells.Add(new Parallelepiped(Vector3.Add(cellPos, new Vector3(grid_edge, 0f, 0f)), grid_edge, -1));
-                count++;
             }
 
             //left
-            if (checkForSphereCubeIntersection(
+            if (checkForSphereBoxIntersection(
                                 new Vector3(cellPos.X - grid_edge * 1.5f, cellPos.Y - grid_edge * 0.5f, cellPos.Z - grid_edge * 0.5f),
                                 new Vector3(cellPos.X - grid_edge * 0.5f, cellPos.Y + grid_edge * 0.5f, cellPos.Z + grid_edge * 0.5f),
                                 pos, (float)radius))
             {
                 cells.Add(new Parallelepiped(Vector3.Add(cellPos, new Vector3(-grid_edge, 0f, 0f)), grid_edge, -1));
-                count++;
             }
 
             //top
-            if (checkForSphereCubeIntersection(
+            if (checkForSphereBoxIntersection(
                                 new Vector3(cellPos.X - grid_edge * 0.5f, cellPos.Y + grid_edge * 0.5f, cellPos.Z - grid_edge * 0.5f),
                                 new Vector3(cellPos.X + grid_edge * 0.5f, cellPos.Y + grid_edge * 1.5f, cellPos.Z + grid_edge * 0.5f),
                                 pos, (float)radius))
             {
                 cells.Add(new Parallelepiped(Vector3.Add(cellPos, new Vector3(0f, grid_edge, 0f)), grid_edge, -1));
-                count++;
             }
 
             //bottom
-            if (checkForSphereCubeIntersection(
+            if (checkForSphereBoxIntersection(
                                 new Vector3(cellPos.X - grid_edge * 0.5f, cellPos.Y - grid_edge * 1.5f, cellPos.Z - grid_edge * 0.5f),
                                 new Vector3(cellPos.X + grid_edge * 0.5f, cellPos.Y - grid_edge * 0.5f, cellPos.Z + grid_edge * 0.5f),
                                 pos, (float)radius))
             {
                 cells.Add(new Parallelepiped(Vector3.Add(cellPos, new Vector3(0f, -grid_edge, 0f)), grid_edge, -1));
-                count++;
             }
 
             //near
-            if (checkForSphereCubeIntersection(
+            if (checkForSphereBoxIntersection(
                                 new Vector3(cellPos.X - grid_edge * 0.5f, cellPos.Y - grid_edge * 0.5f, cellPos.Z + grid_edge * 0.5f),
                                 new Vector3(cellPos.X + grid_edge * 0.5f, cellPos.Y + grid_edge * 0.5f, cellPos.Z + grid_edge * 1.5f),
                                 pos, (float)radius))
             {
                 cells.Add(new Parallelepiped(Vector3.Add(cellPos, new Vector3(0f, 0f, grid_edge)), grid_edge, -1));
-                count++;
             }
 
             //far
-            if (checkForSphereCubeIntersection(
+            if (checkForSphereBoxIntersection(
                                 new Vector3(cellPos.X - grid_edge * 0.5f, cellPos.Y - grid_edge * 0.5f, cellPos.Z - grid_edge * 1.5f),
                                 new Vector3(cellPos.X + grid_edge * 0.5f, cellPos.Y + grid_edge * 0.5f, cellPos.Z - grid_edge * 0.5f),
                                 pos, (float)radius))
             {
                 cells.Add(new Parallelepiped(Vector3.Add(cellPos, new Vector3(0f, 0f, -grid_edge)), -grid_edge, -1));
-                count++;
             }
 
             //bottom_left
-            if (checkForSphereCubeIntersection(
+            if (checkForSphereBoxIntersection(
                                 new Vector3(cellPos.X - grid_edge * 1.5f, cellPos.Y - grid_edge * 1.5f, cellPos.Z - grid_edge * 0.5f),
                                 new Vector3(cellPos.X - grid_edge * 0.5f, cellPos.Y - grid_edge * 0.5f, cellPos.Z + grid_edge * 0.5f),
                                 pos, (float)radius))
             {
                 cells.Add(new Parallelepiped(Vector3.Add(cellPos, new Vector3(-grid_edge, -grid_edge, 0f)), grid_edge, -1));
-                count++;
             }
             //bottom_left_near
-            if (checkForSphereCubeIntersection(
+            if (checkForSphereBoxIntersection(
                                 new Vector3(cellPos.X - grid_edge * 1.5f, cellPos.Y - grid_edge * 1.5f, cellPos.Z + grid_edge * 0.5f),
                                 new Vector3(cellPos.X - grid_edge * 0.5f, cellPos.Y - grid_edge * 0.5f, cellPos.Z + grid_edge * 1.5f),
                                 pos, (float)radius))
             {
                 cells.Add(new Parallelepiped(Vector3.Add(cellPos, new Vector3(-grid_edge, -grid_edge, grid_edge)), grid_edge, -1));
-                count++;
             }
 
             //bottom_left_far
-            if (checkForSphereCubeIntersection(
+            if (checkForSphereBoxIntersection(
                                 new Vector3(cellPos.X - grid_edge * 1.5f, cellPos.Y - grid_edge * 1.5f, cellPos.Z - grid_edge * 1.5f),
                                 new Vector3(cellPos.X - grid_edge * 0.5f, cellPos.Y - grid_edge * 0.5f, cellPos.Z - grid_edge * 0.5f),
                                 pos, (float)radius))
             {
                 cells.Add(new Parallelepiped(Vector3.Add(cellPos, new Vector3(-grid_edge, -grid_edge, -grid_edge)), grid_edge, -1));
-                count++;
             }
 
             //bottom_right
-            if (checkForSphereCubeIntersection(
+            if (checkForSphereBoxIntersection(
                                 new Vector3(cellPos.X + grid_edge * 0.5f, cellPos.Y - grid_edge * 1.5f, cellPos.Z - grid_edge * 0.5f),
                                 new Vector3(cellPos.X + grid_edge * 1.5f, cellPos.Y - grid_edge * 0.5f, cellPos.Z + grid_edge * 0.5f),
                                 pos, (float)radius))
             {
                 cells.Add(new Parallelepiped(Vector3.Add(cellPos, new Vector3(grid_edge, -grid_edge, 0f)), grid_edge, -1));
-                count++;
             }
 
             //bottom_right_near
-            if (checkForSphereCubeIntersection(
+            if (checkForSphereBoxIntersection(
                                 new Vector3(cellPos.X + grid_edge * 0.5f, cellPos.Y - grid_edge * 1.5f, cellPos.Z + grid_edge * 0.5f),
                                 new Vector3(cellPos.X + grid_edge * 1.5f, cellPos.Y - grid_edge * 0.5f, cellPos.Z + grid_edge * 1.5f),
                                 pos, (float)radius))
+            {
                 cells.Add(new Parallelepiped(Vector3.Add(cellPos, new Vector3(grid_edge, -grid_edge, grid_edge)), grid_edge, -1));
+            }
 
             //bottom_right_far
-            if (checkForSphereCubeIntersection(
+            if (checkForSphereBoxIntersection(
                                 new Vector3(cellPos.X + grid_edge * 0.5f, cellPos.Y - grid_edge * 1.5f, cellPos.Z - grid_edge * 1.5f),
                                 new Vector3(cellPos.X + grid_edge * 1.5f, cellPos.Y - grid_edge * 0.5f, cellPos.Z - grid_edge * 0.5f),
                                 pos, (float)radius))
             {
                 cells.Add(new Parallelepiped(Vector3.Add(cellPos, new Vector3(grid_edge, -grid_edge, -grid_edge)), grid_edge, -1));
-                count++;
             }
 
             //top_left
-            if (checkForSphereCubeIntersection(
+            if (checkForSphereBoxIntersection(
                                 new Vector3(cellPos.X - grid_edge * 1.5f, cellPos.Y + grid_edge * 0.5f, cellPos.Z - grid_edge * 0.5f),
                                 new Vector3(cellPos.X - grid_edge * 0.5f, cellPos.Y + grid_edge * 1.5f, cellPos.Z + grid_edge * 0.5f),
                                 pos, (float)radius))
             {
                 cells.Add(new Parallelepiped(Vector3.Add(cellPos, new Vector3(-grid_edge, grid_edge, 0f)), grid_edge, -1));
-                count++;
             }
 
             //top_left_near
-            if (checkForSphereCubeIntersection(
+            if (checkForSphereBoxIntersection(
                                 new Vector3(cellPos.X - grid_edge * 1.5f, cellPos.Y + grid_edge * 0.5f, cellPos.Z + grid_edge * 0.5f),
                                 new Vector3(cellPos.X - grid_edge * 0.5f, cellPos.Y + grid_edge * 1.5f, cellPos.Z + grid_edge * 1.5f),
                                 pos, (float)radius))
             {
                 cells.Add(new Parallelepiped(Vector3.Add(cellPos, new Vector3(-grid_edge, grid_edge, grid_edge)), grid_edge, -1));
-                count++;
             }
 
             //top_left_far
-            if (checkForSphereCubeIntersection(
+            if (checkForSphereBoxIntersection(
                                 new Vector3(cellPos.X - grid_edge * 1.5f, cellPos.Y + grid_edge * 0.5f, cellPos.Z - grid_edge * 1.5f),
                                 new Vector3(cellPos.X - grid_edge * 0.5f, cellPos.Y + grid_edge * 1.5f, cellPos.Z - grid_edge * 0.5f),
                                 pos, (float)radius))
             {
                 cells.Add(new Parallelepiped(Vector3.Add(cellPos, new Vector3(-grid_edge, grid_edge, -grid_edge)), grid_edge, -1));
-                count++;
             }
 
             //top_right
-            if (checkForSphereCubeIntersection(
+            if (checkForSphereBoxIntersection(
                                 new Vector3(cellPos.X + grid_edge * 0.5f, cellPos.Y + grid_edge * 0.5f, cellPos.Z - grid_edge * 0.5f),
                                 new Vector3(cellPos.X + grid_edge * 1.5f, cellPos.Y + grid_edge * 1.5f, cellPos.Z + grid_edge * 0.5f),
                                 pos, (float)radius))
             {
                 cells.Add(new Parallelepiped(Vector3.Add(cellPos, new Vector3(grid_edge, grid_edge, 0f)), grid_edge, -1));
-                count++;
             }
 
             //top_right_near
-            if (checkForSphereCubeIntersection(
+            if (checkForSphereBoxIntersection(
                                 new Vector3(cellPos.X + grid_edge * 0.5f, cellPos.Y + grid_edge * 0.5f, cellPos.Z + grid_edge * 0.5f),
                                 new Vector3(cellPos.X + grid_edge * 1.5f, cellPos.Y + grid_edge * 1.5f, cellPos.Z + grid_edge * 1.5f),
                                 pos, (float)radius))
             {
                 cells.Add(new Parallelepiped(Vector3.Add(cellPos, new Vector3(grid_edge, grid_edge, grid_edge)), grid_edge, -1));
-                count++;
             }
 
             //top_right_far
-            if (checkForSphereCubeIntersection(
+            if (checkForSphereBoxIntersection(
                                 new Vector3(cellPos.X + grid_edge * 0.5f, cellPos.Y + grid_edge * 0.5f, cellPos.Z - grid_edge * 1.5f),
                                 new Vector3(cellPos.X + grid_edge * 1.5f, cellPos.Y + grid_edge * 1.5f, cellPos.Z - grid_edge * 0.5f),
                                 pos, (float)radius))
             {
                 cells.Add(new Parallelepiped(Vector3.Add(cellPos, new Vector3(grid_edge, grid_edge, -grid_edge)), grid_edge, -1));
-                count++;
             }
 
             //top_near
-            if (checkForSphereCubeIntersection(
+            if (checkForSphereBoxIntersection(
                                 new Vector3(cellPos.X - grid_edge * 0.5f, cellPos.Y + grid_edge * 0.5f, cellPos.Z + grid_edge * 0.5f),
                                 new Vector3(cellPos.X + grid_edge * 0.5f, cellPos.Y + grid_edge * 1.5f, cellPos.Z + grid_edge * 1.5f),
                                 pos, (float)radius))
             {
                 cells.Add(new Parallelepiped(Vector3.Add(cellPos, new Vector3(0f, grid_edge, grid_edge)), grid_edge, -1));
-                count++;
-                if (count >= 7)
-                    return;
             }
 
             //bottom_near
-            if (checkForSphereCubeIntersection(
+            if (checkForSphereBoxIntersection(
                                 new Vector3(cellPos.X - grid_edge * 0.5f, cellPos.Y - grid_edge * 1.5f, cellPos.Z + grid_edge * 0.5f),
                                 new Vector3(cellPos.X + grid_edge * 0.5f, cellPos.Y - grid_edge * 0.5f, cellPos.Z + grid_edge * 1.5f),
                                 pos, (float)radius))
             {
                 cells.Add(new Parallelepiped(Vector3.Add(cellPos, new Vector3(0f, -grid_edge, grid_edge)), grid_edge, -1));
-                count++;
-                if (count >= 7)
-                    return;
             }
 
             //top_far
-            if (checkForSphereCubeIntersection(
+            if (checkForSphereBoxIntersection(
                                 new Vector3(cellPos.X - grid_edge * 0.5f, cellPos.Y + grid_edge * 0.5f, cellPos.Z - grid_edge * 1.5f),
                                 new Vector3(cellPos.X + grid_edge * 0.5f, cellPos.Y + grid_edge * 1.5f, cellPos.Z - grid_edge * 0.5f),
                                 pos, (float)radius))
             {
                 cells.Add(new Parallelepiped(Vector3.Add(cellPos, new Vector3(0f, grid_edge, -grid_edge)), grid_edge, -1));
-                count++;
-                if (count >= 7)
-                    return;
             }
 
             //bottom_far
-            if (checkForSphereCubeIntersection(
+            if (checkForSphereBoxIntersection(
                                 new Vector3(cellPos.X - grid_edge * 0.5f, cellPos.Y - grid_edge * 1.5f, cellPos.Z - grid_edge * 1.5f),
                                 new Vector3(cellPos.X + grid_edge * 0.5f, cellPos.Y - grid_edge * 0.5f, cellPos.Z - grid_edge * 0.5f),
                                 pos, (float)radius))
             {
                 cells.Add(new Parallelepiped(Vector3.Add(cellPos, new Vector3(0f, -grid_edge, -grid_edge)), grid_edge, -1));
-                count++;
-                if (count >= 7)
-                    return;
             }
 
             //left_far
-            if (checkForSphereCubeIntersection(
+            if (checkForSphereBoxIntersection(
                                 new Vector3(cellPos.X - grid_edge * 1.5f, cellPos.Y - grid_edge * 0.5f, cellPos.Z - grid_edge * 1.5f),
                                 new Vector3(cellPos.X - grid_edge * 0.5f, cellPos.Y + grid_edge * 0.5f, cellPos.Z - grid_edge * 0.5f),
                                 pos, (float)radius))
             {
                 cells.Add(new Parallelepiped(Vector3.Add(cellPos, new Vector3(-grid_edge, 0f, -grid_edge)), grid_edge, -1));
-                count++;
-                if (count >= 7)
-                    return;
             }
 
             //right_far
-            if (checkForSphereCubeIntersection(
+            if (checkForSphereBoxIntersection(
                                 new Vector3(cellPos.X + grid_edge * 0.5f, cellPos.Y - grid_edge * 0.5f, cellPos.Z - grid_edge * 1.5f),
                                 new Vector3(cellPos.X + grid_edge * 1.5f, cellPos.Y + grid_edge * 0.5f, cellPos.Z - grid_edge * 0.5f),
                                 pos, (float)radius))
             {
                 cells.Add(new Parallelepiped(Vector3.Add(cellPos, new Vector3(grid_edge, 0f, -grid_edge)), grid_edge, -1));
-                count++;
-                if (count >= 7)
-                    return;
             }
 
             //left_near
-            if (checkForSphereCubeIntersection(
+            if (checkForSphereBoxIntersection(
                                 new Vector3(cellPos.X - grid_edge * 1.5f, cellPos.Y - grid_edge * 0.5f, cellPos.Z + grid_edge * 0.5f),
                                 new Vector3(cellPos.X - grid_edge * 0.5f, cellPos.Y + grid_edge * 0.5f, cellPos.Z + grid_edge * 1.5f),
                                 pos, (float)radius))
             {
                 cells.Add(new Parallelepiped(Vector3.Add(cellPos, new Vector3(-grid_edge, 0f, grid_edge)), grid_edge, -1));
-                count++;
-                if (count >= 7)
-                    return;
             }
 
             //right_near
-            if (checkForSphereCubeIntersection(
+            if (checkForSphereBoxIntersection(
                                 new Vector3(cellPos.X + grid_edge * 0.5f, cellPos.Y - grid_edge * 0.5f, cellPos.Z + grid_edge * 0.5f),
                                 new Vector3(cellPos.X + grid_edge * 1.5f, cellPos.Y + grid_edge * 0.5f, cellPos.Z + grid_edge * 1.5f),
                                 pos, (float)radius))
             {
                 cells.Add(new Parallelepiped(Vector3.Add(cellPos, new Vector3(grid_edge, 0f, grid_edge)), grid_edge, -1));
-                count++;
-                if (count >= 7)
-                    return;
             }
 #endregion
 
@@ -518,7 +477,7 @@ namespace ParallelComputedCollisionDetection
                     ((uint)(pos.Z / Window.grid_edge) << ZSHIFT);
         }*/
 
-        bool checkForSphereCubeIntersection(Vector3 c1,  Vector3 c2, Vector3 sPos, float radius)
+        bool checkForSphereBoxIntersection(Vector3 c1,  Vector3 c2, Vector3 sPos, float radius)
         {
             float dist_squared = radius * radius;
             if (sPos.X < c1.X) dist_squared -= (float)Math.Pow(sPos.X - c1.X, 2);

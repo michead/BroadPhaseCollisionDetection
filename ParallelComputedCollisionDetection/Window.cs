@@ -381,6 +381,7 @@ namespace ParallelComputedCollisionDetection
             //showInfo();
         }
 
+        /*
         void DrawGrid3x3()
         {
             GL.Begin(TK.PrimitiveType.LineLoop);
@@ -614,7 +615,7 @@ namespace ParallelComputedCollisionDetection
                 GL.Vertex3(1.0, -3.0, -1.0);
             }
             GL.End();
-        }
+        }*/
 
         void DrawGrid()
         {
