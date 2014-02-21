@@ -29,8 +29,9 @@ namespace ParallelComputedCollisionDetection
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             window = new Window();
+            CollisionDetection.deviceSetUp();
             t = new Thread(RunForm);
-            t.Start();
+            //t.Start();
             window.Run(60.0);
         }
 

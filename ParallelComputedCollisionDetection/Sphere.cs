@@ -49,9 +49,9 @@ namespace ParallelComputedCollisionDetection
         //public bool[] cellsIntersected = new bool[8];
         public List<Body> cells;
 
-        public const uint XSHIFT = 0;
-        public const uint YSHIFT = 3;
-        public const uint ZSHIFT = 6;
+        public const int XSHIFT = 0;
+        public const int YSHIFT = 3;
+        public const int ZSHIFT = 6;
         public const uint intersectCType1 = 1;
         public const uint intersectCType2 = 2;
         public const uint intersectCType3 = 4;
@@ -225,6 +225,7 @@ namespace ParallelComputedCollisionDetection
             //hCell
             cells.Add(new Parallelepiped(cellPos, grid_edge, -1));
             checkCellType(cellPos.X, cellPos.Y, cellPos.Z, true);
+            hashHCell();
 
 
             /*Vector3 pos = Window.bodies.ElementAt<Body>((int)bodyIndex).getPos();
@@ -470,12 +471,13 @@ namespace ParallelComputedCollisionDetection
             checkCellTypes();
         }
 
-        /*public void hashHCell()
+        public void hashHCell()
         {
-            hCell = ((uint)(pos.X / Window.grid_edge) << XSHIFT) |
-                    ((uint)(pos.Y / Window.grid_edge) << YSHIFT) |
-                    ((uint)(pos.Z / Window.grid_edge) << ZSHIFT);
-        }*/
+            float ge = (float)Program.window.grid_edge;
+            hCell = ((uint)(pos.X / ge) << XSHIFT) |
+                    ((uint)(pos.Y /ge) << YSHIFT) |
+                    ((uint)(pos.Z / ge) << ZSHIFT);
+        }
 
         bool checkForSphereBoxIntersection(Vector3 c1,  Vector3 c2, Vector3 sPos, float radius)
         {

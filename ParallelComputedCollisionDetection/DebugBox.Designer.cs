@@ -42,7 +42,7 @@
             this.rtb.Location = new System.Drawing.Point(0, 33);
             this.rtb.Name = "rtb";
             this.rtb.ReadOnly = true;
-            this.rtb.Size = new System.Drawing.Size(309, 164);
+            this.rtb.Size = new System.Drawing.Size(309, 180);
             this.rtb.TabIndex = 0;
             this.rtb.TabStop = false;
             this.rtb.Text = "";

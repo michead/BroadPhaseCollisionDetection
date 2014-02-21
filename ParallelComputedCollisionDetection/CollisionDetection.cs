@@ -10,46 +10,39 @@ using OpenTK.Graphics;
 using OpenTK.Input;
 using OpenTK.Math;
 using OpenCLTemplate;
+using System.Runtime.InteropServices;
 
 namespace ParallelComputedCollisionDetection
 {
-    struct CellArrayElem
+    [StructLayout(LayoutKind.Sequential)]
+    public unsafe struct ObjectProperties
     {
-        int[] cellIDs;
-    }
-
-    struct ObjectArrayElem
-    {
-        int objectID;
-        int controlBits;
-    }
-
-    struct ObjectProperties
-    {
-        public int ID;
-        public int control_bits;
-        //CHECK THIS
-        public int[] cellIDs;
+        public uint ID;
+        public uint control_bits;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
+        public uint[] cellIDs;
         public double radius;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
         public float[] pos;
     }
 
-    static class CollisionDetection
+    public static class CollisionDetection
     {
         static ComputePlatform platform = ComputePlatform.Platforms[0];
         static ComputeContextPropertyList properties = new ComputeContextPropertyList(platform);
         static ComputeContext context;
         static IList<ComputeDevice> devices;
-        static ObjectProperties[] array = new ObjectProperties[Program.window.number_of_bodies];
+        public static ObjectProperties[] array = new ObjectProperties[Program.window.number_of_bodies];
         static ComputeProgram program;
         static string Arvo;
+        public static string deviceInfo = "";
 
-        public static string deviceInfo(){
+        public static void deviceSetUp(){
             devices = new List<ComputeDevice>();
             foreach(ComputeDevice device in platform.Devices)
                 devices.Add(device);
             context = new ComputeContext(devices, properties, null, IntPtr.Zero);
-            string s = "[HOST]\n\t" + Environment.OSVersion + "\n"
+            deviceInfo = "[HOST]\n\t" + Environment.OSVersion + "\n"
                         + "[OPENCL Platform]\n"
                         + "\tName: " + platform.Name + "\n"
                         + "\tVendor: " + platform.Vendor + "\n";
@@ -57,10 +50,10 @@ namespace ParallelComputedCollisionDetection
                         + "\tExtensions: \n";
             foreach (string extension in platform.Extensions)
                 s +="\t\t" + extension + "\n";*/
-            s += "[DEVICES]\n";
+            deviceInfo += "[DEVICES]\n";
             foreach (ComputeDevice device in context.Devices)
             {
-                s += "\tName: " + device.Name + "\n"
+                deviceInfo += "\tName: " + device.Name + "\n"
                     + "\tVendor: " + device.Vendor + "\n"
                     + "\tDriver Version: " + device.DriverVersion + "\n"
                     + "\tOpenCL version: " + device.OpenCLCVersion + "\n"
@@ -74,30 +67,26 @@ namespace ParallelComputedCollisionDetection
                 foreach (string extension in device.Extensions)
                     s += "\n\t + " + extension;*/
             }
-            return s;
         }
 
         public unsafe static void CollisionDetectionSetUp()
         {
-            /*ComputeBuffer<CellArrayElem> cellArray = new ComputeBuffer<CellArrayElem>
-                (context, ComputeMemoryFlags.ReadWrite | ComputeMemoryFlags.UseHostPointer, null);
-            ComputeBuffer<ObjectArrayElem> objectArray = new ComputeBuffer<ObjectArrayElem>
-                (context, ComputeMemoryFlags.ReadWrite | ComputeMemoryFlags.UseHostPointer, null);*/
-            for (int i = 0; i < Program.window.number_of_bodies; i++)
+            int nob = Program.window.number_of_bodies;
+            for (int i = 0; i < nob; i++)
             {
                 Body body = Program.window.bodies.ElementAt(i);
+                array[i].pos = new float[3];
+                array[i].cellIDs = new uint[8];
                 array[i].pos[0] = body.getPos().X;
                 array[i].pos[1] = body.getPos().Y;
                 array[i].pos[2] = body.getPos().Z;
-                array[i].ID = i;
+                array[i].ID = (uint)i;
                 array[i].radius = body.getBSphere().radius;
-                array[i].pos = new float[3];
-                array[i].cellIDs = new int[8];
             }
             System.IO.StreamReader kernelStream = new System.IO.StreamReader("Arvo.cl");
             Arvo = kernelStream.ReadToEnd();
             kernelStream.Close();
-            int nob = Program.window.number_of_bodies;
+            //Console.Write(Arvo);
             int* addrNumOfBodies = &nob;
             IntPtr anob = (IntPtr)addrNumOfBodies;
             double ge = Program.window.grid_edge;
@@ -105,8 +94,15 @@ namespace ParallelComputedCollisionDetection
             IntPtr age = (IntPtr)addr_grid_edge;
 
             //setup
-            ComputeBuffer<ObjectProperties> objArray = new ComputeBuffer<ObjectProperties>
-                (context, ComputeMemoryFlags.ReadWrite | ComputeMemoryFlags.UseHostPointer, array);
+            int structSize = Marshal.SizeOf(array[0]);
+            IntPtr ptr = Marshal.AllocHGlobal(structSize*nob);
+            for(int i=0; i < nob; i++)
+                Marshal.StructureToPtr(array[i], ptr + i*structSize, false);
+            byte[] dataOut = new byte[structSize*nob];
+            Marshal.Copy(ptr, dataOut, 0, structSize*nob);
+            Marshal.FreeHGlobal(ptr);
+            ComputeBuffer<byte> objArray = new ComputeBuffer<byte>
+                (context, ComputeMemoryFlags.ReadWrite | ComputeMemoryFlags.UseHostPointer, dataOut);
             ComputeBuffer<int> numOfBodies = new ComputeBuffer<int>
                 (context, ComputeMemoryFlags.ReadWrite | ComputeMemoryFlags.UseHostPointer, sizeof(int), anob);
             ComputeBuffer<double> gridEdge = new ComputeBuffer<double>
@@ -121,12 +117,16 @@ namespace ParallelComputedCollisionDetection
             //execution
             ComputeCommandQueue queue = 
                 new ComputeCommandQueue(context, ComputePlatform.Platforms[0].Devices[0], ComputeCommandQueueFlags.None);
-            queue.Execute(kernelArvo, null, new long[] { 0 }, null, null);
+            queue.Execute(kernelArvo, null, new long[] { nob }, null, null);
 
             //read from buffer
-            ObjectProperties[] result = new ObjectProperties[Program.window.number_of_bodies];
-            queue.ReadFromBuffer<ObjectProperties>(objArray, ref result, false, null);
+            byte[] result = new byte[structSize * nob];
+            queue.ReadFromBuffer<byte>(objArray, ref result, false, null);
+            IntPtr intPtr = Marshal.AllocHGlobal(structSize*nob);
+            Marshal.Copy(result, 0, intPtr, structSize * nob);
+            for(int i=0; i < nob; i++)
+                array[i] = (ObjectProperties)Marshal.PtrToStructure(intPtr + i*structSize, typeof(ObjectProperties));
+            Marshal.FreeHGlobal(intPtr);
         }
-
     }
 }

@@ -118,11 +118,7 @@ namespace ParallelComputedCollisionDetection
             old_key = OpenTK.Input.Keyboard.GetState();
 
             bodies = new List<Body>();
-            /*bodies.Add(new Parallelepiped(new Vector3(5, 5, 5), 2));
-            bodies.Add(new Parallelepiped(new Vector3(-5, -5, -5), 3.5));
-            bodies.Add(new Parallelepiped(new Vector3(-3, 3, 0), 3));
-            bodies.Add(new Parallelepiped(new Vector3(6, -4, 3), 2));
-            bodies.Add(new Parallelepiped(new Vector3(-7, 7, 4), 1.5));*/
+            
             generateRandomBodies(number_of_bodies, true);
             calculateGridEdge();
 
@@ -132,6 +128,8 @@ namespace ParallelComputedCollisionDetection
             timeSinceStart = new Stopwatch();
             timeSinceStart.Start();
             elaspedTime = timeSinceStart.ElapsedMilliseconds;
+            CollisionDetection.CollisionDetectionSetUp();
+            Program.t.Start();
         }
 
         protected override void OnUnload(EventArgs e)
@@ -967,16 +965,18 @@ namespace ParallelComputedCollisionDetection
                                                     + "\n\tposition: (" + pBody.getPos().X.ToString("0.00")
                                                     + ", " + pBody.getPos().Y.ToString("0.00")
                                                     + ", " + pBody.getPos().Z.ToString("0.00") + ")"
-                            /*+ "\n\tbsphere pos: (" + s.pos.X.ToString("0.00")
-                            + ", " + s.pos.Y.ToString("0.00")
-                            + ", " + s.pos.Z.ToString("0.00") + ")"*/
+                                                    /*+ "\n\tbsphere pos: (" + s.pos.X.ToString("0.00")
+                                                    + ", " + s.pos.Y.ToString("0.00")
+                                                    + ", " + s.pos.Z.ToString("0.00") + ")"*/
                                                     + "\n\tradius: " + s.radius.ToString("0.00")
                                                     + "\n\thCell: " + s.hCell.ToString()
                                                     + "\n\thCell pos: " + s.cellPos.ToString()
-                            //+ "\n\tcellArray[0]: " + binValue
+                                                    //+ "\n\tcellArray[0]: " + binValue
                                                     + "\n\tcellTypesIntersected: " + binValue
                                                     + "\tcells count: " + s.cells.Count.ToString()
-                                                    + "\n\t cell types intersected: " + cellTypesIntersected;
+                                                    + "\n\t cell types intersected: " + cellTypesIntersected
+                                                    + "\n\t OCL hCellHash test: " + CollisionDetection.array[2].cellIDs[0].ToString()
+                                                    + "\n\t CPU hCellHash test: " + bodies.ElementAt(2).getBSphere().hCell.ToString();
                     }
                 };
                 Program.db.getRTB().BeginInvoke(mi);
