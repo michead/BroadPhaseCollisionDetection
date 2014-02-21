@@ -975,10 +975,10 @@ namespace ParallelComputedCollisionDetection
                                                     + "\n\t cell types int: " + cellTypesIntersected
                                                     + "\n\t OCL hCellHash test[0]: " + CollisionDetection.array[picked].cellIDs[0].ToString()
                                                     + "\n\t CPU hCellHash test[0]: " + s.cellArray[0].ToString()
-                                                    /*+ "\n\t OCL hCellHash test[1]: " + CollisionDetection.array[picked].cellIDs[1].ToString()
+                                                    + "\n\t OCL hCellHash test[1]: " + CollisionDetection.array[picked].cellIDs[1].ToString()
                                                     + "\n\t CPU hCellHash test[1]: " + s.cellArray[1].ToString()
                                                     + "\n\t OCL hCellHash test[2]: " + CollisionDetection.array[picked].cellIDs[2].ToString()
-                                                    + "\n\t CPU hCellHash test[2]: " + s.cellArray[2].ToString()*/
+                                                    + "\n\t CPU hCellHash test[2]: " + s.cellArray[2].ToString()
                                                     + "\n\t OCL control_bits: " + CollisionDetection.array[picked].ctrl_bits.ToString()
                                                     + "\n\t CPU control_bits: " + s.ctrl_bits.ToString()
                                                     + "\n\t OCL c_bits(bin):\t" + binValue2

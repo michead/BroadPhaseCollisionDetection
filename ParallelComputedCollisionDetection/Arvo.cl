@@ -68,6 +68,7 @@
             }
             
 #define CHECK_FOR_SPHERE_BOX_INTERSECTION(x2, y2, z2, x3, y3, z3) \
+            dist_squared = radius * radius;\
             if (pos[0] < x2) dist_squared -= (pos[0] - x2)*(pos[0] - x2);\
             else if (pos[0] > x3) dist_squared -= (pos[0] - x3)*(pos[0] - x3);\
             if (pos[1] < y2) dist_squared -= (pos[1] - y2)*(pos[1] - y2);\
@@ -90,11 +91,15 @@ typedef struct{
 __kernel void Arvo(__global ObjectProperties* obj_array, __global int* n, __global double* grid_edge){
             int i = get_global_id(0);
             if(i>=*n) return;
+            
             float cellPos[3];
             float pos[3];
             float posx;
             float posy;
             float posz;
+            
+            float radius = (float)(obj_array[i].radius);
+            float dist_squared = radius * radius;
             
             float ge = (float)(*grid_edge);
             float dge = 2 * ge;
@@ -117,12 +122,10 @@ __kernel void Arvo(__global ObjectProperties* obj_array, __global int* n, __glob
 
             //hCell
             obj_array[i].cellIDs[0] = HASH_FUNCTION(cellPos[0], cellPos[1], cellPos[2], 0);
+            CELL_TYPE_CHECK(cellPos[0], cellPos[1], cellPos[2]);
             
             int j = 1;
             int res;
-            
-            float radius = (float)(obj_array[i].radius);
-            float dist_squared = radius * radius;
             
             //COLLISION CHECK - (3^3 - 1) cases
             
