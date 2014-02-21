@@ -975,8 +975,8 @@ namespace ParallelComputedCollisionDetection
                                                     + "\n\tcellTypesIntersected: " + binValue
                                                     + "\tcells count: " + s.cells.Count.ToString()
                                                     + "\n\t cell types intersected: " + cellTypesIntersected
-                                                    + "\n\t OCL hCellHash test: " + CollisionDetection.array[2].cellIDs[0].ToString()
-                                                    + "\n\t CPU hCellHash test: " + bodies.ElementAt(2).getBSphere().hCell.ToString();
+                                                    + "\n\t OCL hCellHash test: " + CollisionDetection.array[picked].cellIDs[0].ToString()
+                                                    + "\n\t CPU hCellHash test: " + bodies.ElementAt(picked).getBSphere().hCell.ToString();
                     }
                 };
                 Program.db.getRTB().BeginInvoke(mi);
