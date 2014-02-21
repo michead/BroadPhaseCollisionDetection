@@ -818,7 +818,7 @@ namespace ParallelComputedCollisionDetection
             switch (view)
             {
                 case 'x':
-                    for (int i = 0; i < bodies_.Count(); i++)
+                    for (int i = 0; i < number_of_bodies; i++)
                     {
                         Sphere bsphere = bodies_[i].getBSphere();
                         Vector3 pos = bodies_[i].getPos();
@@ -835,7 +835,7 @@ namespace ParallelComputedCollisionDetection
                     break;
 
                 case 'y':
-                    for (int i = 0; i < bodies_.Count(); i++)
+                    for (int i = 0; i < number_of_bodies; i++)
                     {
                         Sphere bsphere = bodies_[i].getBSphere();
                         Vector3 pos = bodies_[i].getPos();
@@ -852,7 +852,7 @@ namespace ParallelComputedCollisionDetection
                     break;
 
                 case 'z':
-                    for (int i = 0; i < bodies_.Count(); i++)
+                    for (int i = 0; i < number_of_bodies; i++)
                     {
                         Sphere bsphere = bodies_[i].getBSphere();
                         Vector3 pos = bodies_[i].getPos();
@@ -931,52 +931,58 @@ namespace ParallelComputedCollisionDetection
                     else
                     {
                         Body pBody = bodies.ElementAt(picked);
-                        /*string binValue = Convert.ToString(pBody.getBSphere().cellArray[0], 2);
+                        string binValue = Convert.ToString(pBody.getBSphere().ctrl_bits, 2);
                         char[] bits = binValue.PadLeft(16, '0').ToCharArray();
                         binValue = "";
-                        for (int i = 0; i < bits.Count(); i++)
+                        string binValue2 = Convert.ToString(CollisionDetection.array[picked].ctrl_bits, 2);
+                        char[] bits2 = binValue2.PadLeft(16, '0').ToCharArray();
+                        binValue2 = "";
+                        for (int i = 0; i < 16; i++)
+                        {
+                            if (i % 4 == 0)
+                            {
+                                binValue += " ";
+                                binValue2 += " ";
+                            }
                             binValue += bits[i];
-                        binValue += "\n";*/
-                        string binValue = Convert.ToString(pBody.getBSphere().cTypesIntersected, 2);
-                        char[] bits = binValue.PadLeft(8, '0').ToCharArray();
-                        binValue = "";
-                        for (int i = 0; i < bits.Count(); i++)
-                            binValue += bits[i];
-                        binValue += "\n";
+                            binValue2 += bits2[i];
+                        }
                         string cellTypesIntersected = "";
                         Sphere s = pBody.getBSphere();
-                        if ((s.cTypesIntersected & 1) == 1)
+                        if ((s.ctrl_bits & 1) == 1)
                             cellTypesIntersected += "1 ";
-                        if ((s.cTypesIntersected & 2) == 2)
+                        if ((s.ctrl_bits & 2) == 2)
                             cellTypesIntersected += "2 ";
-                        if ((s.cTypesIntersected & 4) == 4)
+                        if ((s.ctrl_bits & 4) == 4)
                             cellTypesIntersected += "3 ";
-                        if ((s.cTypesIntersected & 8) == 8)
+                        if ((s.ctrl_bits & 8) == 8)
                             cellTypesIntersected += "4 ";
-                        if ((s.cTypesIntersected & 16) == 16)
+                        if ((s.ctrl_bits & 16) == 16)
                             cellTypesIntersected += "5 ";
-                        if ((s.cTypesIntersected & 32) == 32)
+                        if ((s.ctrl_bits & 32) == 32)
                             cellTypesIntersected += "6 ";
-                        if ((s.cTypesIntersected & 64) == 64)
+                        if ((s.ctrl_bits & 64) == 64)
                             cellTypesIntersected += "7 ";
-                        if ((s.cTypesIntersected & 128) == 128)
+                        if ((s.ctrl_bits & 128) == 128)
                             cellTypesIntersected += "8 ";
                         Program.db.getRTB().Text = "Body[" + picked + "]:"
                                                     + "\n\tposition: (" + pBody.getPos().X.ToString("0.00")
                                                     + ", " + pBody.getPos().Y.ToString("0.00")
                                                     + ", " + pBody.getPos().Z.ToString("0.00") + ")"
-                                                    /*+ "\n\tbsphere pos: (" + s.pos.X.ToString("0.00")
-                                                    + ", " + s.pos.Y.ToString("0.00")
-                                                    + ", " + s.pos.Z.ToString("0.00") + ")"*/
                                                     + "\n\tradius: " + s.radius.ToString("0.00")
-                                                    + "\n\thCell: " + s.hCell.ToString()
                                                     + "\n\thCell pos: " + s.cellPos.ToString()
-                                                    //+ "\n\tcellArray[0]: " + binValue
-                                                    + "\n\tcellTypesIntersected: " + binValue
-                                                    + "\tcells count: " + s.cells.Count.ToString()
-                                                    + "\n\t cell types intersected: " + cellTypesIntersected
-                                                    + "\n\t OCL hCellHash test: " + CollisionDetection.array[picked].cellIDs[0].ToString()
-                                                    + "\n\t CPU hCellHash test: " + bodies.ElementAt(picked).getBSphere().hCell.ToString();
+                                                    + "\n\tcells count: " + s.cells.Count.ToString()
+                                                    + "\n\t cell types int: " + cellTypesIntersected
+                                                    + "\n\t OCL hCellHash test[0]: " + CollisionDetection.array[picked].cellIDs[0].ToString()
+                                                    + "\n\t CPU hCellHash test[0]: " + s.cellArray[0].ToString()
+                                                    /*+ "\n\t OCL hCellHash test[1]: " + CollisionDetection.array[picked].cellIDs[1].ToString()
+                                                    + "\n\t CPU hCellHash test[1]: " + s.cellArray[1].ToString()
+                                                    + "\n\t OCL hCellHash test[2]: " + CollisionDetection.array[picked].cellIDs[2].ToString()
+                                                    + "\n\t CPU hCellHash test[2]: " + s.cellArray[2].ToString()*/
+                                                    + "\n\t OCL control_bits: " + CollisionDetection.array[picked].ctrl_bits.ToString()
+                                                    + "\n\t CPU control_bits: " + s.ctrl_bits.ToString()
+                                                    + "\n\t OCL c_bits(bin):\t" + binValue2
+                                                    + "\n\t cTypes int(bin):\t" + binValue;
                     }
                 };
                 Program.db.getRTB().BeginInvoke(mi);
@@ -985,14 +991,6 @@ namespace ParallelComputedCollisionDetection
 
         public void showFPS()
         {
-            /*int now = System.DateTime.Now.Millisecond;
-            if ((now - elaspedTime) > 250)
-            {
-                fps_string = "FPS: " + fps * 4 + "\n";
-                fps = 0;
-                elaspedTime = now;
-            }
-            fps++;*/
             long deltaTime = timeSinceStart.ElapsedMilliseconds - elaspedTime;
             ++frames;
 
@@ -1012,7 +1010,7 @@ namespace ParallelComputedCollisionDetection
                         else if (fps < 10)
                             Program.db.getRTB_FPS().ForeColor = Color.Red;
                         else
-                            Program.db.getRTB_FPS().ForeColor = Color.Green;
+                            Program.db.getRTB_FPS().ForeColor = Color.LawnGreen;
                     };
                     Program.db.getRTB_FPS().BeginInvoke(mi);
                 }

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using OpenTK;
 using OpenTK.Graphics;
 
-#region Assembly Collision
+#region Assembly Collisions
 using GL = OpenTK.Graphics.OpenGL.GL;
 using PolygonMode = OpenTK.Graphics.OpenGL.PolygonMode;
 using MaterialFace = OpenTK.Graphics.OpenGL.MaterialFace;
@@ -35,23 +35,14 @@ namespace ParallelComputedCollisionDetection
         public double radius; 
         public int slices;
         public int stacks;
-        public float left;
-        public float right;
-        public float top;
-        public float bottom;
-        public float front;
-        public float back;
-        //public HomeCellType homeCellType;
-        public uint hCell;
-        public uint cTypesIntersected;
+        public uint ctrl_bits;
         public int bodyIndex;
-        public uint[] cellArray = new uint[8];
-        //public bool[] cellsIntersected = new bool[8];
+        public uint[] cellArray;
         public List<Body> cells;
 
         public const int XSHIFT = 0;
-        public const int YSHIFT = 3;
-        public const int ZSHIFT = 6;
+        public const int YSHIFT = 4;
+        public const int ZSHIFT = 8;
         public const uint intersectCType1 = 1;
         public const uint intersectCType2 = 2;
         public const uint intersectCType3 = 4;
@@ -68,19 +59,18 @@ namespace ParallelComputedCollisionDetection
             this.slices = slices;
             this.stacks = stacks;
             quad = Glu.NewQuadric();
-            this.left = pos.X - (float)radius;
-            this.right = pos.X + (float)radius;
-            this.top = pos.Y + (float)radius;
-            this.bottom = pos.Y - (float)radius;
-            this.front = pos.Z + (float)radius;
-            this.back = pos.Z - (float)radius;
             this.bodyIndex = bodyIndex;
             this.cellPos = Vector3.Zero;
-            cells = new List<Body>();
+            cells = new List<Body>(8);
+            cellArray = new uint[8];
 
-            for (int i = 0; i < 8; i++)
-                cellArray[i] |= (uint)bodyIndex << 5;
-            checkCellTypes();
+            /*for (int i = 0; i < 8; i++)
+                cellArray[i] |= (uint)bodyIndex << 5;*/
+
+            foreach (Body cell in cells)
+            {
+                checkCellType(cell.getPos().X, cell.getPos().Y, cell.getPos().Z, false);
+            }
         }
 
         public void Draw()
@@ -206,7 +196,7 @@ namespace ParallelComputedCollisionDetection
         public void checkForCellIntersection()
         {
             cells.Clear();
-            cTypesIntersected = 0;
+            ctrl_bits = 0;
 
             float grid_edge = (float)Program.window.grid_edge;
             if(pos.X>=0)
@@ -225,13 +215,7 @@ namespace ParallelComputedCollisionDetection
             //hCell
             cells.Add(new Parallelepiped(cellPos, grid_edge, -1));
             checkCellType(cellPos.X, cellPos.Y, cellPos.Z, true);
-            hashHCell(cellPos);
-
-
-            /*Vector3 pos = Window.bodies.ElementAt<Body>((int)bodyIndex).getPos();
-            cellPos.X = (int)(pos.X / grid_edge) * grid_edge + grid_edge * 0.5f;
-            cellPos.Y = (int)(pos.Y / grid_edge) * grid_edge + grid_edge * 0.5f;
-            cellPos.Z = (int)(pos.Z / grid_edge) * grid_edge + grid_edge * 0.5f;*/
+            //hashCell(cellPos, 0);
             
             #region Check For Collisions
             //right
@@ -468,26 +452,41 @@ namespace ParallelComputedCollisionDetection
             }
 #endregion
 
-            checkCellTypes();
+            checkCellType(cellPos.X, cellPos.Y, cellPos.Z, true);
+            hashCell(cellPos, 0);
+            for (int i = 1; i < 8; i++)
+            {
+                if (i >= cells.Count)
+                {
+                    cellArray[i] = 0;
+                    continue;
+                }
+                Body cell = cells.ElementAt(i);
+                checkCellType(cell.getPos().X, cell.getPos().Y, cell.getPos().Z, false);
+                hashCell(cell.getPos(), i);
+            }
         }
 
-        public void hashHCell(Vector3 hcp)
+        public void hashCell(Vector3 hcp, int index)
         {
-            double ge = Program.window.grid_edge;
-            hCell = ((uint)(hcp.X / ge) << XSHIFT) |
-                    ((uint)(hcp.Y /ge) << YSHIFT) |
-                    ((uint)(hcp.Z / ge) << ZSHIFT);
+            float ge = (float)Program.window.grid_edge;
+            float posx = hcp.X + 10;
+            float posy = -(hcp.Y - 10);
+            float posz = -(hcp.Z - 10);
+            cellArray[index] = (((uint)(posx / ge) << XSHIFT) |
+                                ((uint)(posy / ge) << YSHIFT) |
+                                ((uint)(posz / ge) << ZSHIFT));
         }
 
         bool checkForSphereBoxIntersection(Vector3 c1,  Vector3 c2, Vector3 sPos, float radius)
         {
             float dist_squared = radius * radius;
-            if (sPos.X < c1.X) dist_squared -= (float)Math.Pow(sPos.X - c1.X, 2);
-            else if (sPos.X > c2.X) dist_squared -= (float)Math.Pow(sPos.X - c2.X, 2);
-            if (sPos.Y < c1.Y) dist_squared -= (float)Math.Pow(sPos.Y - c1.Y, 2);
-            else if (sPos.Y > c2.Y) dist_squared -= (float)Math.Pow(sPos.Y - c2.Y, 2);
-            if (sPos.Z < c1.Z) dist_squared -= (float)Math.Pow(sPos.Z - c1.Z, 2);
-            else if (sPos.Z > c2.Z) dist_squared -= (float)Math.Pow(sPos.Z - c2.Z, 2);
+            if (sPos.X < c1.X) dist_squared -= (float)((sPos.X - c1.X)*(sPos.X - c1.X));
+            else if (sPos.X > c2.X) dist_squared -= (float)((sPos.X - c2.X)*(sPos.X - c2.X));
+            if (sPos.Y < c1.Y) dist_squared -= (float)((sPos.Y - c1.Y)*(sPos.Y - c1.Y));
+            else if (sPos.Y > c2.Y) dist_squared -= (float)((sPos.Y - c2.Y)*(sPos.Y - c2.Y));
+            if (sPos.Z < c1.Z) dist_squared -= (float)((sPos.Z - c1.Z)*(sPos.Z - c1.Z));
+            else if (sPos.Z > c2.Z) dist_squared -= (float)((sPos.Z - c2.Z)*(sPos.Z - c2.Z));
             return dist_squared > 0;
         }
 
@@ -553,14 +552,6 @@ namespace ParallelComputedCollisionDetection
             }
         }*/
 
-        public void checkCellTypes()
-        {
-            foreach (Body cell in cells)
-            {
-                checkCellType(cell.getPos().X, cell.getPos().Y, cell.getPos().Z, false);
-            }
-        }
-
         public void checkCellType(float posX, float posY, float posZ, bool homeCell)
         {
             double grid_edge = Program.window.grid_edge;
@@ -572,53 +563,54 @@ namespace ParallelComputedCollisionDetection
             //case 1
             if (posX % (2 * grid_edge) <= grid_edge && posY % (2 * grid_edge) <= grid_edge && posZ % (2 * grid_edge) <= grid_edge)
             {
-                cTypesIntersected |= intersectCType1;
+                ctrl_bits |= intersectCType1;
                 index = 1;
             }
             //case 2
             else if (posX % (2 * grid_edge) > grid_edge && posY % (2 * grid_edge) <= grid_edge && posZ % (2 * grid_edge) <= grid_edge)
             {
-                cTypesIntersected |= intersectCType2;
+                ctrl_bits |= intersectCType2;
                 index = 2;
             }
             //case 3
             else if (posX % (2 * grid_edge) <= grid_edge && posY % (2 * grid_edge) > grid_edge && posZ % (2 * grid_edge) <= grid_edge)
             {
-                cTypesIntersected |= intersectCType3;
+                ctrl_bits |= intersectCType3;
                 index = 3;
             }
             //case 4
             else if (posX % (2 * grid_edge) > grid_edge && posY % (2 * grid_edge) > grid_edge && posZ % (2 * grid_edge) <= grid_edge)
             {
-                cTypesIntersected |= intersectCType4;
+                ctrl_bits |= intersectCType4;
                 index = 4;
             }
             //case 5
             else if (posX % (2 * grid_edge) <= grid_edge && posY % (2 * grid_edge) <= grid_edge && posZ % (2 * grid_edge) > grid_edge)
             {
-                cTypesIntersected |= intersectCType5;
+                ctrl_bits |= intersectCType5;
                 index = 5;
             }
             //case 6
             else if (posX % (2 * grid_edge) > grid_edge && posY % (2 * grid_edge) <= grid_edge && posZ % (2 * grid_edge) > grid_edge)
             {
-                cTypesIntersected |= intersectCType6;
+                ctrl_bits |= intersectCType6;
                 index = 6;
             }
             //case 7
             else if (posX % (2 * grid_edge) <= grid_edge && posY % (2 * grid_edge) > grid_edge && posZ % (2 * grid_edge) > grid_edge)
             {
-                cTypesIntersected |= intersectCType7;
+                ctrl_bits |= intersectCType7;
                 index = 7;
             }
             //case 8
             else
             {
-                cTypesIntersected |= intersectCType8;
+                ctrl_bits |= intersectCType8;
                 index = 8;
             }
+
             if (homeCell)
-                hCell = index;
+                ctrl_bits |= index << 8;
         }
     }
 }

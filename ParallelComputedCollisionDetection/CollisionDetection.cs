@@ -18,7 +18,7 @@ namespace ParallelComputedCollisionDetection
     public unsafe struct ObjectProperties
     {
         public uint ID;
-        public uint control_bits;
+        public uint ctrl_bits;
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
         public uint[] cellIDs;
         public double radius;
@@ -118,6 +118,7 @@ namespace ParallelComputedCollisionDetection
             ComputeCommandQueue queue = 
                 new ComputeCommandQueue(context, ComputePlatform.Platforms[0].Devices[0], ComputeCommandQueueFlags.None);
             queue.Execute(kernelArvo, null, new long[] { nob }, null, null);
+            queue.Finish();
 
             //read from buffer
             byte[] result = new byte[structSize * nob];
@@ -126,7 +127,21 @@ namespace ParallelComputedCollisionDetection
             Marshal.Copy(result, 0, intPtr, structSize * nob);
             for(int i=0; i < nob; i++)
                 array[i] = (ObjectProperties)Marshal.PtrToStructure(intPtr + i*structSize, typeof(ObjectProperties));
+            checkCorrectness();
             Marshal.FreeHGlobal(intPtr);
+        }
+
+        static void checkCorrectness()
+        {
+            List<Body> bodies = Program.window.bodies;
+            int nob = Program.window.number_of_bodies;
+            for (int i = 0; i < nob; i++)
+                if (array[i].ID != bodies[i].getBSphere().bodyIndex
+                    || array[i].radius != bodies[i].getBSphere().radius
+                    || array[i].pos[0] != bodies[i].getPos().X
+                    || array[i].pos[1] != bodies[i].getPos().Y
+                    || array[i].pos[2] != bodies[i].getPos().Z)
+                    Console.WriteLine("Copy inconsistency encountered at index: " + i);
         }
     }
 }

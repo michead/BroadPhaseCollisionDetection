@@ -86,6 +86,9 @@
       <DependentUpon>DebugBox.cs</DependentUpon>
     </Compile>
     <Compile Include="Octahedron.cs" />
+    <Compile Include="RichEdit50.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Tetrahedron.cs" />
     <Compile Include="Parallelepiped.cs" />
     <Compile Include="Dodecahedron.cs" />

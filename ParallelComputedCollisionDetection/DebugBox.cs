@@ -20,8 +20,10 @@ namespace ParallelComputedCollisionDetection
 
         private void DebugBox_Load(object sender, EventArgs e)
         {
-            this.SetBounds(Screen.PrimaryScreen.Bounds.Width - 340, 0, 340, 500);
-            rtb2.SetBounds(rtb.Location.X, 210, this.Width, 400);
+            this.SetStyle(ControlStyles.SupportsTransparentBackColor, true);
+            this.TransparencyKey = this.BackColor;
+            this.SetBounds(Screen.PrimaryScreen.Bounds.Width - 350, 0, 380, 500);
+            rtb2.SetBounds(rtb.Location.X, 300, this.Width, 350);
             rtb2.Text = CollisionDetection.deviceInfo;
         }
 
