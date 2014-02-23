@@ -13,9 +13,9 @@
 
 #define HASH_FUNCTION(x, y, z, k) \
                     obj_array[i].cellIDs[k] = \
-                        (((uint)((x + 10) / ge)) << XSHIFT) |  \
+                        ((((uint)((x + 10) / ge)) << XSHIFT) |  \
                         (((uint)((y + 10) / ge)) << YSHIFT) |  \
-                        (((uint)((z + 10) / ge)) << ZSHIFT) + 1;
+                        (((uint)((z + 10) / ge)) << ZSHIFT)) + (uint)1;
                     
 #define MOD(x, y) \
             (x - (y * (int)(x/y)))
@@ -24,43 +24,43 @@
             posx = posX + 10;\
             posy = -(posY - 10);\
             posz = -(posZ - 10);\
-            if (MOD(posx, dge) <= (ge) && MOD(posy, dge) <= (ge) && MOD(posz, dge) <= (ge))\
+            if (fmod(posx, dge) <= (ge) && fmod(posy, dge) <= (ge) && fmod(posz, dge) <= (ge))\
             {\
                 obj_array[i].ctrl_bits |= ICType1;\
                 if(posX == cellPos[0] && posY == cellPos[1] && posZ == cellPos[2])\
                     obj_array[i].ctrl_bits |= (1 << 8);\
             }\
-            else if (MOD(posx, dge) > (ge) && MOD(posy, dge) <= (ge) && MOD(posz, dge) <= (ge))\
+            else if (fmod(posx, dge) > (ge) && fmod(posy, dge) <= (ge) && fmod(posz, dge) <= (ge))\
             {\
                 obj_array[i].ctrl_bits |= ICType2;\
                 if(posX == cellPos[0] && posY == cellPos[1] && posZ == cellPos[2])\
                     obj_array[i].ctrl_bits |= (2 << 8);\
             }\
-            else if (MOD(posx, dge) <= (ge) && MOD(posy, dge) > (ge) && MOD(posz, dge) <= (ge))\
+            else if (fmod(posx, dge) <= (ge) && fmod(posy, dge) > (ge) && fmod(posz, dge) <= (ge))\
             {\
                 obj_array[i].ctrl_bits |= ICType3;\
                 if(posX == cellPos[0] && posY == cellPos[1] && posZ == cellPos[2])\
                     obj_array[i].ctrl_bits |= (3 << 8);\
             }\
-            else if (MOD(posx, dge) > (ge) && MOD(posy, dge) > (ge) && MOD(posz, dge) <= (ge))\
+            else if (fmod(posx, dge) > (ge) && fmod(posy, dge) > (ge) && fmod(posz, dge) <= (ge))\
             {\
                 obj_array[i].ctrl_bits |= ICType4;\
                 if(posX == cellPos[0] && posY == cellPos[1] && posZ == cellPos[2])\
                     obj_array[i].ctrl_bits |= (4 << 8);\
             }\
-            else if (MOD(posx, dge) <= (ge) && MOD(posy, dge) <= (ge) && MOD(posz, dge) > (ge))\
+            else if (fmod(posx, dge) <= (ge) && fmod(posy, dge) <= (ge) && fmod(posz, dge) > (ge))\
             {\
                 obj_array[i].ctrl_bits |= ICType5;\
                 if(posX == cellPos[0] && posY == cellPos[1] && posZ == cellPos[2])\
                     obj_array[i].ctrl_bits |= (5 << 8);\
             }\
-            else if (MOD(posx, dge) > (ge) && MOD(posy, dge) <= (ge) && MOD(posz, dge) > (ge))\
+            else if (fmod(posx, dge) > (ge) && fmod(posy, dge) <= (ge) && fmod(posz, dge) > (ge))\
             {\
                 obj_array[i].ctrl_bits |= ICType6;\
                 if(posX == cellPos[0] && posY == cellPos[1] && posZ == cellPos[2])\
                     obj_array[i].ctrl_bits |= (6 << 8);\
             }\
-            else if (MOD(posx, dge) <= (ge) && MOD(posy, dge) > (ge) && MOD(posz, dge) > (ge))\
+            else if (fmod(posx, dge) <= (ge) && fmod(posy, dge) > (ge) && fmod(posz, dge) > (ge))\
             {\
                 obj_array[i].ctrl_bits |= ICType7;\
                 if(posX == cellPos[0] && posY == cellPos[1] && posZ == cellPos[2])\

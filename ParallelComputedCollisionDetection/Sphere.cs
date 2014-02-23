@@ -74,17 +74,17 @@ namespace ParallelComputedCollisionDetection
 
             float grid_edge = (float)Program.window.grid_edge;
             if(pos.X>=0)
-                cellPos.X = ((int)((this.pos.X + grid_edge * 0.5f) / grid_edge)) * grid_edge;
+                cellPos.X = ((int)((this.pos.X + grid_edge * 0.5) / grid_edge)) * grid_edge;
             else
-                cellPos.X = ((int)((this.pos.X - grid_edge * 0.5f) / grid_edge)) * grid_edge;
+                cellPos.X = ((int)((this.pos.X - grid_edge * 0.5) / grid_edge)) * grid_edge;
             if (pos.Y >= 0)
-                cellPos.Y = ((int)((this.pos.Y + grid_edge * 0.5f) / grid_edge)) * grid_edge;
+                cellPos.Y = ((int)((this.pos.Y + grid_edge * 0.5) / grid_edge)) * grid_edge;
             else
-                cellPos.Y = ((int)((this.pos.Y - grid_edge * 0.5f) / grid_edge)) * grid_edge;
+                cellPos.Y = ((int)((this.pos.Y - grid_edge * 0.5) / grid_edge)) * grid_edge;
             if (pos.Z >= 0)
-                cellPos.Z = ((int)((this.pos.Z + grid_edge * 0.5f) / grid_edge)) * grid_edge;
+                cellPos.Z = ((int)((this.pos.Z + grid_edge * 0.5) / grid_edge)) * grid_edge;
             else
-                cellPos.Z = ((int)((this.pos.Z - grid_edge * 0.5f) / grid_edge)) * grid_edge;
+                cellPos.Z = ((int)((this.pos.Z - grid_edge * 0.5) / grid_edge)) * grid_edge;
 
             //hCell
             cells.Add(new Parallelepiped(cellPos, grid_edge, -1));
@@ -346,7 +346,7 @@ namespace ParallelComputedCollisionDetection
             float ge = (float)Program.window.grid_edge;
             cellArray[index] = (((uint)((hcp.X + 10) / ge) << XSHIFT) |
                                 ((uint)((hcp.Y + 10) / ge) << YSHIFT) |
-                                ((uint)((hcp.Z + 10) / ge) << ZSHIFT)) + 1;
+                                ((uint)((hcp.Z + 10) / ge) << ZSHIFT)) + (uint)1;
         }
 
         bool checkForSphereBoxIntersection(Vector3 c1,  Vector3 c2, Vector3 sPos, float radius)
@@ -363,50 +363,51 @@ namespace ParallelComputedCollisionDetection
 
         public void checkCellType(float posX, float posY, float posZ, bool homeCell)
         {
-            double grid_edge = Program.window.grid_edge;
+            float grid_edge = Program.window.grid_edge;
             uint index;
-            posX += 10;
-            posY = -(posY - 10);
-            posZ = -(posZ - 10);
+            float pos_X = posX + 10f;
+            float pos_Y = -(posY - 10f);
+            float pos_Z = -(posZ - 10f);
+            float dge = grid_edge * 2f;
 
             //case 1
-            if (posX % (2 * grid_edge) <= grid_edge && posY % (2 * grid_edge) <= grid_edge && posZ % (2 * grid_edge) <= grid_edge)
+            if (pos_X % (dge) <= grid_edge && pos_Y % (dge) <= grid_edge && pos_Z % (dge) <= grid_edge)
             {
                 ctrl_bits |= ICType1;
                 index = 1;
             }
             //case 2
-            else if (posX % (2 * grid_edge) > grid_edge && posY % (2 * grid_edge) <= grid_edge && posZ % (2 * grid_edge) <= grid_edge)
+            else if (pos_X % (dge) > grid_edge && pos_Y % (dge) <= grid_edge && pos_Z % (dge) <= grid_edge)
             {
                 ctrl_bits |= ICType2;
                 index = 2;
             }
             //case 3
-            else if (posX % (2 * grid_edge) <= grid_edge && posY % (2 * grid_edge) > grid_edge && posZ % (2 * grid_edge) <= grid_edge)
+            else if (pos_X % (dge) <= grid_edge && pos_Y % (dge) > grid_edge && pos_Z % (dge) <= grid_edge)
             {
                 ctrl_bits |= ICType3;
                 index = 3;
             }
             //case 4
-            else if (posX % (2 * grid_edge) > grid_edge && posY % (2 * grid_edge) > grid_edge && posZ % (2 * grid_edge) <= grid_edge)
+            else if (pos_X % (dge) > grid_edge && pos_Y % (dge) > grid_edge && pos_Z % (dge) <= grid_edge)
             {
                 ctrl_bits |= ICType4;
                 index = 4;
             }
             //case 5
-            else if (posX % (2 * grid_edge) <= grid_edge && posY % (2 * grid_edge) <= grid_edge && posZ % (2 * grid_edge) > grid_edge)
+            else if (pos_X % (dge) <= grid_edge && pos_Y % (dge) <= grid_edge && pos_Z % (dge) > grid_edge)
             {
                 ctrl_bits |= ICType5;
                 index = 5;
             }
             //case 6
-            else if (posX % (2 * grid_edge) > grid_edge && posY % (2 * grid_edge) <= grid_edge && posZ % (2 * grid_edge) > grid_edge)
+            else if (pos_X % (dge) > grid_edge && pos_Y % (dge) <= grid_edge && pos_Z % (dge) > grid_edge)
             {
                 ctrl_bits |= ICType6;
                 index = 6;
             }
             //case 7
-            else if (posX % (2 * grid_edge) <= grid_edge && posY % (2 * grid_edge) > grid_edge && posZ % (2 * grid_edge) > grid_edge)
+            else if (pos_X % (dge) <= grid_edge && pos_Y % (dge) > grid_edge && pos_Z % (dge) > grid_edge)
             {
                 ctrl_bits |= ICType7;
                 index = 7;

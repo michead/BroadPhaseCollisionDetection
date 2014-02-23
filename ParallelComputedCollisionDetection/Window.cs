@@ -778,8 +778,8 @@ namespace ParallelComputedCollisionDetection
                                                         + "\n[6]\t" + s.cellArray[6].ToString() + "\t" + bd.cellIDs[6]
                                                         + "\n[7]\t" + s.cellArray[7].ToString() + "\t" + bd.cellIDs[7]
                                                         + "\n\n               CONTROL BITS\n"
-                                                        + "\n(int)\t" + s.ctrl_bits.ToString() + "\t" + bd.ctrl_bits.ToString();
-                                                        //+ "\n(bin)\t" + binValue2 + "\t" + binValue;
+                                                        + "\n(int)\t" + s.ctrl_bits.ToString() + "\t" + bd.ctrl_bits.ToString()
+                                                        + "\n(bin)\n\tOCL " + binValue2 + "\n\tCPU " + binValue;
                         #endregion
                     }
                 };
