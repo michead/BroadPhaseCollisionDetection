@@ -28,10 +28,26 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.fps_rtb = new ParallelComputedCollisionDetection.RichEdit50();
-            this.rtb2 = new ParallelComputedCollisionDetection.RichEdit50();
-            this.rtb = new ParallelComputedCollisionDetection.RichEdit50();
+            this.comp_rtb = new System.Windows.Forms.RichTextBox();
+            this.fps_rtb = new System.Windows.Forms.RichTextBox();
+            this.rtb2 = new System.Windows.Forms.RichTextBox();
+            this.rtb = new System.Windows.Forms.RichTextBox();
+            this.rtb_log = new System.Windows.Forms.RichTextBox();
             this.SuspendLayout();
+            // 
+            // comp_rtb
+            // 
+            this.comp_rtb.BackColor = System.Drawing.SystemColors.ActiveCaptionText;
+            this.comp_rtb.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.comp_rtb.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.comp_rtb.ForeColor = System.Drawing.SystemColors.Info;
+            this.comp_rtb.Location = new System.Drawing.Point(0, 3);
+            this.comp_rtb.Name = "comp_rtb";
+            this.comp_rtb.ReadOnly = true;
+            this.comp_rtb.Size = new System.Drawing.Size(309, 194);
+            this.comp_rtb.TabIndex = 3;
+            this.comp_rtb.TabStop = false;
+            this.comp_rtb.Text = "";
             // 
             // fps_rtb
             // 
@@ -75,12 +91,28 @@
             this.rtb.TabStop = false;
             this.rtb.Text = "";
             // 
+            // rtb_log
+            // 
+            this.rtb_log.BackColor = System.Drawing.SystemColors.InfoText;
+            this.rtb_log.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.rtb_log.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.rtb_log.ForeColor = System.Drawing.SystemColors.Info;
+            this.rtb_log.Location = new System.Drawing.Point(0, 101);
+            this.rtb_log.Name = "rtb_log";
+            this.rtb_log.ReadOnly = true;
+            this.rtb_log.Size = new System.Drawing.Size(100, 96);
+            this.rtb_log.TabIndex = 4;
+            this.rtb_log.TabStop = false;
+            this.rtb_log.Text = "";
+            // 
             // DebugBox
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.ActiveCaptionText;
             this.ClientSize = new System.Drawing.Size(312, 199);
+            this.Controls.Add(this.rtb_log);
+            this.Controls.Add(this.comp_rtb);
             this.Controls.Add(this.fps_rtb);
             this.Controls.Add(this.rtb2);
             this.Controls.Add(this.rtb);
@@ -98,8 +130,10 @@
 
         #endregion
 
-        private RichEdit50 rtb;
-        private RichEdit50 rtb2;
-        private RichEdit50 fps_rtb;
+        private System.Windows.Forms.RichTextBox rtb;
+        private System.Windows.Forms.RichTextBox rtb2;
+        private System.Windows.Forms.RichTextBox fps_rtb;
+        private System.Windows.Forms.RichTextBox comp_rtb;
+        private System.Windows.Forms.RichTextBox rtb_log;
     }
 }

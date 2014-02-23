@@ -28,10 +28,10 @@
     <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
+    <PlatformTarget>x86</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
-    <Optimize>true</Optimize>
+    <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
@@ -85,18 +85,10 @@
     <Compile Include="DebugBox.Designer.cs">
       <DependentUpon>DebugBox.cs</DependentUpon>
     </Compile>
-    <Compile Include="Octahedron.cs" />
-    <Compile Include="RichEdit50.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="Tetrahedron.cs" />
     <Compile Include="Parallelepiped.cs" />
-    <Compile Include="Dodecahedron.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Sphere.cs" />
-    <Compile Include="TextRenderer.cs" />
-    <Compile Include="Utils.cs" />
     <Compile Include="Window.cs" />
   </ItemGroup>
   <ItemGroup>

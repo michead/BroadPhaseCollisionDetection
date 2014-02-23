@@ -2,14 +2,20 @@
 #define YSHIFT 4
 #define ZSHIFT 8
 
+#define ICType1 1
+#define ICType2 2
+#define ICType3 4
+#define ICType4 8
+#define ICType5 16
+#define ICType6 32
+#define ICType7 64
+#define ICType8 128
+
 #define HASH_FUNCTION(x, y, z, k) \
-                    posx = x + 10;\
-                    posy = -(y - 10);\
-                    posz = -(z - 10);\
                     obj_array[i].cellIDs[k] = \
-                        (((uint)(posx / ge)) << XSHIFT) |  \
-                        (((uint)(posy / ge)) << YSHIFT) |  \
-                        (((uint)(posz / ge)) << ZSHIFT);
+                        (((uint)((x + 10) / ge)) << XSHIFT) |  \
+                        (((uint)((y + 10) / ge)) << YSHIFT) |  \
+                        (((uint)((z + 10) / ge)) << ZSHIFT) + 1;
                     
 #define MOD(x, y) \
             (x - (y * (int)(x/y)))
@@ -20,49 +26,49 @@
             posz = -(posZ - 10);\
             if (MOD(posx, dge) <= (ge) && MOD(posy, dge) <= (ge) && MOD(posz, dge) <= (ge))\
             {\
-                obj_array[i].ctrl_bits |= 1;\
+                obj_array[i].ctrl_bits |= ICType1;\
                 if(posX == cellPos[0] && posY == cellPos[1] && posZ == cellPos[2])\
                     obj_array[i].ctrl_bits |= (1 << 8);\
             }\
             else if (MOD(posx, dge) > (ge) && MOD(posy, dge) <= (ge) && MOD(posz, dge) <= (ge))\
             {\
-                obj_array[i].ctrl_bits |= 2;\
+                obj_array[i].ctrl_bits |= ICType2;\
                 if(posX == cellPos[0] && posY == cellPos[1] && posZ == cellPos[2])\
                     obj_array[i].ctrl_bits |= (2 << 8);\
             }\
             else if (MOD(posx, dge) <= (ge) && MOD(posy, dge) > (ge) && MOD(posz, dge) <= (ge))\
             {\
-                obj_array[i].ctrl_bits |= 4;\
+                obj_array[i].ctrl_bits |= ICType3;\
                 if(posX == cellPos[0] && posY == cellPos[1] && posZ == cellPos[2])\
                     obj_array[i].ctrl_bits |= (3 << 8);\
             }\
             else if (MOD(posx, dge) > (ge) && MOD(posy, dge) > (ge) && MOD(posz, dge) <= (ge))\
             {\
-                obj_array[i].ctrl_bits |= 8;\
+                obj_array[i].ctrl_bits |= ICType4;\
                 if(posX == cellPos[0] && posY == cellPos[1] && posZ == cellPos[2])\
                     obj_array[i].ctrl_bits |= (4 << 8);\
             }\
             else if (MOD(posx, dge) <= (ge) && MOD(posy, dge) <= (ge) && MOD(posz, dge) > (ge))\
             {\
-                obj_array[i].ctrl_bits |= 16;\
+                obj_array[i].ctrl_bits |= ICType5;\
                 if(posX == cellPos[0] && posY == cellPos[1] && posZ == cellPos[2])\
                     obj_array[i].ctrl_bits |= (5 << 8);\
             }\
             else if (MOD(posx, dge) > (ge) && MOD(posy, dge) <= (ge) && MOD(posz, dge) > (ge))\
             {\
-                obj_array[i].ctrl_bits |= 32;\
+                obj_array[i].ctrl_bits |= ICType6;\
                 if(posX == cellPos[0] && posY == cellPos[1] && posZ == cellPos[2])\
                     obj_array[i].ctrl_bits |= (6 << 8);\
             }\
             else if (MOD(posx, dge) <= (ge) && MOD(posy, dge) > (ge) && MOD(posz, dge) > (ge))\
             {\
-                obj_array[i].ctrl_bits |= 64;\
+                obj_array[i].ctrl_bits |= ICType7;\
                 if(posX == cellPos[0] && posY == cellPos[1] && posZ == cellPos[2])\
                     obj_array[i].ctrl_bits |= (7 << 8);\
             }\
             else\
             {\
-                obj_array[i].ctrl_bits |= 128;\
+                obj_array[i].ctrl_bits |= ICType8;\
                 if(posX == cellPos[0] && posY == cellPos[1] && posZ == cellPos[2])\
                     obj_array[i].ctrl_bits |= (8 << 8);\
             }
@@ -83,12 +89,12 @@
 typedef struct{
     uint ID;
     uint ctrl_bits;
-    uint cellIDs[8];
-    double radius;
+    float radius;
     float pos[3];
-}ObjectProperties;
+    uint cellIDs[8];
+}BodyData;
 
-__kernel void Arvo(__global ObjectProperties* obj_array, __global int* n, __global double* grid_edge){
+__kernel void Arvo(__global BodyData* obj_array, __global const int* n, __global const float* grid_edge){
             int i = get_global_id(0);
             if(i>=*n) return;
             
@@ -98,27 +104,29 @@ __kernel void Arvo(__global ObjectProperties* obj_array, __global int* n, __glob
             float posy;
             float posz;
             
-            float radius = (float)(obj_array[i].radius);
+            float radius = obj_array[i].radius;
             float dist_squared = radius * radius;
             
-            float ge = (float)(*grid_edge);
+            float ge = *grid_edge;
             float dge = 2 * ge;
             
+            //pos = (float3)(obj_array[i].pos[0], obj_array[i].pos[1], obj_array[i].pos[2]);
             pos[0] = obj_array[i].pos[0];
             pos[1] = obj_array[i].pos[1];
             pos[2] = obj_array[i].pos[2];
-            if(pos[0]>=0)
-                cellPos[0] = ((int)((pos[0] + (ge) * 0.5f) / (ge))) * (ge);
+            
+            if(pos[0]>=0.0)
+                cellPos[0] = ((int)((pos[0] + (ge) * 0.5) / (ge))) * (ge);
             else
-                cellPos[0] = ((int)((pos[0] - (ge) * 0.5f) / (ge))) * (ge);
-            if (pos[1] >= 0)
-                cellPos[1] = ((int)((pos[1] + (ge) * 0.5f) / (ge))) * (ge);
+                cellPos[0] = ((int)((pos[0] - (ge) * 0.5) / (ge))) * (ge);
+            if (pos[1] >= 0.0)
+                cellPos[1] = ((int)((pos[1] + (ge) * 0.5) / (ge))) * (ge);
             else
-                cellPos[1] = ((int)((pos[1] - (ge) * 0.5f) / (ge))) * (ge);
-            if (pos[2] >= 0)
-                cellPos[2] = ((int)((pos[2] + (ge) * 0.5f) / (ge))) * (ge);
+                cellPos[1] = ((int)((pos[1] - (ge) * 0.5) / (ge))) * (ge);
+            if (pos[2] >= 0.0)
+                cellPos[2] = ((int)((pos[2] + (ge) * 0.5) / (ge))) * (ge);
             else
-                cellPos[2] = ((int)((pos[2] - (ge) * 0.5f) / (ge))) * (ge);
+                cellPos[2] = ((int)((pos[2] - (ge) * 0.5) / (ge))) * (ge);
 
             //hCell
             obj_array[i].cellIDs[0] = HASH_FUNCTION(cellPos[0], cellPos[1], cellPos[2], 0);
@@ -131,9 +139,9 @@ __kernel void Arvo(__global ObjectProperties* obj_array, __global int* n, __glob
             
             //right
 			CHECK_FOR_SPHERE_BOX_INTERSECTION
-				(cellPos[0] + ge * 0.5f, cellPos[1] - ge * 0.5f, cellPos[2] - ge * 0.5f, 
-				cellPos[0] + ge * 1.5f, cellPos[1] + ge * 0.5f, cellPos[2] + ge * 0.5f);
-			if(res == 1){
+				(cellPos[0] + ge * 0.5, cellPos[1] - ge * 0.5, cellPos[2] - ge * 0.5, 
+				cellPos[0] + ge * 1.5, cellPos[1] + ge * 0.5, cellPos[2] + ge * 0.5);
+			if(res == 1 &&  j < 8){
 				obj_array[i].cellIDs[j] = HASH_FUNCTION(cellPos[0] + ge, cellPos[1], cellPos[2], j);
 				j++;
 				CELL_TYPE_CHECK(cellPos[0] + ge, cellPos[1], cellPos[2]);
@@ -141,9 +149,9 @@ __kernel void Arvo(__global ObjectProperties* obj_array, __global int* n, __glob
 
             //left
 			CHECK_FOR_SPHERE_BOX_INTERSECTION
-				(cellPos[0] - ge * 1.5f, cellPos[1] - ge * 0.5f, cellPos[2] - ge * 0.5f, 
-				cellPos[0] - ge * 0.5f, cellPos[1] + ge * 0.5f, cellPos[2] + ge * 0.5f);
-			if(res == 1){
+				(cellPos[0] - ge * 1.5, cellPos[1] - ge * 0.5, cellPos[2] - ge * 0.5, 
+				cellPos[0] - ge * 0.5, cellPos[1] + ge * 0.5, cellPos[2] + ge * 0.5);
+			if(res == 1 &&  j < 8){
 				obj_array[i].cellIDs[j] = HASH_FUNCTION(cellPos[0] - ge, cellPos[1], cellPos[2], j);
 				j++;
 				CELL_TYPE_CHECK(cellPos[0] - ge, cellPos[1], cellPos[2]);
@@ -151,9 +159,9 @@ __kernel void Arvo(__global ObjectProperties* obj_array, __global int* n, __glob
 
             //top
 			CHECK_FOR_SPHERE_BOX_INTERSECTION
-				(cellPos[0] - ge * 0.5f, cellPos[1] + ge * 0.5f, cellPos[2] - ge * 0.5f, 
-				cellPos[0] + ge * 0.5f, cellPos[1] + ge * 1.5f, cellPos[2] + ge * 0.5f);
-			if(res == 1){
+				(cellPos[0] - ge * 0.5, cellPos[1] + ge * 0.5, cellPos[2] - ge * 0.5, 
+				cellPos[0] + ge * 0.5, cellPos[1] + ge * 1.5, cellPos[2] + ge * 0.5);
+			if(res == 1 &&  j < 8){
 				obj_array[i].cellIDs[j] = HASH_FUNCTION(cellPos[0], cellPos[1] + ge, cellPos[2], j);
 				j++;
 				CELL_TYPE_CHECK(cellPos[0], cellPos[1] + ge, cellPos[2]);
@@ -161,9 +169,9 @@ __kernel void Arvo(__global ObjectProperties* obj_array, __global int* n, __glob
 
             //bottom
 			CHECK_FOR_SPHERE_BOX_INTERSECTION
-				(cellPos[0] - ge * 0.5f, cellPos[1] - ge * 1.5f, cellPos[2] - ge * 0.5f, 
-				cellPos[0] + ge * 0.5f, cellPos[1] - ge * 0.5f, cellPos[2] + ge * 0.5f);
-			if(res == 1){
+				(cellPos[0] - ge * 0.5, cellPos[1] - ge * 1.5, cellPos[2] - ge * 0.5, 
+				cellPos[0] + ge * 0.5, cellPos[1] - ge * 0.5, cellPos[2] + ge * 0.5);
+			if(res == 1 &&  j < 8){
 				obj_array[i].cellIDs[j] = HASH_FUNCTION(cellPos[0], cellPos[1] - ge, cellPos[2], j);
 				j++;
 				CELL_TYPE_CHECK(cellPos[0], cellPos[1] - ge, cellPos[2]);
@@ -171,9 +179,9 @@ __kernel void Arvo(__global ObjectProperties* obj_array, __global int* n, __glob
 
             //near
 			CHECK_FOR_SPHERE_BOX_INTERSECTION
-				(cellPos[0] - ge * 0.5f, cellPos[1] - ge * 0.5f, cellPos[2] + ge * 0.5f, 
-				cellPos[0] + ge * 0.5f, cellPos[1] + ge * 0.5f, cellPos[2] + ge * 0.5f);
-			if(res == 1){
+				(cellPos[0] - ge * 0.5, cellPos[1] - ge * 0.5, cellPos[2] + ge * 0.5, 
+				cellPos[0] + ge * 0.5, cellPos[1] + ge * 0.5, cellPos[2] + ge * 0.5);
+			if(res == 1 &&  j < 8){
 				obj_array[i].cellIDs[j] = HASH_FUNCTION(cellPos[0], cellPos[1], cellPos[2] + ge, j);
 				j++;
 				CELL_TYPE_CHECK(cellPos[0], cellPos[1], cellPos[2] + ge);
@@ -181,9 +189,9 @@ __kernel void Arvo(__global ObjectProperties* obj_array, __global int* n, __glob
 
             //far
 			CHECK_FOR_SPHERE_BOX_INTERSECTION
-				(cellPos[0] - ge * 0.5f, cellPos[1] - ge * 0.5f, cellPos[2] - ge * 1.5f, 
-				cellPos[0] + ge * 0.5f, cellPos[1] + ge * 0.5f, cellPos[2] - ge * 0.5f);
-			if(res == 1){
+				(cellPos[0] - ge * 0.5, cellPos[1] - ge * 0.5, cellPos[2] - ge * 1.5, 
+				cellPos[0] + ge * 0.5, cellPos[1] + ge * 0.5, cellPos[2] - ge * 0.5);
+			if(res == 1 &&  j < 8){
 				obj_array[i].cellIDs[j] = HASH_FUNCTION(cellPos[0], cellPos[1], cellPos[2] - ge, j);
 				j++;
 				CELL_TYPE_CHECK(cellPos[0], cellPos[1], cellPos[2] - ge);
@@ -191,9 +199,9 @@ __kernel void Arvo(__global ObjectProperties* obj_array, __global int* n, __glob
 
             //bottom_left
             CHECK_FOR_SPHERE_BOX_INTERSECTION
-				(cellPos[0] - ge * 1.5f, cellPos[1] - ge * 1.5f, cellPos[2] - ge * 0.5f, 
-				cellPos[0] - ge * 0.5f, cellPos[1] - ge * 0.5f, cellPos[2] + ge * 0.5f);
-			if(res == 1){
+				(cellPos[0] - ge * 1.5, cellPos[1] - ge * 1.5, cellPos[2] - ge * 0.5, 
+				cellPos[0] - ge * 0.5, cellPos[1] - ge * 0.5, cellPos[2] + ge * 0.5);
+			if(res == 1 &&  j < 8){
 				obj_array[i].cellIDs[j] = HASH_FUNCTION(cellPos[0] - ge, cellPos[1] - ge, cellPos[2], j);
 				j++;
 				CELL_TYPE_CHECK(cellPos[0] - ge, cellPos[1] - ge, cellPos[2]);
@@ -201,9 +209,9 @@ __kernel void Arvo(__global ObjectProperties* obj_array, __global int* n, __glob
 			
             //bottom_left_near
 			CHECK_FOR_SPHERE_BOX_INTERSECTION
-				(cellPos[0] - ge * 1.5f, cellPos[1] - ge * 1.5f, cellPos[2] + ge * 0.5f, 
-				cellPos[0] - ge * 0.5f, cellPos[1] - ge * 0.5f, cellPos[2] + ge * 1.5f);
-			if(res == 1){
+				(cellPos[0] - ge * 1.5, cellPos[1] - ge * 1.5, cellPos[2] + ge * 0.5, 
+				cellPos[0] - ge * 0.5, cellPos[1] - ge * 0.5, cellPos[2] + ge * 1.5);
+			if(res == 1 &&  j < 8){
 				obj_array[i].cellIDs[j] = HASH_FUNCTION(cellPos[0] - ge, cellPos[1] - ge, cellPos[2] + ge, j);
 				j++;
 				CELL_TYPE_CHECK(cellPos[0] - ge, cellPos[1] - ge, cellPos[2] + ge);
@@ -211,9 +219,9 @@ __kernel void Arvo(__global ObjectProperties* obj_array, __global int* n, __glob
 
             //bottom_left_far
 			CHECK_FOR_SPHERE_BOX_INTERSECTION
-				(cellPos[0] - ge * 1.5f, cellPos[1] - ge * 1.5f, cellPos[2] - ge * 1.5f, 
-				cellPos[0] - ge * 0.5f, cellPos[1] - ge * 0.5f, cellPos[2] - ge * 0.5f);
-			if(res == 1){
+				(cellPos[0] - ge * 1.5, cellPos[1] - ge * 1.5, cellPos[2] - ge * 1.5, 
+				cellPos[0] - ge * 0.5, cellPos[1] - ge * 0.5, cellPos[2] - ge * 0.5);
+			if(res == 1 &&  j < 8){
 				obj_array[i].cellIDs[j] = HASH_FUNCTION(cellPos[0] - ge, cellPos[1] - ge, cellPos[2] - ge, j);
 				j++;
 				CELL_TYPE_CHECK(cellPos[0] - ge, cellPos[1] - ge, cellPos[2] - ge);
@@ -221,9 +229,9 @@ __kernel void Arvo(__global ObjectProperties* obj_array, __global int* n, __glob
 
             //bottom_right
 			CHECK_FOR_SPHERE_BOX_INTERSECTION
-				(cellPos[0] + ge * 0.5f, cellPos[1] - ge * 1.5f, cellPos[2] - ge * 0.5f, 
-				cellPos[0] + ge * 1.5f, cellPos[1] - ge * 0.5f, cellPos[2] + ge * 0.5f);
-			if(res == 1){
+				(cellPos[0] + ge * 0.5, cellPos[1] - ge * 1.5, cellPos[2] - ge * 0.5, 
+				cellPos[0] + ge * 1.5, cellPos[1] - ge * 0.5, cellPos[2] + ge * 0.5);
+			if(res == 1 &&  j < 8){
 				obj_array[i].cellIDs[j] = HASH_FUNCTION(cellPos[0] + ge, cellPos[1] - ge, cellPos[2], j);
 				j++;
 				CELL_TYPE_CHECK(cellPos[0] + ge, cellPos[1] - ge, cellPos[2]);
@@ -231,9 +239,9 @@ __kernel void Arvo(__global ObjectProperties* obj_array, __global int* n, __glob
 
             //bottom_right_near
 			CHECK_FOR_SPHERE_BOX_INTERSECTION
-				(cellPos[0] + ge * 0.5f, cellPos[1] - ge * 1.5f, cellPos[2] + ge * 0.5f, 
-				cellPos[0] + ge * 1.5f, cellPos[1] - ge * 0.5f, cellPos[2] + ge * 1.5f);
-			if(res == 1){
+				(cellPos[0] + ge * 0.5, cellPos[1] - ge * 1.5, cellPos[2] + ge * 0.5, 
+				cellPos[0] + ge * 1.5, cellPos[1] - ge * 0.5, cellPos[2] + ge * 1.5);
+			if(res == 1 &&  j < 8){
 				obj_array[i].cellIDs[j] = HASH_FUNCTION(cellPos[0] + ge, cellPos[1] - ge, cellPos[2] + ge, j);
 				j++;
 				CELL_TYPE_CHECK(cellPos[0] + ge, cellPos[1] - ge, cellPos[2] + ge);
@@ -241,9 +249,9 @@ __kernel void Arvo(__global ObjectProperties* obj_array, __global int* n, __glob
 
             //bottom_right_far
 			CHECK_FOR_SPHERE_BOX_INTERSECTION
-				(cellPos[0] + ge * 0.5f, cellPos[1] - ge * 1.5f, cellPos[2] - ge * 1.5f, 
-				cellPos[0] + ge * 1.5f, cellPos[1] - ge * 0.5f, cellPos[2] - ge * 0.5f);
-			if(res == 1){
+				(cellPos[0] + ge * 0.5, cellPos[1] - ge * 1.5, cellPos[2] - ge * 1.5, 
+				cellPos[0] + ge * 1.5, cellPos[1] - ge * 0.5, cellPos[2] - ge * 0.5);
+			if(res == 1 &&  j < 8){
 				obj_array[i].cellIDs[j] = HASH_FUNCTION(cellPos[0] + ge, cellPos[1] - ge, cellPos[2] - ge, j);
 				j++;
 				CELL_TYPE_CHECK(cellPos[0] + ge, cellPos[1] - ge, cellPos[2] - ge);
@@ -251,9 +259,9 @@ __kernel void Arvo(__global ObjectProperties* obj_array, __global int* n, __glob
 
             //top_left
 			CHECK_FOR_SPHERE_BOX_INTERSECTION
-				(cellPos[0] - ge * 1.5f, cellPos[1] + ge * 0.5f, cellPos[2] - ge * 0.5f, 
-				cellPos[0] - ge * 0.5f, cellPos[1] + ge * 1.5f, cellPos[2] + ge * 0.5f);
-			if(res == 1){
+				(cellPos[0] - ge * 1.5, cellPos[1] + ge * 0.5, cellPos[2] - ge * 0.5, 
+				cellPos[0] - ge * 0.5, cellPos[1] + ge * 1.5, cellPos[2] + ge * 0.5);
+			if(res == 1 &&  j < 8){
 				obj_array[i].cellIDs[j] = HASH_FUNCTION(cellPos[0] - ge, cellPos[1] + ge, cellPos[2], j);
 				j++;
 				CELL_TYPE_CHECK(cellPos[0] - ge, cellPos[1] + ge, cellPos[2]);
@@ -261,9 +269,9 @@ __kernel void Arvo(__global ObjectProperties* obj_array, __global int* n, __glob
 
             //top_left_near
 			CHECK_FOR_SPHERE_BOX_INTERSECTION
-				(cellPos[0] - ge * 1.5f, cellPos[1] + ge * 0.5f, cellPos[2] + ge * 0.5f, 
-				cellPos[0] - ge * 0.5f, cellPos[1] + ge * 1.5f, cellPos[2] + ge * 1.5f);
-			if(res == 1){
+				(cellPos[0] - ge * 1.5, cellPos[1] + ge * 0.5, cellPos[2] + ge * 0.5, 
+				cellPos[0] - ge * 0.5, cellPos[1] + ge * 1.5, cellPos[2] + ge * 1.5);
+			if(res == 1 &&  j < 8){
 				obj_array[i].cellIDs[j] = HASH_FUNCTION(cellPos[0] - ge, cellPos[1] + ge, cellPos[2] + ge, j);
 				j++;
 				CELL_TYPE_CHECK(cellPos[0] - ge, cellPos[1] + ge, cellPos[2] + ge);
@@ -271,9 +279,9 @@ __kernel void Arvo(__global ObjectProperties* obj_array, __global int* n, __glob
 
             //top_left_far
 			CHECK_FOR_SPHERE_BOX_INTERSECTION
-				(cellPos[0] - ge * 1.5f, cellPos[1] + ge * 0.5f, cellPos[2] - ge * 1.5f, 
-				cellPos[0] - ge * 0.5f, cellPos[1] + ge * 1.5f, cellPos[2] - ge * 0.5f);
-			if(res == 1){
+				(cellPos[0] - ge * 1.5, cellPos[1] + ge * 0.5, cellPos[2] - ge * 1.5, 
+				cellPos[0] - ge * 0.5, cellPos[1] + ge * 1.5, cellPos[2] - ge * 0.5);
+			if(res == 1 &&  j < 8){
 				obj_array[i].cellIDs[j] = HASH_FUNCTION(cellPos[0] - ge, cellPos[1] + ge, cellPos[2] - ge, j);
 				j++;
 				CELL_TYPE_CHECK(cellPos[0] - ge, cellPos[1] + ge, cellPos[2] - ge);
@@ -281,9 +289,9 @@ __kernel void Arvo(__global ObjectProperties* obj_array, __global int* n, __glob
 
             //top_right
 			CHECK_FOR_SPHERE_BOX_INTERSECTION
-				(cellPos[0] + ge * 0.5f, cellPos[1] + ge * 0.5f, cellPos[2] - ge * 0.5f, 
-				cellPos[0] + ge * 1.5f, cellPos[1] + ge * 1.5f, cellPos[2] + ge * 0.5f);
-			if(res == 1){
+				(cellPos[0] + ge * 0.5, cellPos[1] + ge * 0.5, cellPos[2] - ge * 0.5, 
+				cellPos[0] + ge * 1.5, cellPos[1] + ge * 1.5, cellPos[2] + ge * 0.5);
+			if(res == 1 &&  j < 8){
 				obj_array[i].cellIDs[j] = HASH_FUNCTION(cellPos[0] + ge, cellPos[1] + ge, cellPos[2], j);
 				j++;
 				CELL_TYPE_CHECK(cellPos[0] + ge, cellPos[1] + ge, cellPos[2]);
@@ -291,9 +299,9 @@ __kernel void Arvo(__global ObjectProperties* obj_array, __global int* n, __glob
 
             //top_right_near
 			CHECK_FOR_SPHERE_BOX_INTERSECTION
-				(cellPos[0] + ge * 0.5f, cellPos[1] + ge * 0.5f, cellPos[2] + ge * 0.5f, 
-				cellPos[0] + ge * 1.5f, cellPos[1] + ge * 1.5f, cellPos[2] + ge * 1.5f);
-			if(res == 1){
+				(cellPos[0] + ge * 0.5, cellPos[1] + ge * 0.5, cellPos[2] + ge * 0.5, 
+				cellPos[0] + ge * 1.5, cellPos[1] + ge * 1.5, cellPos[2] + ge * 1.5);
+			if(res == 1 &&  j < 8){
 				obj_array[i].cellIDs[j] = HASH_FUNCTION(cellPos[0] + ge, cellPos[1] + ge, cellPos[2] + ge, j);
 				j++;
 				CELL_TYPE_CHECK(cellPos[0] + ge, cellPos[1] + ge, cellPos[2] + ge);
@@ -301,9 +309,9 @@ __kernel void Arvo(__global ObjectProperties* obj_array, __global int* n, __glob
 
             //top_right_far
 			CHECK_FOR_SPHERE_BOX_INTERSECTION
-				(cellPos[0] + ge * 0.5f, cellPos[1] + ge * 0.5f, cellPos[2] - ge * 1.5f, 
-				cellPos[0] + ge * 1.5f, cellPos[1] + ge * 1.5f, cellPos[2] - ge * 0.5f);
-			if(res == 1){
+				(cellPos[0] + ge * 0.5, cellPos[1] + ge * 0.5, cellPos[2] - ge * 1.5, 
+				cellPos[0] + ge * 1.5, cellPos[1] + ge * 1.5, cellPos[2] - ge * 0.5);
+			if(res == 1 &&  j < 8){
 				obj_array[i].cellIDs[j] = HASH_FUNCTION(cellPos[0] + ge, cellPos[1] + ge, cellPos[2] - ge, j);
 				j++;
 				CELL_TYPE_CHECK(cellPos[0] + ge, cellPos[1] + ge, cellPos[2] - ge);
@@ -311,9 +319,9 @@ __kernel void Arvo(__global ObjectProperties* obj_array, __global int* n, __glob
 
             //top_near
 			CHECK_FOR_SPHERE_BOX_INTERSECTION
-				(cellPos[0] - ge * 0.5f, cellPos[1] + ge * 0.5f, cellPos[2] + ge * 0.5f, 
-				cellPos[0] + ge * 0.5f, cellPos[1] + ge * 1.5f, cellPos[2] + ge * 1.5f);
-			if(res == 1){
+				(cellPos[0] - ge * 0.5, cellPos[1] + ge * 0.5, cellPos[2] + ge * 0.5, 
+				cellPos[0] + ge * 0.5, cellPos[1] + ge * 1.5, cellPos[2] + ge * 1.5);
+			if(res == 1 &&  j < 8){
 				obj_array[i].cellIDs[j] = HASH_FUNCTION(cellPos[0], cellPos[1] + ge, cellPos[2] + ge, j);
 				j++;
 				CELL_TYPE_CHECK(cellPos[0], cellPos[1] + ge, cellPos[2] + ge);
@@ -321,9 +329,9 @@ __kernel void Arvo(__global ObjectProperties* obj_array, __global int* n, __glob
 
             //bottom_near
 			CHECK_FOR_SPHERE_BOX_INTERSECTION
-				(cellPos[0] - ge * 0.5f, cellPos[1] - ge * 1.5f, cellPos[2] + ge * 0.5f, 
-				cellPos[0] + ge * 0.5f, cellPos[1] - ge * 0.5f, cellPos[2] + ge * 1.5f);
-			if(res == 1){
+				(cellPos[0] - ge * 0.5, cellPos[1] - ge * 1.5, cellPos[2] + ge * 0.5, 
+				cellPos[0] + ge * 0.5, cellPos[1] - ge * 0.5, cellPos[2] + ge * 1.5);
+			if(res == 1 &&  j < 8){
 				obj_array[i].cellIDs[j] = HASH_FUNCTION(cellPos[0], cellPos[1] - ge, cellPos[2] + ge, j);
 				j++;
 				CELL_TYPE_CHECK(cellPos[0], cellPos[1] - ge, cellPos[2] + ge);
@@ -331,9 +339,9 @@ __kernel void Arvo(__global ObjectProperties* obj_array, __global int* n, __glob
 
             //top_far
 			CHECK_FOR_SPHERE_BOX_INTERSECTION
-				(cellPos[0] - ge * 0.5f, cellPos[1] + ge * 0.5f, cellPos[2] - ge * 1.5f, 
-				cellPos[0] + ge * 0.5f, cellPos[1] + ge * 1.5f, cellPos[2] - ge * 0.5f);
-			if(res == 1){
+				(cellPos[0] - ge * 0.5, cellPos[1] + ge * 0.5, cellPos[2] - ge * 1.5, 
+				cellPos[0] + ge * 0.5, cellPos[1] + ge * 1.5, cellPos[2] - ge * 0.5);
+			if(res == 1 &&  j < 8){
 				obj_array[i].cellIDs[j] = HASH_FUNCTION(cellPos[0], cellPos[1] + ge, cellPos[2] - ge, j);
 				j++;
 				CELL_TYPE_CHECK(cellPos[0], cellPos[1] + ge, cellPos[2] - ge);
@@ -341,9 +349,9 @@ __kernel void Arvo(__global ObjectProperties* obj_array, __global int* n, __glob
 
             //bottom_far
 			CHECK_FOR_SPHERE_BOX_INTERSECTION
-				(cellPos[0] - ge * 0.5f, cellPos[1] - ge * 1.5f, cellPos[2] - ge * 1.5f, 
-				cellPos[0] + ge * 0.5f, cellPos[1] - ge * 0.5f, cellPos[2] - ge * 0.5f);
-			if(res == 1){
+				(cellPos[0] - ge * 0.5, cellPos[1] - ge * 1.5, cellPos[2] - ge * 1.5, 
+				cellPos[0] + ge * 0.5, cellPos[1] - ge * 0.5, cellPos[2] - ge * 0.5);
+			if(res == 1 &&  j < 8){
 				obj_array[i].cellIDs[j] = HASH_FUNCTION(cellPos[0], cellPos[1] - ge, cellPos[2] - ge, j);
 				j++;
 				CELL_TYPE_CHECK(cellPos[0], cellPos[1] - ge, cellPos[2] - ge);
@@ -351,9 +359,9 @@ __kernel void Arvo(__global ObjectProperties* obj_array, __global int* n, __glob
 
             //left_far
 			CHECK_FOR_SPHERE_BOX_INTERSECTION
-				(cellPos[0] - ge * 1.5f, cellPos[1] - ge * 0.5f, cellPos[2] - ge * 1.5f, 
-				cellPos[0] - ge * 0.5f, cellPos[1] + ge * 0.5f, cellPos[2] - ge * 0.5f);
-			if(res == 1){
+				(cellPos[0] - ge * 1.5, cellPos[1] - ge * 0.5, cellPos[2] - ge * 1.5, 
+				cellPos[0] - ge * 0.5, cellPos[1] + ge * 0.5, cellPos[2] - ge * 0.5);
+			if(res == 1 &&  j < 8){
 				obj_array[i].cellIDs[j] = HASH_FUNCTION(cellPos[0] - ge, cellPos[1], cellPos[2] - ge, j);
 				j++;
 				CELL_TYPE_CHECK(cellPos[0] - ge, cellPos[1], cellPos[2] - ge);
@@ -361,9 +369,9 @@ __kernel void Arvo(__global ObjectProperties* obj_array, __global int* n, __glob
 
             //right_far
 			CHECK_FOR_SPHERE_BOX_INTERSECTION
-				(cellPos[0] + ge * 0.5f, cellPos[1] - ge * 0.5f, cellPos[2] - ge * 1.5f, 
-				cellPos[0] + ge * 1.5f, cellPos[1] + ge * 0.5f, cellPos[2] - ge * 0.5f);
-			if(res == 1){
+				(cellPos[0] + ge * 0.5, cellPos[1] - ge * 0.5, cellPos[2] - ge * 1.5, 
+				cellPos[0] + ge * 1.5, cellPos[1] + ge * 0.5, cellPos[2] - ge * 0.5);
+			if(res == 1 &&  j < 8){
 				obj_array[i].cellIDs[j] = HASH_FUNCTION(cellPos[0] + ge, cellPos[1], cellPos[2] - ge, j);
 				j++;
 				CELL_TYPE_CHECK(cellPos[0] + ge, cellPos[1], cellPos[2] - ge);
@@ -371,9 +379,9 @@ __kernel void Arvo(__global ObjectProperties* obj_array, __global int* n, __glob
 
             //left_near
 			CHECK_FOR_SPHERE_BOX_INTERSECTION
-				(cellPos[0] - ge * 1.5f, cellPos[1] - ge * 0.5f, cellPos[2] + ge * 0.5f, 
-				cellPos[0] - ge * 0.5f, cellPos[1] + ge * 0.5f, cellPos[2] + ge * 1.5f);
-			if(res == 1){
+				(cellPos[0] - ge * 1.5, cellPos[1] - ge * 0.5, cellPos[2] + ge * 0.5, 
+				cellPos[0] - ge * 0.5, cellPos[1] + ge * 0.5, cellPos[2] + ge * 1.5);
+			if(res == 1 &&  j < 8){
 				obj_array[i].cellIDs[j] = HASH_FUNCTION(cellPos[0] - ge, cellPos[1], cellPos[2] + ge, j);
 				j++;
 				CELL_TYPE_CHECK(cellPos[0] - ge, cellPos[1], cellPos[2] + ge);
@@ -381,11 +389,11 @@ __kernel void Arvo(__global ObjectProperties* obj_array, __global int* n, __glob
             
             //right_near
             CHECK_FOR_SPHERE_BOX_INTERSECTION
-				(cellPos[0] + ge * 0.5f, cellPos[1] - ge * 0.5f, cellPos[2] + ge * 0.5f, 
-				cellPos[0] - ge * 0.5f, cellPos[1] + ge * 0.5f, cellPos[2] + ge * 1.5f);
-			if(res == 1){
+				(cellPos[0] + ge * 0.5, cellPos[1] - ge * 0.5, cellPos[2] + ge * 0.5, 
+				cellPos[0] - ge * 0.5, cellPos[1] + ge * 0.5, cellPos[2] + ge * 1.5);
+			if(res == 1 &&  j < 8){
 				obj_array[i].cellIDs[j] = HASH_FUNCTION(cellPos[0] + ge, cellPos[1], cellPos[2] + ge, j);
 				j++;
 				CELL_TYPE_CHECK(cellPos[0] + ge, cellPos[1], cellPos[2] + ge);
-			}    
+			}
 }

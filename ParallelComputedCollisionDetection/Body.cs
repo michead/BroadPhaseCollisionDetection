@@ -9,7 +9,7 @@ namespace ParallelComputedCollisionDetection
 {
     public interface Body
     {
-        double getRadius();
+        float getRadius();
         Vector3 getPos();
 
         void setPos(Vector3 pos);

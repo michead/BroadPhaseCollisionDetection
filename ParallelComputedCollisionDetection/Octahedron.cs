@@ -22,17 +22,17 @@ namespace ParallelComputedCollisionDetection
         double[][] vertices = new double[6][];
         int sphere_precision = 25;
         double Pi = Math.PI;
-        double radius;
+        float radius;
         double phiaa;
         double phia;
         double the90;
         double the;
         Sphere bsphere;
 
-        public Octahedron(Vector3 pos, double radius)
+        public Octahedron(Vector3 pos, float radius)
         {
             phiaa = 0.0;
-            radius = 1.0;
+            radius = 1.0f;
             phia = Pi * phiaa / 180.0;
             the90 = Pi * 90.0 / 180;
 

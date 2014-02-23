@@ -21,7 +21,7 @@ namespace ParallelComputedCollisionDetection
         double[][] vertices = new double [4][];
         double Pi = Math.PI;
         double phiaa = -19.471220333;
-        double radius;
+        float radius;
         double phia;
         double the120;
         double the;
@@ -30,7 +30,7 @@ namespace ParallelComputedCollisionDetection
         double edge;
         int sphere_precision = 25;
 
-        public Tetrahedron(Vector3 pos, double radius)
+        public Tetrahedron(Vector3 pos, float radius)
         {
             this.radius = radius;
             phia = Pi * phiaa / 180.0;

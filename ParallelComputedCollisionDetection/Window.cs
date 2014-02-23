@@ -15,6 +15,7 @@ using System.ComponentModel;
 using System.Data;
 using OpenTK.Platform;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 #region Assembly Collisions
 using TK = OpenTK.Graphics.OpenGL;
@@ -37,8 +38,8 @@ namespace ParallelComputedCollisionDetection
         //public int sphere_precision = 20;
         float coord_transf;
         float wp_scale_factor = 3;
-        public double grid_edge = 3;
-        public int number_of_bodies = 12;
+        public float grid_edge = 3;
+        public int number_of_bodies = 8;
         int tiles;
         KeyboardState old_key;
         bool xRot;
@@ -181,6 +182,17 @@ namespace ParallelComputedCollisionDetection
                 float deltaY = Cursor.Position.Y - oldY;
                 moveBody(deltaX, deltaY);
             }
+            else if (mouse.IsButtonDown(MouseButton.Middle) && !old_mouse.IsButtonDown(MouseButton.Middle) && picked >= 0)
+            {
+                MethodInvoker mi = delegate
+                {
+                    Program.db.getComp_RTB().Text = "loading...";
+                    Program.db.getRTB().Text = "";
+                };
+                Program.db.getRTB().BeginInvoke(mi);
+                CollisionDetection.CollisionDetectionSetUp();
+                showInfo();
+            }
 
             if (mouse.IsButtonDown(MouseButton.Right))
             {
@@ -211,7 +223,16 @@ namespace ParallelComputedCollisionDetection
         void checkKeyboardInput()
         {
             if (Keyboard[Key.R] && !old_key.IsKeyDown(Key.R))
+            {
+                MethodInvoker mi = delegate
+                {
+                    Program.db.getComp_RTB().Text = "loading...";
+                    Program.db.getRTB().Text = "";
+                };
                 generateRandomBodies(number_of_bodies, true);
+                CollisionDetection.CollisionDetectionSetUp();
+                showInfo();
+            }
             if (Keyboard[Key.Left])
                 offsetX -= rotation_speed;
             if (Keyboard[Key.Right])
@@ -378,242 +399,6 @@ namespace ParallelComputedCollisionDetection
             showFPS();
             //showInfo();
         }
-
-        /*
-        void DrawGrid3x3()
-        {
-            GL.Begin(TK.PrimitiveType.LineLoop);
-            {
-                GL.Color3(1.0, 1.0, 1.0);
-
-                GL.Vertex3(-3.0, 3.0, 3.0);
-                GL.Vertex3(3.0, 3.0, 3.0);
-                GL.Vertex3(3.0, -3.0, 3.0);
-                GL.Vertex3(-3.0, -3.0, 3.0);
-            }
-            GL.End();
-
-            GL.Begin(PrimitiveType.LineLoop);
-            {
-                GL.Color3(1.0, 1.0, 1.0);
-
-                GL.Vertex3(-3.0, 3.0, 1.0);
-                GL.Vertex3(3.0, 3.0, 1.0);
-                GL.Vertex3(3.0, -3.0, 1.0);
-                GL.Vertex3(-3.0, -3.0, 1.0);
-            }
-            GL.End();
-
-            GL.Begin(PrimitiveType.LineLoop);
-            {
-                GL.Color3(1.0, 1.0, 1.0);
-
-                GL.Vertex3(-3.0, 3.0, -1.0);
-                GL.Vertex3(3.0, 3.0, -1.0);
-                GL.Vertex3(3.0, -3.0, -1.0);
-                GL.Vertex3(-3.0, -3.0, -1.0);
-            }
-            GL.End();
-
-            GL.Begin(PrimitiveType.LineLoop);
-            {
-                GL.Color3(1.0, 1.0, 1.0);
-
-                GL.Vertex3(-3.0, 3.0, -3.0);
-                GL.Vertex3(3.0, 3.0, -3.0);
-                GL.Vertex3(3.0, -3.0, -3.0);
-                GL.Vertex3(-3.0, -3.0, -3.0);
-            }
-            GL.End();
-
-            GL.Begin(PrimitiveType.Lines);
-            {
-                GL.Color3(1.0, 1.0, 1.0);
-
-                GL.Vertex3(-3.0, 3.0, 3.0);
-                GL.Vertex3(-3.0, 3.0, -3.0);
-            }
-            GL.End();
-
-            GL.Begin(PrimitiveType.Lines);
-            {
-                GL.Color3(1.0, 1.0, 1.0);
-
-                GL.Vertex3(3.0, 3.0, 3.0);
-                GL.Vertex3(3.0, 3.0, -3.0);
-            }
-            GL.End();
-
-            GL.Begin(PrimitiveType.Lines);
-            {
-                GL.Color3(1.0, 1.0, 1.0);
-
-                GL.Vertex3(3.0, -3.0, 3.0);
-                GL.Vertex3(3.0, -3.0, -3.0);
-            }
-            GL.End();
-
-            GL.Begin(PrimitiveType.Lines);
-            {
-                GL.Color3(1.0, 1.0, 1.0);
-
-                GL.Vertex3(-3.0, -3.0, 3.0);
-                GL.Vertex3(-3.0, -3.0, -3.0);
-            }
-            GL.End();
-
-            GL.Begin(PrimitiveType.LineLoop);
-            {
-                GL.Color3(1.0, 1.0, 1.0);
-
-                GL.Vertex3(-1.0, 3.0, 3.0);
-                GL.Vertex3(-1.0, 3.0, -3.0);
-                GL.Vertex3(-1.0, -3.0, -3.0);
-                GL.Vertex3(-1.0, -3.0, 3.0);
-            }
-            GL.End();
-
-            GL.Begin(PrimitiveType.LineLoop);
-            {
-                GL.Color3(1.0, 1.0, 1.0);
-
-                GL.Vertex3(1.0, 3.0, 3.0);
-                GL.Vertex3(1.0, 3.0, -3.0);
-                GL.Vertex3(1.0, -3.0, -3.0);
-                GL.Vertex3(1.0, -3.0, 3.0);
-            }
-            GL.End();
-
-            GL.Begin(PrimitiveType.LineLoop);
-            {
-                GL.Color3(1.0, 1.0, 1.0);
-
-                GL.Vertex3(3.0, 1.0, 3.0);
-                GL.Vertex3(3.0, 1.0, -3.0);
-                GL.Vertex3(-3.0, 1.0, -3.0);
-                GL.Vertex3(-3.0, 1.0, 3.0);
-            }
-            GL.End();
-
-            GL.Begin(PrimitiveType.LineLoop);
-            {
-                GL.Color3(1.0, 1.0, 1.0);
-
-                GL.Vertex3(3.0, -1.0, 3.0);
-                GL.Vertex3(3.0, -1.0, -3.0);
-                GL.Vertex3(-3.0, -1.0, -3.0);
-                GL.Vertex3(-3.0, -1.0, 3.0);
-            }
-            GL.End();
-
-            GL.Begin(PrimitiveType.Lines);
-            {
-                GL.Color3(1.0, 1.0, 1.0);
-
-                GL.Vertex3(-1.0, 1.0, 3.0);
-                GL.Vertex3(-1.0, 1.0, -3.0);
-            }
-            GL.End();
-
-            GL.Begin(PrimitiveType.Lines);
-            {
-                GL.Color3(1.0, 1.0, 1.0);
-
-                GL.Vertex3(1.0, 1.0, 3.0);
-                GL.Vertex3(1.0, 1.0, -3.0);
-            }
-            GL.End();
-
-            GL.Begin(PrimitiveType.Lines);
-            {
-                GL.Color3(1.0, 1.0, 1.0);
-
-                GL.Vertex3(-1.0, -1.0, 3.0);
-                GL.Vertex3(-1.0, -1.0, -3.0);
-            }
-            GL.End();
-
-            GL.Begin(PrimitiveType.Lines);
-            {
-                GL.Color3(1.0, 1.0, 1.0);
-
-                GL.Vertex3(1.0, -1.0, 3.0);
-                GL.Vertex3(1.0, -1.0, -3.0);
-            }
-            GL.End();
-
-            GL.Begin(PrimitiveType.Lines);
-            {
-                GL.Color3(1.0, 1.0, 1.0);
-
-                GL.Vertex3(-3.0, 1.0, 1.0);
-                GL.Vertex3(3.0, 1.0, 1.0);
-            }
-            GL.End();
-
-            GL.Begin(PrimitiveType.Lines);
-            {
-                GL.Color3(1.0, 1.0, 1.0);
-
-                GL.Vertex3(-3.0, 1.0, -1.0);
-                GL.Vertex3(3.0, 1.0, -1.0);
-            }
-            GL.End();
-
-            GL.Begin(PrimitiveType.Lines);
-            {
-                GL.Color3(1.0, 1.0, 1.0);
-
-                GL.Vertex3(-3.0, -1.0, 1.0);
-                GL.Vertex3(3.0, -1.0, 1.0);
-            }
-            GL.End();
-
-            GL.Begin(PrimitiveType.Lines);
-            {
-                GL.Color3(1.0, 1.0, 1.0);
-
-                GL.Vertex3(-3.0, -1.0, -1.0);
-                GL.Vertex3(3.0, -1.0, -1.0);
-            }
-            GL.End();
-
-            GL.Begin(PrimitiveType.Lines);
-            {
-                GL.Color3(1.0, 1.0, 1.0);
-
-                GL.Vertex3(-1.0, 3.0, 1.0);
-                GL.Vertex3(-1.0, -3.0, 1.0);
-            }
-            GL.End();
-
-            GL.Begin(PrimitiveType.Lines);
-            {
-                GL.Color3(1.0, 1.0, 1.0);
-
-                GL.Vertex3(1.0, 3.0, 1.0);
-                GL.Vertex3(1.0, -3.0, 1.0);
-            }
-            GL.End();
-
-            GL.Begin(PrimitiveType.Lines);
-            {
-                GL.Color3(1.0, 1.0, 1.0);
-
-                GL.Vertex3(-1.0, 3.0, -1.0);
-                GL.Vertex3(-1.0, -3.0, -1.0);
-            }
-            GL.End();
-
-            GL.Begin(PrimitiveType.Lines);
-            {
-                GL.Color3(1.0, 1.0, 1.0);
-
-                GL.Vertex3(1.0, 3.0, -1.0);
-                GL.Vertex3(1.0, -3.0, -1.0);
-            }
-            GL.End();
-        }*/
 
         void DrawGrid()
         {
@@ -910,14 +695,14 @@ namespace ParallelComputedCollisionDetection
 
         void calculateGridEdge()
         {
-            double maxRadius = 0;
+            float maxRadius = 0;
             foreach (Body body in bodies)
                 if (maxRadius < body.getBSphere().radius)
                     maxRadius = body.getBSphere().radius;
             //grid_edge = Math.Sqrt(maxRadius * 2) * 1.5;
             grid_edge = maxRadius * 2;
             tiles = (int)(fov / grid_edge);
-            grid_edge = fov / (double)tiles;
+            grid_edge = fov / (float)tiles;
             //Console.Write("\nfov: " + fov.ToString() + ", tiles: " + tiles.ToString() + ", grid_edge: " + grid_edge.ToString() + "\n");
         }
 
@@ -927,7 +712,11 @@ namespace ParallelComputedCollisionDetection
                 MethodInvoker mi = delegate
                 {
                     if (picked == -1)
+                    {
                         Program.db.getRTB().Text = "";
+                        //if (Program.db.getComp_RTB().Text != "loading...")
+                        Program.db.getComp_RTB().Text = "";
+                    }
                     else
                     {
                         Body pBody = bodies.ElementAt(picked);
@@ -965,27 +754,37 @@ namespace ParallelComputedCollisionDetection
                             cellTypesIntersected += "7 ";
                         if ((s.ctrl_bits & 128) == 128)
                             cellTypesIntersected += "8 ";
+                        BodyData bd = CollisionDetection.array[picked];
+                        #region PRINT DEBUG
                         Program.db.getRTB().Text = "Body[" + picked + "]:"
                                                     + "\n\tposition: (" + pBody.getPos().X.ToString("0.00")
                                                     + ", " + pBody.getPos().Y.ToString("0.00")
                                                     + ", " + pBody.getPos().Z.ToString("0.00") + ")"
                                                     + "\n\tradius: " + s.radius.ToString("0.00")
                                                     + "\n\thCell pos: " + s.cellPos.ToString()
-                                                    + "\n\tcells count: " + s.cells.Count.ToString()
-                                                    + "\n\t cell types int: " + cellTypesIntersected
-                                                    + "\n\t OCL hCellHash test[0]: " + CollisionDetection.array[picked].cellIDs[0].ToString()
-                                                    + "\n\t CPU hCellHash test[0]: " + s.cellArray[0].ToString()
-                                                    + "\n\t OCL hCellHash test[1]: " + CollisionDetection.array[picked].cellIDs[1].ToString()
-                                                    + "\n\t CPU hCellHash test[1]: " + s.cellArray[1].ToString()
-                                                    + "\n\t OCL hCellHash test[2]: " + CollisionDetection.array[picked].cellIDs[2].ToString()
-                                                    + "\n\t CPU hCellHash test[2]: " + s.cellArray[2].ToString()
-                                                    + "\n\t OCL control_bits: " + CollisionDetection.array[picked].ctrl_bits.ToString()
-                                                    + "\n\t CPU control_bits: " + s.ctrl_bits.ToString()
-                                                    + "\n\t OCL c_bits(bin):\t" + binValue2
-                                                    + "\n\t cTypes int(bin):\t" + binValue;
+                                                    + "\n\thCell type: " + ((s.ctrl_bits & (15<<8))>>8)
+                                                    + "\n\t# of cells inters.: " + s.cells.Count.ToString()
+                                                    + "\n\tcTypes inters.: " + cellTypesIntersected
+                                                    + "\n\tBodyData struct size: " + Marshal.SizeOf(bd);
+
+                        Program.db.getComp_RTB().Text = "\n\tCPU vs OCL"
+                                                        + "\n\n                       HASH\n"
+                                                        + "\n[0]\t" + s.cellArray[0].ToString() + "\t" + bd.cellIDs[0]
+                                                        + "\n[1]\t" + s.cellArray[1].ToString() + "\t" + bd.cellIDs[1]
+                                                        + "\n[2]\t" + s.cellArray[2].ToString() + "\t" + bd.cellIDs[2]
+                                                        + "\n[3]\t" + s.cellArray[3].ToString() + "\t" + bd.cellIDs[3]
+                                                        + "\n[4]\t" + s.cellArray[4].ToString() + "\t" + bd.cellIDs[4]
+                                                        + "\n[5]\t" + s.cellArray[5].ToString() + "\t" + bd.cellIDs[5]
+                                                        + "\n[6]\t" + s.cellArray[6].ToString() + "\t" + bd.cellIDs[6]
+                                                        + "\n[7]\t" + s.cellArray[7].ToString() + "\t" + bd.cellIDs[7]
+                                                        + "\n\n               CONTROL BITS\n"
+                                                        + "\n(int)\t" + s.ctrl_bits.ToString() + "\t" + bd.ctrl_bits.ToString();
+                                                        //+ "\n(bin)\t" + binValue2 + "\t" + binValue;
+                        #endregion
                     }
                 };
-                Program.db.getRTB().BeginInvoke(mi);
+                try { Program.db.getRTB().BeginInvoke(mi); }
+                catch { }
             }
         }
 
@@ -1012,7 +811,8 @@ namespace ParallelComputedCollisionDetection
                         else
                             Program.db.getRTB_FPS().ForeColor = Color.LawnGreen;
                     };
-                    Program.db.getRTB_FPS().BeginInvoke(mi);
+                    try { Program.db.getRTB_FPS().BeginInvoke(mi); }
+                    catch { }
                 }
             }
         }

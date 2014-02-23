@@ -27,7 +27,7 @@ namespace ParallelComputedCollisionDetection
         Sphere bsphere;
         int sphere_precision = 30;
         public double offsetX;
-        double radius;
+        float radius;
         public int index;
 
         public Parallelepiped(Vector3 pos, double edge, int index) {
@@ -40,7 +40,7 @@ namespace ParallelComputedCollisionDetection
             this.index = index;
             this.offsetX = 0;
             this.radius =
-                Math.Sqrt(Math.Pow(length * 0.5, 2) + Math.Pow(height * 0.5, 2) + Math.Pow(width * 0.5, 2));
+                (float)Math.Sqrt(Math.Pow(length * 0.5, 2) + Math.Pow(height * 0.5, 2) + Math.Pow(width * 0.5, 2));
             if (index != -1)
             {
                 calculateBoundingSphere();
@@ -60,7 +60,7 @@ namespace ParallelComputedCollisionDetection
             this.offsetX = (this.height / (Math.Sin(this.angle_) * 2))
                     * Math.Cos(this.angle_);
             this.radius = 
-                Math.Sqrt(Math.Pow(Math.Abs(offsetX) * 0.5 + length * 0.5, 2) + Math.Pow(height * 0.5, 2) + Math.Pow(width * 0.5, 2));
+                (float)Math.Sqrt(Math.Pow(Math.Abs(offsetX) * 0.5 + length * 0.5, 2) + Math.Pow(height * 0.5, 2) + Math.Pow(width * 0.5, 2));
             if (index != -1)
             {
                 calculateBoundingSphere();
@@ -141,7 +141,7 @@ namespace ParallelComputedCollisionDetection
             bsphere.bodyIndex = index;
         }
 
-        public double getRadius()
+        public float getRadius()
         {
             return radius;
         }

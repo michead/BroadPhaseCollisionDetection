@@ -22,7 +22,7 @@ namespace ParallelComputedCollisionDetection
         double Pi = MathHelper.Pi;
         double phiaa = 52.62263590; 
         double phibb = 10.81231754;
-        double radius;
+        float radius;
         double phia;
         double phib;
         double phic;
@@ -34,7 +34,7 @@ namespace ParallelComputedCollisionDetection
         int sphere_precision = 25;
         double edge;
 
-        public Dodecahedron(Vector3 pos, double radius){
+        public Dodecahedron(Vector3 pos, float radius){
             this.radius = radius;
             phia = Pi * phiaa / 180.0;
             phib = Pi*phibb/180.0;
