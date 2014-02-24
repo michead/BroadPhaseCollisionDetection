@@ -27,8 +27,8 @@ namespace ParallelComputedCollisionDetection
             rtb2.SetBounds(rtb.Location.X, 300, 350, 425);
             rtb2.Text = CollisionDetection.deviceInfo;
             fps_rtb.SetBounds(10, 15, 50, 20);
-            comp_rtb.SetBounds(10, 40, 300, 320);
-            rtb_log.SetBounds(10, 345, 300, 380);
+            comp_rtb.SetBounds(10, 40, 320, 320);
+            rtb_log.SetBounds(10, 345, 320, 380);
             rtb_log.Text = CollisionDetection.log;
         }
 

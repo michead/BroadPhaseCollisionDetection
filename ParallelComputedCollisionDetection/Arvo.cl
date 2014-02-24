@@ -75,16 +75,13 @@
             
 #define CHECK_FOR_SPHERE_BOX_INTERSECTION(x2, y2, z2, x3, y3, z3) \
             dist_squared = radius * radius;\
-            if (pos[0] < x2) dist_squared -= (pos[0] - x2)*(pos[0] - x2);\
-            else if (pos[0] > x3) dist_squared -= (pos[0] - x3)*(pos[0] - x3);\
-            if (pos[1] < y2) dist_squared -= (pos[1] - y2)*(pos[1] - y2);\
-            else if (pos[1] > y3) dist_squared -= (pos[1] - y3)*(pos[1] - y3);\
-            if (pos[2] < z2) dist_squared -= (pos[2] - z2)*(pos[2] - z2);\
-            else if (pos[2] > z3) dist_squared -= (pos[2] - z3)*(pos[2] - z3);\
-            if (dist_squared > 0)\
-                res = 1;\
-            else\
-                res = 0;            
+            if (pos[0] < (x2)) dist_squared -= (pos[0] - (x2))*(pos[0] - (x2));\
+            else if (pos[0] > (x3)) dist_squared -= (pos[0] - (x3))*(pos[0] - (x3));\
+            if (pos[1] < (y2)) dist_squared -= (pos[1] - (y2))*(pos[1] - (y2));\
+            else if (pos[1] > (y3)) dist_squared -= (pos[1] - (y3))*(pos[1] - (y3));\
+            if (pos[2] < (z2)) dist_squared -= (pos[2] - (z2))*(pos[2] - (z2));\
+            else if (pos[2] > (z3)) dist_squared -= (pos[2] - (z3))*(pos[2] - (z3));\
+            res = dist_squared > 0;           
 
 typedef struct{
     uint ID;
@@ -92,6 +89,7 @@ typedef struct{
     float radius;
     float pos[3];
     uint cellIDs[8];
+    long mask;
 }BodyData;
 
 __kernel void Arvo(__global BodyData* obj_array, __global const int* n, __global const float* grid_edge){
@@ -133,267 +131,293 @@ __kernel void Arvo(__global BodyData* obj_array, __global const int* n, __global
             CELL_TYPE_CHECK(cellPos[0], cellPos[1], cellPos[2]);
             
             int j = 1;
-            int res;
+            bool res;
             
             //COLLISION CHECK - (3^3 - 1) cases
             
-            //right
+            //right 1
 			CHECK_FOR_SPHERE_BOX_INTERSECTION
 				(cellPos[0] + ge * 0.5, cellPos[1] - ge * 0.5, cellPos[2] - ge * 0.5, 
 				cellPos[0] + ge * 1.5, cellPos[1] + ge * 0.5, cellPos[2] + ge * 0.5);
-			if(res == 1 &&  j < 8){
+			if(res){
 				obj_array[i].cellIDs[j] = HASH_FUNCTION(cellPos[0] + ge, cellPos[1], cellPos[2], j);
 				j++;
 				CELL_TYPE_CHECK(cellPos[0] + ge, cellPos[1], cellPos[2]);
+                                obj_array[i].mask |= 1;
 			}
 
-            //left
+            //left 2
 			CHECK_FOR_SPHERE_BOX_INTERSECTION
 				(cellPos[0] - ge * 1.5, cellPos[1] - ge * 0.5, cellPos[2] - ge * 0.5, 
 				cellPos[0] - ge * 0.5, cellPos[1] + ge * 0.5, cellPos[2] + ge * 0.5);
-			if(res == 1 &&  j < 8){
+			if(res){
 				obj_array[i].cellIDs[j] = HASH_FUNCTION(cellPos[0] - ge, cellPos[1], cellPos[2], j);
 				j++;
 				CELL_TYPE_CHECK(cellPos[0] - ge, cellPos[1], cellPos[2]);
+                                obj_array[i].mask |= (1<<1);
 			}
 
-            //top
+            //top 3
 			CHECK_FOR_SPHERE_BOX_INTERSECTION
 				(cellPos[0] - ge * 0.5, cellPos[1] + ge * 0.5, cellPos[2] - ge * 0.5, 
 				cellPos[0] + ge * 0.5, cellPos[1] + ge * 1.5, cellPos[2] + ge * 0.5);
-			if(res == 1 &&  j < 8){
+			if(res){
 				obj_array[i].cellIDs[j] = HASH_FUNCTION(cellPos[0], cellPos[1] + ge, cellPos[2], j);
 				j++;
 				CELL_TYPE_CHECK(cellPos[0], cellPos[1] + ge, cellPos[2]);
+                                obj_array[i].mask |= (1<<2);
 			}
 
-            //bottom
+            //bottom 4
 			CHECK_FOR_SPHERE_BOX_INTERSECTION
 				(cellPos[0] - ge * 0.5, cellPos[1] - ge * 1.5, cellPos[2] - ge * 0.5, 
 				cellPos[0] + ge * 0.5, cellPos[1] - ge * 0.5, cellPos[2] + ge * 0.5);
-			if(res == 1 &&  j < 8){
+			if(res){
 				obj_array[i].cellIDs[j] = HASH_FUNCTION(cellPos[0], cellPos[1] - ge, cellPos[2], j);
 				j++;
 				CELL_TYPE_CHECK(cellPos[0], cellPos[1] - ge, cellPos[2]);
+                                obj_array[i].mask |= (1<<3);
 			}
 
-            //near
+            //near 5
 			CHECK_FOR_SPHERE_BOX_INTERSECTION
 				(cellPos[0] - ge * 0.5, cellPos[1] - ge * 0.5, cellPos[2] + ge * 0.5, 
 				cellPos[0] + ge * 0.5, cellPos[1] + ge * 0.5, cellPos[2] + ge * 0.5);
-			if(res == 1 &&  j < 8){
+			if(res){
 				obj_array[i].cellIDs[j] = HASH_FUNCTION(cellPos[0], cellPos[1], cellPos[2] + ge, j);
 				j++;
 				CELL_TYPE_CHECK(cellPos[0], cellPos[1], cellPos[2] + ge);
+                                obj_array[i].mask |= (1<<4);
 			}
 
-            //far
+            //far 6
 			CHECK_FOR_SPHERE_BOX_INTERSECTION
 				(cellPos[0] - ge * 0.5, cellPos[1] - ge * 0.5, cellPos[2] - ge * 1.5, 
 				cellPos[0] + ge * 0.5, cellPos[1] + ge * 0.5, cellPos[2] - ge * 0.5);
-			if(res == 1 &&  j < 8){
+			if(res){
 				obj_array[i].cellIDs[j] = HASH_FUNCTION(cellPos[0], cellPos[1], cellPos[2] - ge, j);
 				j++;
 				CELL_TYPE_CHECK(cellPos[0], cellPos[1], cellPos[2] - ge);
+                                obj_array[i].mask |= (1<<5);
 			}
 
-            //bottom_left
-            CHECK_FOR_SPHERE_BOX_INTERSECTION
+            //bottom_left 7
+                        CHECK_FOR_SPHERE_BOX_INTERSECTION
 				(cellPos[0] - ge * 1.5, cellPos[1] - ge * 1.5, cellPos[2] - ge * 0.5, 
 				cellPos[0] - ge * 0.5, cellPos[1] - ge * 0.5, cellPos[2] + ge * 0.5);
-			if(res == 1 &&  j < 8){
+			if(res){
 				obj_array[i].cellIDs[j] = HASH_FUNCTION(cellPos[0] - ge, cellPos[1] - ge, cellPos[2], j);
 				j++;
 				CELL_TYPE_CHECK(cellPos[0] - ge, cellPos[1] - ge, cellPos[2]);
+                                obj_array[i].mask |= (1<<6);
 			}
 			
-            //bottom_left_near
+            //bottom_left_near 8
 			CHECK_FOR_SPHERE_BOX_INTERSECTION
 				(cellPos[0] - ge * 1.5, cellPos[1] - ge * 1.5, cellPos[2] + ge * 0.5, 
 				cellPos[0] - ge * 0.5, cellPos[1] - ge * 0.5, cellPos[2] + ge * 1.5);
-			if(res == 1 &&  j < 8){
+			if(res){
 				obj_array[i].cellIDs[j] = HASH_FUNCTION(cellPos[0] - ge, cellPos[1] - ge, cellPos[2] + ge, j);
 				j++;
 				CELL_TYPE_CHECK(cellPos[0] - ge, cellPos[1] - ge, cellPos[2] + ge);
+                                obj_array[i].mask |= (1<<7);
 			}
 
-            //bottom_left_far
+            //bottom_left_far 9
 			CHECK_FOR_SPHERE_BOX_INTERSECTION
 				(cellPos[0] - ge * 1.5, cellPos[1] - ge * 1.5, cellPos[2] - ge * 1.5, 
 				cellPos[0] - ge * 0.5, cellPos[1] - ge * 0.5, cellPos[2] - ge * 0.5);
-			if(res == 1 &&  j < 8){
+			if(res){
 				obj_array[i].cellIDs[j] = HASH_FUNCTION(cellPos[0] - ge, cellPos[1] - ge, cellPos[2] - ge, j);
 				j++;
 				CELL_TYPE_CHECK(cellPos[0] - ge, cellPos[1] - ge, cellPos[2] - ge);
+                                obj_array[i].mask |= (1<<8);
 			}
 
-            //bottom_right
+            //bottom_right 10
 			CHECK_FOR_SPHERE_BOX_INTERSECTION
 				(cellPos[0] + ge * 0.5, cellPos[1] - ge * 1.5, cellPos[2] - ge * 0.5, 
 				cellPos[0] + ge * 1.5, cellPos[1] - ge * 0.5, cellPos[2] + ge * 0.5);
-			if(res == 1 &&  j < 8){
+			if(res){
 				obj_array[i].cellIDs[j] = HASH_FUNCTION(cellPos[0] + ge, cellPos[1] - ge, cellPos[2], j);
 				j++;
 				CELL_TYPE_CHECK(cellPos[0] + ge, cellPos[1] - ge, cellPos[2]);
+                                obj_array[i].mask |= (1<<9);
 			}
 
-            //bottom_right_near
+            //bottom_right_near 11
 			CHECK_FOR_SPHERE_BOX_INTERSECTION
 				(cellPos[0] + ge * 0.5, cellPos[1] - ge * 1.5, cellPos[2] + ge * 0.5, 
 				cellPos[0] + ge * 1.5, cellPos[1] - ge * 0.5, cellPos[2] + ge * 1.5);
-			if(res == 1 &&  j < 8){
+			if(res){
 				obj_array[i].cellIDs[j] = HASH_FUNCTION(cellPos[0] + ge, cellPos[1] - ge, cellPos[2] + ge, j);
 				j++;
 				CELL_TYPE_CHECK(cellPos[0] + ge, cellPos[1] - ge, cellPos[2] + ge);
+                                obj_array[i].mask |= (1<<10);
 			}
 
-            //bottom_right_far
+            //bottom_right_far 12
 			CHECK_FOR_SPHERE_BOX_INTERSECTION
 				(cellPos[0] + ge * 0.5, cellPos[1] - ge * 1.5, cellPos[2] - ge * 1.5, 
 				cellPos[0] + ge * 1.5, cellPos[1] - ge * 0.5, cellPos[2] - ge * 0.5);
-			if(res == 1 &&  j < 8){
+			if(res){
 				obj_array[i].cellIDs[j] = HASH_FUNCTION(cellPos[0] + ge, cellPos[1] - ge, cellPos[2] - ge, j);
 				j++;
 				CELL_TYPE_CHECK(cellPos[0] + ge, cellPos[1] - ge, cellPos[2] - ge);
+                                obj_array[i].mask |= (1<<11);
 			}
 
-            //top_left
+            //top_left 13
 			CHECK_FOR_SPHERE_BOX_INTERSECTION
 				(cellPos[0] - ge * 1.5, cellPos[1] + ge * 0.5, cellPos[2] - ge * 0.5, 
 				cellPos[0] - ge * 0.5, cellPos[1] + ge * 1.5, cellPos[2] + ge * 0.5);
-			if(res == 1 &&  j < 8){
+			if(res &&  j < 8){
 				obj_array[i].cellIDs[j] = HASH_FUNCTION(cellPos[0] - ge, cellPos[1] + ge, cellPos[2], j);
 				j++;
 				CELL_TYPE_CHECK(cellPos[0] - ge, cellPos[1] + ge, cellPos[2]);
+                                obj_array[i].mask |= (1<<12);
 			}
 
-            //top_left_near
+            //top_left_near 14
 			CHECK_FOR_SPHERE_BOX_INTERSECTION
 				(cellPos[0] - ge * 1.5, cellPos[1] + ge * 0.5, cellPos[2] + ge * 0.5, 
 				cellPos[0] - ge * 0.5, cellPos[1] + ge * 1.5, cellPos[2] + ge * 1.5);
-			if(res == 1 &&  j < 8){
+			if(res &&  j < 8){
 				obj_array[i].cellIDs[j] = HASH_FUNCTION(cellPos[0] - ge, cellPos[1] + ge, cellPos[2] + ge, j);
 				j++;
 				CELL_TYPE_CHECK(cellPos[0] - ge, cellPos[1] + ge, cellPos[2] + ge);
+                                obj_array[i].mask |= (1<<13);
 			}
 
-            //top_left_far
+            //top_left_far 15
 			CHECK_FOR_SPHERE_BOX_INTERSECTION
 				(cellPos[0] - ge * 1.5, cellPos[1] + ge * 0.5, cellPos[2] - ge * 1.5, 
 				cellPos[0] - ge * 0.5, cellPos[1] + ge * 1.5, cellPos[2] - ge * 0.5);
-			if(res == 1 &&  j < 8){
+			if(res &&  j < 8){
 				obj_array[i].cellIDs[j] = HASH_FUNCTION(cellPos[0] - ge, cellPos[1] + ge, cellPos[2] - ge, j);
 				j++;
 				CELL_TYPE_CHECK(cellPos[0] - ge, cellPos[1] + ge, cellPos[2] - ge);
+                                obj_array[i].mask |= (1<<14);
 			}
 
-            //top_right
+            //top_right 16
 			CHECK_FOR_SPHERE_BOX_INTERSECTION
 				(cellPos[0] + ge * 0.5, cellPos[1] + ge * 0.5, cellPos[2] - ge * 0.5, 
 				cellPos[0] + ge * 1.5, cellPos[1] + ge * 1.5, cellPos[2] + ge * 0.5);
-			if(res == 1 &&  j < 8){
+			if(res &&  j < 8){
 				obj_array[i].cellIDs[j] = HASH_FUNCTION(cellPos[0] + ge, cellPos[1] + ge, cellPos[2], j);
 				j++;
 				CELL_TYPE_CHECK(cellPos[0] + ge, cellPos[1] + ge, cellPos[2]);
+                                obj_array[i].mask |= (1<<15);
 			}
 
-            //top_right_near
+            //top_right_near 17
 			CHECK_FOR_SPHERE_BOX_INTERSECTION
 				(cellPos[0] + ge * 0.5, cellPos[1] + ge * 0.5, cellPos[2] + ge * 0.5, 
 				cellPos[0] + ge * 1.5, cellPos[1] + ge * 1.5, cellPos[2] + ge * 1.5);
-			if(res == 1 &&  j < 8){
+			if(res &&  j < 8){
 				obj_array[i].cellIDs[j] = HASH_FUNCTION(cellPos[0] + ge, cellPos[1] + ge, cellPos[2] + ge, j);
 				j++;
 				CELL_TYPE_CHECK(cellPos[0] + ge, cellPos[1] + ge, cellPos[2] + ge);
+                                obj_array[i].mask |= (1<<16);
 			}
 
-            //top_right_far
+            //top_right_far 18
 			CHECK_FOR_SPHERE_BOX_INTERSECTION
 				(cellPos[0] + ge * 0.5, cellPos[1] + ge * 0.5, cellPos[2] - ge * 1.5, 
 				cellPos[0] + ge * 1.5, cellPos[1] + ge * 1.5, cellPos[2] - ge * 0.5);
-			if(res == 1 &&  j < 8){
+			if(res &&  j < 8){
 				obj_array[i].cellIDs[j] = HASH_FUNCTION(cellPos[0] + ge, cellPos[1] + ge, cellPos[2] - ge, j);
 				j++;
 				CELL_TYPE_CHECK(cellPos[0] + ge, cellPos[1] + ge, cellPos[2] - ge);
+                                obj_array[i].mask |= (1<<17);
 			}
 
-            //top_near
+            //top_near 19
 			CHECK_FOR_SPHERE_BOX_INTERSECTION
 				(cellPos[0] - ge * 0.5, cellPos[1] + ge * 0.5, cellPos[2] + ge * 0.5, 
 				cellPos[0] + ge * 0.5, cellPos[1] + ge * 1.5, cellPos[2] + ge * 1.5);
-			if(res == 1 &&  j < 8){
+			if(res &&  j < 8){
 				obj_array[i].cellIDs[j] = HASH_FUNCTION(cellPos[0], cellPos[1] + ge, cellPos[2] + ge, j);
 				j++;
 				CELL_TYPE_CHECK(cellPos[0], cellPos[1] + ge, cellPos[2] + ge);
+                                obj_array[i].mask |= (1<<18);
 			}
 
-            //bottom_near
+            //bottom_near 20
 			CHECK_FOR_SPHERE_BOX_INTERSECTION
 				(cellPos[0] - ge * 0.5, cellPos[1] - ge * 1.5, cellPos[2] + ge * 0.5, 
 				cellPos[0] + ge * 0.5, cellPos[1] - ge * 0.5, cellPos[2] + ge * 1.5);
-			if(res == 1 &&  j < 8){
+			if(res &&  j < 8){
 				obj_array[i].cellIDs[j] = HASH_FUNCTION(cellPos[0], cellPos[1] - ge, cellPos[2] + ge, j);
 				j++;
 				CELL_TYPE_CHECK(cellPos[0], cellPos[1] - ge, cellPos[2] + ge);
+                                obj_array[i].mask |= (1<<19);
 			}
 
-            //top_far
+            //top_far 21
 			CHECK_FOR_SPHERE_BOX_INTERSECTION
 				(cellPos[0] - ge * 0.5, cellPos[1] + ge * 0.5, cellPos[2] - ge * 1.5, 
 				cellPos[0] + ge * 0.5, cellPos[1] + ge * 1.5, cellPos[2] - ge * 0.5);
-			if(res == 1 &&  j < 8){
+			if(res &&  j < 8){
 				obj_array[i].cellIDs[j] = HASH_FUNCTION(cellPos[0], cellPos[1] + ge, cellPos[2] - ge, j);
 				j++;
 				CELL_TYPE_CHECK(cellPos[0], cellPos[1] + ge, cellPos[2] - ge);
+                                obj_array[i].mask |= (1<<20);
 			}
 
-            //bottom_far
+            //bottom_far 22
 			CHECK_FOR_SPHERE_BOX_INTERSECTION
 				(cellPos[0] - ge * 0.5, cellPos[1] - ge * 1.5, cellPos[2] - ge * 1.5, 
 				cellPos[0] + ge * 0.5, cellPos[1] - ge * 0.5, cellPos[2] - ge * 0.5);
-			if(res == 1 &&  j < 8){
+			if(res &&  j < 8){
 				obj_array[i].cellIDs[j] = HASH_FUNCTION(cellPos[0], cellPos[1] - ge, cellPos[2] - ge, j);
 				j++;
 				CELL_TYPE_CHECK(cellPos[0], cellPos[1] - ge, cellPos[2] - ge);
+                                obj_array[i].mask |= (1<<21);
 			}
 
-            //left_far
+            //left_far 23
 			CHECK_FOR_SPHERE_BOX_INTERSECTION
 				(cellPos[0] - ge * 1.5, cellPos[1] - ge * 0.5, cellPos[2] - ge * 1.5, 
 				cellPos[0] - ge * 0.5, cellPos[1] + ge * 0.5, cellPos[2] - ge * 0.5);
-			if(res == 1 &&  j < 8){
+			if(res &&  j < 8){
 				obj_array[i].cellIDs[j] = HASH_FUNCTION(cellPos[0] - ge, cellPos[1], cellPos[2] - ge, j);
 				j++;
 				CELL_TYPE_CHECK(cellPos[0] - ge, cellPos[1], cellPos[2] - ge);
+                                obj_array[i].mask |= (1<<22);
 			}
 
-            //right_far
+            //right_far 24
 			CHECK_FOR_SPHERE_BOX_INTERSECTION
 				(cellPos[0] + ge * 0.5, cellPos[1] - ge * 0.5, cellPos[2] - ge * 1.5, 
 				cellPos[0] + ge * 1.5, cellPos[1] + ge * 0.5, cellPos[2] - ge * 0.5);
-			if(res == 1 &&  j < 8){
+			if(res &&  j < 8){
 				obj_array[i].cellIDs[j] = HASH_FUNCTION(cellPos[0] + ge, cellPos[1], cellPos[2] - ge, j);
 				j++;
 				CELL_TYPE_CHECK(cellPos[0] + ge, cellPos[1], cellPos[2] - ge);
+                                obj_array[i].mask |= (1<<23);
 			}
 
-            //left_near
+            //left_near 25
 			CHECK_FOR_SPHERE_BOX_INTERSECTION
 				(cellPos[0] - ge * 1.5, cellPos[1] - ge * 0.5, cellPos[2] + ge * 0.5, 
 				cellPos[0] - ge * 0.5, cellPos[1] + ge * 0.5, cellPos[2] + ge * 1.5);
-			if(res == 1 &&  j < 8){
+			if(res &&  j < 8){
 				obj_array[i].cellIDs[j] = HASH_FUNCTION(cellPos[0] - ge, cellPos[1], cellPos[2] + ge, j);
 				j++;
 				CELL_TYPE_CHECK(cellPos[0] - ge, cellPos[1], cellPos[2] + ge);
+                                obj_array[i].mask |= (1<<24);
 			}
             
-            //right_near
-            CHECK_FOR_SPHERE_BOX_INTERSECTION
+            //right_near 26
+                        CHECK_FOR_SPHERE_BOX_INTERSECTION
 				(cellPos[0] + ge * 0.5, cellPos[1] - ge * 0.5, cellPos[2] + ge * 0.5, 
 				cellPos[0] - ge * 0.5, cellPos[1] + ge * 0.5, cellPos[2] + ge * 1.5);
-			if(res == 1 &&  j < 8){
+			if(res &&  j < 8){
 				obj_array[i].cellIDs[j] = HASH_FUNCTION(cellPos[0] + ge, cellPos[1], cellPos[2] + ge, j);
 				j++;
 				CELL_TYPE_CHECK(cellPos[0] + ge, cellPos[1], cellPos[2] + ge);
+                                obj_array[i].mask |= (1<<25);
 			}
 }

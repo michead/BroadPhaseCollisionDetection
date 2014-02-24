@@ -25,6 +25,7 @@ namespace ParallelComputedCollisionDetection
         public float[] pos;
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
         public uint[] cellIDs;
+        public long mask;
     }
 
     public static class CollisionDetection
@@ -176,6 +177,7 @@ namespace ParallelComputedCollisionDetection
 
         static void checkCorrectness()
         {
+            log = "";
             List<Body> bodies = Program.window.bodies;
             int nob = Program.window.number_of_bodies;
             //float ge = Program.window.grid_edge;
@@ -219,7 +221,20 @@ namespace ParallelComputedCollisionDetection
                         + "\nY: " + array[i].pos[1].ToString() + "  |  " + bodies[i].getPos().Y.ToString()
                         + "\nZ: " + array[i].pos[2].ToString() + "  |  " + bodies[i].getPos().Z.ToString() + "\n");*/
             }
-            Console.Write(log);
+            /*foreach (BodyData b in array)
+            {
+                char[] a = Convert.ToString(b.mask, 2).PadLeft(32, '0').ToCharArray();
+                for (int i = 0; i < a.Length; i++)
+                {
+                    if (i % 4 == 0)
+                    {
+                        log += " ";
+                    }
+                    log += a[i];
+                }
+                log += "\n";
+            }
+            Console.Write(log);*/
         }
     }
 }

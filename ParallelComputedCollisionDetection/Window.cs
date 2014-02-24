@@ -191,6 +191,11 @@ namespace ParallelComputedCollisionDetection
                 };
                 Program.db.getRTB().BeginInvoke(mi);
                 CollisionDetection.CollisionDetectionSetUp();
+                MethodInvoker mi2 = delegate
+                {
+                    Program.db.getRTB_log().Text = CollisionDetection.log;
+                };
+                Program.db.getRTB().BeginInvoke(mi2);
                 showInfo();
             }
 
