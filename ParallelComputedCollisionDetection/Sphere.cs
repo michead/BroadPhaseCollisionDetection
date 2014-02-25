@@ -332,7 +332,7 @@ namespace ParallelComputedCollisionDetection
             {
                 if (i >= cells.Count)
                 {
-                    cellArray[i] = 0;
+                    cellArray[i] = 0xffffffff;
                     continue;
                 }
                 Body cell = cells.ElementAt(i);

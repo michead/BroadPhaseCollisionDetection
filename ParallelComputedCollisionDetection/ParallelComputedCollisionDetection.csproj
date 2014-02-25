@@ -28,7 +28,7 @@
     <BootstrapperEnabled>true</BootstrapperEnabled>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>x86</PlatformTarget>
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -37,6 +37,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -78,6 +79,16 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Body.cs" />
+    <Compile Include="Clpp.Core\ClppContext.cs" />
+    <Compile Include="Clpp.Core\ClppProgram.cs" />
+    <Compile Include="Clpp.Core\Scan\ClppScan.cs" />
+    <Compile Include="Clpp.Core\Scan\ClppScanDefault.cs" />
+    <Compile Include="Clpp.Core\Scan\ClppScanGPU.cs" />
+    <Compile Include="Clpp.Core\Sort\ClppSort.cs" />
+    <Compile Include="Clpp.Core\Sort\ClppSortRadixSortGPU.cs" />
+    <Compile Include="Clpp.Core\Utilities\DisposeHelper.cs" />
+    <Compile Include="Clpp.Core\Utilities\EmbeddedResourceUtilities.cs" />
+    <Compile Include="Clpp.Core\Utilities\OwnedObject.cs" />
     <Compile Include="CollisionDetection.cs" />
     <Compile Include="DebugBox.cs">
       <SubType>Form</SubType>
@@ -96,6 +107,18 @@
     <None Include="Arvo.cl">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Include="Clpp.Core\packages.config" />
+    <None Include="Clpp.Core\Scan\clppScanDefault.cl" />
+    <None Include="Clpp.Core\Scan\clppScanGPU.cl" />
+    <None Include="Clpp.Core\Sort\clppSortRadixSortGPU.cl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="clppScan_Default.cl" />
+    <None Include="clppScan_GPU.cl" />
+    <None Include="clppSort_RadixSort.cl" />
+    <None Include="clppSort_RadixSortGPU.cl" />
+    <None Include="RadixSort.cl" />
+    <None Include="scan_kernel.cl" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="DebugBox.resx">
@@ -119,6 +142,10 @@
       <Install>false</Install>
     </BootstrapperPackage>
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="Clpp.Core\Clpp.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

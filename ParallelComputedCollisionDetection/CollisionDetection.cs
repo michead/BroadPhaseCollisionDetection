@@ -12,6 +12,7 @@ using OpenTK.Math;
 using OpenCLTemplate;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
+using Clpp.Core;
 
 namespace ParallelComputedCollisionDetection
 {
@@ -25,7 +26,6 @@ namespace ParallelComputedCollisionDetection
         public float[] pos;
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
         public uint[] cellIDs;
-        public long mask;
     }
 
     public static class CollisionDetection
@@ -38,9 +38,11 @@ namespace ParallelComputedCollisionDetection
         static ComputeProgram program;
         static string Arvo;
         public static string log;
-        public static string deviceInfo = "";
-        static string path = 
-        @"\C:\Users\simone\Documents\Visual Studio 2013\Projects\ParallelComputedCollisionDetection\ParallelComputedCollisionDetection\Arvo.cl";
+        public static string deviceInfo;
+        public const int WORK_GROUP_SIZE = 192;
+        public const int R = 16;
+        public const uint bits_to_sort = 4294967295;
+        public static uint[] rs_array;
 
         public static void deviceSetUp(){
             devices = new List<ComputeDevice>();
@@ -69,7 +71,8 @@ namespace ParallelComputedCollisionDetection
                     + "\tMax Work Item dimensions: " + device.MaxWorkItemDimensions + "\n"
                     + "\tMax Work Item sizes: " + device.MaxWorkItemSizes.Count + "\n"
                     + "\tCompute Units: " + device.MaxComputeUnits + "\n"
-                    + "\tGlobal Memory : " + device.GlobalMemorySize + "bytes\n";
+                    + "\tGlobal Memory : " + device.GlobalMemorySize + "bytes\n"
+                    + "\tShared Memory: " + device.LocalMemorySize + "bytes";
                     /*+ "\tImage Support: " + device.ImageSupport + "\n"
                     + "\tExtensions: ";
                 foreach (string extension in device.Extensions)
@@ -136,6 +139,12 @@ namespace ParallelComputedCollisionDetection
 
             ComputeBuffer<byte> objArray = new ComputeBuffer<byte>
                 (context, ComputeMemoryFlags.ReadWrite | ComputeMemoryFlags.CopyHostPointer, input);
+            ComputeBuffer<uint> cellArray = new ComputeBuffer<uint>
+                (context, ComputeMemoryFlags.ReadWrite, nob * 8);
+            /*ComputeBuffer<uint> cellArray2 = new ComputeBuffer<uint>
+                (context, ComputeMemoryFlags.ReadWrite, nob * 8);
+            ComputeBuffer<uint> support = new ComputeBuffer<uint>
+                (context, ComputeMemoryFlags.ReadWrite, 256 * 24);*/
             Marshal.FreeHGlobal(ptr);
             ComputeBuffer<int> numOfBodies = new ComputeBuffer<int>
                 (context, ComputeMemoryFlags.ReadOnly | ComputeMemoryFlags.CopyHostPointer, sizeof(int), anob);
@@ -147,12 +156,42 @@ namespace ParallelComputedCollisionDetection
             kernelArvo.SetMemoryArgument(0, objArray);
             kernelArvo.SetMemoryArgument(1, numOfBodies);
             kernelArvo.SetMemoryArgument(2, gridEdge);
+            kernelArvo.SetMemoryArgument(3, cellArray);
+            /*kernelArvo.SetMemoryArgument(4, cellArray2);
+            kernelArvo.SetMemoryArgument(5, support);*/
 
             //execution
             ComputeCommandQueue queue = 
                 new ComputeCommandQueue(context, ComputePlatform.Platforms[0].Devices[0], ComputeCommandQueueFlags.Profiling);
             queue.Execute(kernelArvo, null, new long[] { nob }, null, null);
 
+            //RADIX SORT!
+            /*rs_array = new uint[nob * 8];
+            IntPtr rs = Marshal.AllocHGlobal(nob * 8);
+            ClppContext clppContext = new ClppContext(ComputeDeviceTypes.Gpu);
+            clppContext.PrintInformation();
+            Clpp.Core.Sort.ClppSortRadixSortGPU sort = new Clpp.Core.Sort.ClppSortRadixSortGPU(clppContext, nob * 8, (long)bits_to_sort, true);
+            queue.ReadFromBuffer<uint>(cellArray, ref rs_array, false, null);
+            uint[] copy = new uint[nob * 8];
+            for (int h = 0; h < nob * 8; h++)
+                copy[h] = rs_array[h];
+            Array.Sort(copy);
+            GCHandle ah = GCHandle.Alloc(rs_array, GCHandleType.Pinned);
+            IntPtr a_ah = ah.AddrOfPinnedObject();
+
+            //TODO: modify source to use old compute buffer!  
+            sort.PushDatas(a_ah, nob * 8);
+            sort.Sort();
+            sort.PopDatas();
+            ah.Free();
+
+            for (int h = 0; h < nob * 8; h++)
+            {
+                Console.WriteLine("INDEX: " + h);
+                Console.WriteLine(copy[h]);
+                Console.WriteLine(rs_array[h]);
+            }*/
+            
             //read from buffer
             array = new BodyData[nob];
             byte[] result = new byte[structSize * nob];
@@ -166,6 +205,7 @@ namespace ParallelComputedCollisionDetection
             Marshal.FreeHGlobal(intPtr);
 
             //disposal
+            cellArray.Dispose();
             objArray.Dispose();
             numOfBodies.Dispose();
             gridEdge.Dispose();
@@ -221,20 +261,6 @@ namespace ParallelComputedCollisionDetection
                         + "\nY: " + array[i].pos[1].ToString() + "  |  " + bodies[i].getPos().Y.ToString()
                         + "\nZ: " + array[i].pos[2].ToString() + "  |  " + bodies[i].getPos().Z.ToString() + "\n");*/
             }
-            /*foreach (BodyData b in array)
-            {
-                char[] a = Convert.ToString(b.mask, 2).PadLeft(32, '0').ToCharArray();
-                for (int i = 0; i < a.Length; i++)
-                {
-                    if (i % 4 == 0)
-                    {
-                        log += " ";
-                    }
-                    log += a[i];
-                }
-                log += "\n";
-            }
-            Console.Write(log);*/
         }
     }
 }

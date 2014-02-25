@@ -39,7 +39,7 @@ namespace ParallelComputedCollisionDetection
         float coord_transf;
         float wp_scale_factor = 3;
         public float grid_edge = 3;
-        public int number_of_bodies = 8;
+        public int number_of_bodies = 64;
         int tiles;
         KeyboardState old_key;
         bool xRot;
@@ -191,11 +191,6 @@ namespace ParallelComputedCollisionDetection
                 };
                 Program.db.getRTB().BeginInvoke(mi);
                 CollisionDetection.CollisionDetectionSetUp();
-                MethodInvoker mi2 = delegate
-                {
-                    Program.db.getRTB_log().Text = CollisionDetection.log;
-                };
-                Program.db.getRTB().BeginInvoke(mi2);
                 showInfo();
             }
 
@@ -516,60 +511,52 @@ namespace ParallelComputedCollisionDetection
 
         void drawCollisionIntervals()
         {
-            if (view == '0')
+            if (view == '0' || picked == - 1)
                 return;
 
             GL.LineWidth(4.0f);
-            int i = 0;
-            float j = 0;
+            colors[picked % (colors.Count())][3] = 0.5f;
+            GL.Color4(colors[picked % (colors.Count())]);
+            Vector3 pos = bodies[picked].getPos();
+            Sphere bsphere = bodies[picked].getBSphere();
 
-            foreach (Body body in bodies)
+            if (view == 'z')
             {
-                colors[i % (colors.Count())][3] = 0.5f;
-                GL.Color4(colors[i % (colors.Count())]);
-                Vector3 pos = body.getPos();
-                Sphere bsphere = body.getBSphere();
-
-                if (view == 'z')
+                GL.Begin(PrimitiveType.Lines);
                 {
-                    GL.Begin(PrimitiveType.Lines);
-                    {
-                        GL.Vertex3(pos.X - bsphere.radius, -(gizmosOffsetY + j), 10);
-                        GL.Vertex3(pos.X + bsphere.radius, -(gizmosOffsetY + j), 10);
+                    GL.Vertex3(pos.X - bsphere.radius, -gizmosOffsetY, 10);
+                    GL.Vertex3(pos.X + bsphere.radius, -gizmosOffsetY, 10);
 
-                        GL.Vertex3(-(gizmosOffsetX + j), pos.Y + bsphere.radius, 10);
-                        GL.Vertex3(-(gizmosOffsetX + j), pos.Y - bsphere.radius, 10);
-                    }
-                    GL.End();
+                    GL.Vertex3(-gizmosOffsetX, pos.Y + bsphere.radius, 10);
+                    GL.Vertex3(-gizmosOffsetX, pos.Y - bsphere.radius, 10);
                 }
+                GL.End();
+            }
 
-                else if (view == 'x')
+            else if (view == 'x')
+            {
+                GL.Begin(PrimitiveType.Lines);
                 {
-                    GL.Begin(PrimitiveType.Lines);
-                    {
-                        GL.Vertex3(10, -(gizmosOffsetY + j), pos.Z - bsphere.radius);
-                        GL.Vertex3(10, -(gizmosOffsetY + j), pos.Z + bsphere.radius);
+                    GL.Vertex3(10, -gizmosOffsetY, pos.Z - bsphere.radius);
+                    GL.Vertex3(10, -gizmosOffsetY, pos.Z + bsphere.radius);
 
-                        GL.Vertex3(10, pos.Y + bsphere.radius, gizmosOffsetZ + j);
-                        GL.Vertex3(10, pos.Y - bsphere.radius, gizmosOffsetZ + j);
-                    }
-                    GL.End();
+                    GL.Vertex3(10, pos.Y + bsphere.radius, gizmosOffsetZ);
+                    GL.Vertex3(10, pos.Y - bsphere.radius, gizmosOffsetZ);
                 }
+                GL.End();
+            }
 
-                else
+            else
+            {
+                GL.Begin(PrimitiveType.Lines);
                 {
-                    GL.Begin(PrimitiveType.Lines);
-                    {
-                        GL.Vertex3(-(gizmosOffsetX + j), 10, pos.Z + bsphere.radius);
-                        GL.Vertex3(-(gizmosOffsetX + j), 10, pos.Z - bsphere.radius);
+                    GL.Vertex3(-gizmosOffsetX, 10, pos.Z + bsphere.radius);
+                    GL.Vertex3(-gizmosOffsetX, 10, pos.Z - bsphere.radius);
 
-                        GL.Vertex3(pos.X - bsphere.radius, 10, gizmosOffsetZ + j);
-                        GL.Vertex3(pos.X + bsphere.radius, 10, gizmosOffsetZ + j);
-                    }
-                    GL.End();
+                    GL.Vertex3(pos.X - bsphere.radius, 10, gizmosOffsetZ);
+                    GL.Vertex3(pos.X + bsphere.radius, 10, gizmosOffsetZ);
                 }
-                i++;
-                j += 0.15f;
+                GL.End();
             }
             GL.LineWidth(1.0f);
         }
@@ -784,7 +771,7 @@ namespace ParallelComputedCollisionDetection
                                                         + "\n[7]\t" + s.cellArray[7].ToString() + "\t" + bd.cellIDs[7]
                                                         + "\n\n               CONTROL BITS\n"
                                                         + "\n(int)\t" + s.ctrl_bits.ToString() + "\t" + bd.ctrl_bits.ToString()
-                                                        + "\n(bin)\n\tOCL " + binValue2 + "\n\tCPU " + binValue;
+                                                        + "\n(bin)\tOCL " + binValue2 + "\n\tCPU " + binValue;
                         #endregion
                     }
                 };
