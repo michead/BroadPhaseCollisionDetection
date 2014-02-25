@@ -104,7 +104,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-    <None Include="Arvo.cl">
+    <None Include="Kernels\Arvo.cl">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="Clpp.Core\packages.config" />
@@ -113,12 +113,9 @@
     <None Include="Clpp.Core\Sort\clppSortRadixSortGPU.cl">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="clppScan_Default.cl" />
-    <None Include="clppScan_GPU.cl" />
-    <None Include="clppSort_RadixSort.cl" />
-    <None Include="clppSort_RadixSortGPU.cl" />
-    <None Include="RadixSort.cl" />
-    <None Include="scan_kernel.cl" />
+    <None Include="Kernels\oclRadixSort.cl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="DebugBox.resx">

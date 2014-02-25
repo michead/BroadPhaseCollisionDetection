@@ -39,7 +39,7 @@ namespace ParallelComputedCollisionDetection
         float coord_transf;
         float wp_scale_factor = 3;
         public float grid_edge = 3;
-        public int number_of_bodies = 64;
+        public int number_of_bodies = 128;
         int tiles;
         KeyboardState old_key;
         bool xRot;

@@ -1,4 +1,6 @@
-﻿using System;
+﻿#define CONVERSION
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -13,6 +15,7 @@ using OpenCLTemplate;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using Clpp.Core;
+using System.IO;
 
 namespace ParallelComputedCollisionDetection
 {
@@ -31,20 +34,22 @@ namespace ParallelComputedCollisionDetection
     public static class CollisionDetection
     {
         static ComputePlatform platform = ComputePlatform.Platforms[0];
-        static ComputeContextPropertyList properties = new ComputeContextPropertyList(platform);
         static ComputeContext context;
         static IList<ComputeDevice> devices;
         public static BodyData[] array;
         static ComputeProgram program;
         static string Arvo;
+        static string RadixSort;
         public static string log;
         public static string deviceInfo;
-        public const int WORK_GROUP_SIZE = 192;
+        public const int CBITS = 4;
+        public const int BLOCK_SIZE = 64;
         public const int R = 16;
         public const uint bits_to_sort = 4294967295;
         public static uint[] rs_array;
 
         public static void deviceSetUp(){
+            ComputeContextPropertyList properties = new ComputeContextPropertyList(platform);
             devices = new List<ComputeDevice>();
             foreach(ComputeDevice device in platform.Devices)
                 devices.Add(device);
@@ -83,6 +88,9 @@ namespace ParallelComputedCollisionDetection
         public unsafe static void CollisionDetectionSetUp()
         {
             int nob = Program.window.number_of_bodies;
+            uint element_count = (uint)nob * 8;
+            uint[] copy = new uint[element_count];
+
             array = new BodyData[nob];
             for (int i = 0; i < nob; i++)
             {
@@ -95,8 +103,11 @@ namespace ParallelComputedCollisionDetection
                 array[i].ID = (uint)i;
                 array[i].radius = body.getBSphere().radius;
             }
-            System.IO.StreamReader kernelStream = new System.IO.StreamReader("Arvo.cl");
+            System.IO.StreamReader kernelStream = new System.IO.StreamReader("Kernels/Arvo.cl");
             Arvo = kernelStream.ReadToEnd();
+            kernelStream.Close();
+            kernelStream = new System.IO.StreamReader("Kernels/oclRadixSort.cl");
+            RadixSort = kernelStream.ReadToEnd();
             kernelStream.Close();
             int* addrNumOfBodies = &nob;
             IntPtr anob = (IntPtr)addrNumOfBodies;
@@ -111,6 +122,7 @@ namespace ParallelComputedCollisionDetection
                 Marshal.StructureToPtr(array[i], ptr + i*structSize, false);
             byte[] input = new byte[structSize*nob];
             Marshal.Copy(ptr, input, 0, structSize * nob);
+            Marshal.FreeHGlobal(ptr);
 
 #region USELESS DEBUG
             /*Console.WriteLine("FLOAT: " + sizeof(float));
@@ -140,12 +152,7 @@ namespace ParallelComputedCollisionDetection
             ComputeBuffer<byte> objArray = new ComputeBuffer<byte>
                 (context, ComputeMemoryFlags.ReadWrite | ComputeMemoryFlags.CopyHostPointer, input);
             ComputeBuffer<uint> cellArray = new ComputeBuffer<uint>
-                (context, ComputeMemoryFlags.ReadWrite, nob * 8);
-            /*ComputeBuffer<uint> cellArray2 = new ComputeBuffer<uint>
-                (context, ComputeMemoryFlags.ReadWrite, nob * 8);
-            ComputeBuffer<uint> support = new ComputeBuffer<uint>
-                (context, ComputeMemoryFlags.ReadWrite, 256 * 24);*/
-            Marshal.FreeHGlobal(ptr);
+                (context, ComputeMemoryFlags.ReadWrite | ComputeMemoryFlags.AllocateHostPointer, element_count);
             ComputeBuffer<int> numOfBodies = new ComputeBuffer<int>
                 (context, ComputeMemoryFlags.ReadOnly | ComputeMemoryFlags.CopyHostPointer, sizeof(int), anob);
             ComputeBuffer<float> gridEdge = new ComputeBuffer<float>
@@ -157,22 +164,102 @@ namespace ParallelComputedCollisionDetection
             kernelArvo.SetMemoryArgument(1, numOfBodies);
             kernelArvo.SetMemoryArgument(2, gridEdge);
             kernelArvo.SetMemoryArgument(3, cellArray);
-            /*kernelArvo.SetMemoryArgument(4, cellArray2);
-            kernelArvo.SetMemoryArgument(5, support);*/
+
+            #region INITIALIZING RADIX SORT MEMBERS
+            uint block_count = (uint)Math.Ceiling((float)element_count / BLOCK_SIZE);
+            uint lScanCount = block_count * (1 << CBITS) / 4;
+            uint lScanSize = (uint)Math.Ceiling(((float)lScanCount / BLOCK_SIZE)) * BLOCK_SIZE;
+            uint globalSize = block_count * BLOCK_SIZE;
+            #endregion
+
+            #region COMPILING RADIX SORT
+            ComputeProgram rad_sort = new ComputeProgram(context, RadixSort);
+            rad_sort.Build(devices, "-g", null, IntPtr.Zero);
+            ComputeKernel kernel_block_sort = rad_sort.CreateKernel("clBlockSort");
+            ComputeKernel kernel_block_scan = rad_sort.CreateKernel("clBlockScan");
+            ComputeKernel kernel_block_prefix = rad_sort.CreateKernel("clBlockPrefix");
+            ComputeKernel kernel_reorder = rad_sort.CreateKernel("clReorder");
+            #endregion
+
+            #region POPULATING RADIX SORT BUFFERS
+            ComputeBuffer<uint> bfBlockScan = new ComputeBuffer<uint>(context, ComputeMemoryFlags.ReadWrite 
+                | ComputeMemoryFlags.AllocateHostPointer, block_count * (1 << CBITS));
+            ComputeBuffer<uint> bfBlockOffset = new ComputeBuffer<uint>(context, ComputeMemoryFlags.ReadWrite 
+                | ComputeMemoryFlags.AllocateHostPointer, block_count * (1 << CBITS));
+            ComputeBuffer<uint> bfBlockSum = new ComputeBuffer<uint>(context, ComputeMemoryFlags.ReadWrite
+                | ComputeMemoryFlags.AllocateHostPointer, BLOCK_SIZE);
+            ComputeBuffer<uint> temp1 = new ComputeBuffer<uint>(context, ComputeMemoryFlags.ReadWrite
+                | ComputeMemoryFlags.AllocateHostPointer, element_count);
+            #endregion
 
             //execution
             ComputeCommandQueue queue = 
                 new ComputeCommandQueue(context, ComputePlatform.Platforms[0].Devices[0], ComputeCommandQueueFlags.Profiling);
             queue.Execute(kernelArvo, null, new long[] { nob }, null, null);
+            rs_array = new uint[nob * 8];
+            queue.ReadFromBuffer<uint>(cellArray, ref rs_array, false, null);
 
-            //RADIX SORT!
-            /*rs_array = new uint[nob * 8];
+            IntPtr ptr_sc = Marshal.AllocHGlobal(sizeof(uint));
+            Marshal.StructureToPtr(lScanCount, ptr_sc, false);
+            IntPtr ptr_ec = Marshal.AllocHGlobal(sizeof(uint));
+            Marshal.StructureToPtr(element_count, ptr_ec, false);
+          
+            #region libCL RADIX SORT ITERATION
+            for (uint j = 0; j < 32; j += CBITS)
+            {
+                IntPtr ptr_j = Marshal.AllocHGlobal(sizeof(uint));
+                Marshal.StructureToPtr(j, ptr_j, false);
+
+                ComputeBuffer<uint> bf_sc = 
+                    new ComputeBuffer<uint>(context, ComputeMemoryFlags.ReadOnly | ComputeMemoryFlags.CopyHostPointer, sizeof(uint), ptr_sc);
+                ComputeBuffer<uint> iter =
+                    new ComputeBuffer<uint>(context, ComputeMemoryFlags.ReadOnly | ComputeMemoryFlags.CopyHostPointer, sizeof(uint), ptr_j);
+                ComputeBuffer<uint> bf_ec =
+                    new ComputeBuffer<uint>(context, ComputeMemoryFlags.ReadOnly | ComputeMemoryFlags.CopyHostPointer, sizeof(uint), ptr_ec);
+
+                #region BLOCK SORT
+                kernel_block_sort.SetMemoryArgument(0, cellArray);
+                kernel_block_sort.SetMemoryArgument(1, temp1);
+                kernel_block_sort.SetMemoryArgument(2, iter);
+                kernel_block_sort.SetMemoryArgument(3, bfBlockScan);
+                kernel_block_sort.SetMemoryArgument(4, bfBlockOffset);
+                kernel_block_sort.SetMemoryArgument(5, bf_ec);
+                queue.Execute(kernel_block_sort, null, new long[] { globalSize }, new long[] { BLOCK_SIZE }, null);
+                #endregion
+
+                #region BLOCK SCAN
+                kernel_block_scan.SetMemoryArgument(0, bfBlockScan);
+                kernel_block_scan.SetMemoryArgument(1, bfBlockSum);
+                kernel_block_scan.SetMemoryArgument(2, bf_sc);
+                queue.Execute(kernel_block_scan, null, new long[] { lScanSize }, new long[] { BLOCK_SIZE }, null);
+                #endregion
+
+                #region BLOCK PREFIX
+                kernel_block_prefix.SetMemoryArgument(0, bfBlockScan);
+                kernel_block_prefix.SetMemoryArgument(1, bfBlockSum);
+                kernel_block_prefix.SetMemoryArgument(2, bf_sc);
+                queue.Execute(kernel_block_prefix, null, new long[] { lScanSize }, new long[] { BLOCK_SIZE }, null);
+                #endregion
+
+                #region REORDER
+                kernel_reorder.SetMemoryArgument(0, temp1);
+                kernel_reorder.SetMemoryArgument(1, cellArray);
+                kernel_reorder.SetMemoryArgument(2, bfBlockScan);
+                kernel_reorder.SetMemoryArgument(3, bfBlockOffset);
+                kernel_reorder.SetMemoryArgument(4, iter);
+                kernel_reorder.SetMemoryArgument(5, bf_ec);
+                queue.Execute(kernel_reorder, null, new long[] { globalSize }, new long[] { BLOCK_SIZE }, null);
+                #endregion
+            }
+            #endregion
+
+            #region clpp.net RADIX SORT
+            /*
             IntPtr rs = Marshal.AllocHGlobal(nob * 8);
-            ClppContext clppContext = new ClppContext(ComputeDeviceTypes.Gpu);
+            ClppContext clppContext = new ClppContext(ComputeDeviceTypes.Cpu);
             clppContext.PrintInformation();
             Clpp.Core.Sort.ClppSortRadixSortGPU sort = new Clpp.Core.Sort.ClppSortRadixSortGPU(clppContext, nob * 8, (long)bits_to_sort, true);
             queue.ReadFromBuffer<uint>(cellArray, ref rs_array, false, null);
-            uint[] copy = new uint[nob * 8];
             for (int h = 0; h < nob * 8; h++)
                 copy[h] = rs_array[h];
             Array.Sort(copy);
@@ -183,14 +270,22 @@ namespace ParallelComputedCollisionDetection
             sort.PushDatas(a_ah, nob * 8);
             sort.Sort();
             sort.PopDatas();
-            ah.Free();
+            ah.Free();*/
+            #endregion
 
-            for (int h = 0; h < nob * 8; h++)
+            queue.ReadFromBuffer<uint>(cellArray, ref copy, false, null);
+
+            Array.Sort<uint>(rs_array);
+
+            string s = "";
+            for (int h = 0; h < element_count; h++)
             {
-                Console.WriteLine("INDEX: " + h);
-                Console.WriteLine(copy[h]);
-                Console.WriteLine(rs_array[h]);
-            }*/
+                s += "INDEX: " + h + "\n";
+                s += copy[h] + "\n";
+                s += rs_array[h] + "\n";
+            }
+            File.WriteAllText(@"C:\Users\simone\Desktop\logFromRadixSort.txt", String.Empty);
+            File.WriteAllText(@"C:\Users\simone\Desktop\logFromRadixSort.txt", s);
             
             //read from buffer
             array = new BodyData[nob];
@@ -237,29 +332,8 @@ namespace ParallelComputedCollisionDetection
                         + "\nX: " + array[i].pos[0].ToString() + "  |  " + bodies[i].getPos().X.ToString()
                         + "\nY: " + array[i].pos[1].ToString() + "  |  " + bodies[i].getPos().Y.ToString()
                         + "\nZ: " + array[i].pos[2].ToString() + "  |  " + bodies[i].getPos().Z.ToString()
-                        /*+ "\ncID[0]" + array[i].cellIDs[0].ToString() + "  |  " + bodies[i].getBSphere().cellArray[0].ToString()
-                        + "\ncID[1]" + array[i].cellIDs[1].ToString() + "  |  " + bodies[i].getBSphere().cellArray[1].ToString()
-                        + "\ncID[2]" + array[i].cellIDs[2].ToString() + "  |  " + bodies[i].getBSphere().cellArray[2].ToString()
-                        + "\ncID[3]" + array[i].cellIDs[3].ToString() + "  |  " + bodies[i].getBSphere().cellArray[3].ToString()
-                        + "\ncID[4]" + array[i].cellIDs[4].ToString() + "  |  " + bodies[i].getBSphere().cellArray[4].ToString()
-                        + "\ncID[5]" + array[i].cellIDs[5].ToString() + "  |  " + bodies[i].getBSphere().cellArray[5].ToString()
-                        + "\ncID[6]" + array[i].cellIDs[6].ToString() + "  |  " + bodies[i].getBSphere().cellArray[6].ToString()
-                        + "\ncID[7]" + array[i].cellIDs[7].ToString() + "  |  " + bodies[i].getBSphere().cellArray[7].ToString()*/
-                        /*+ "\nradius: \n\t" + Convert.ToString(BitConverter.DoubleToInt64Bits(array[i].radius), 2)
-                        + "\n\t" + Convert.ToString(BitConverter.DoubleToInt64Bits(bodies[i].getBSphere().radius), 2)
-                        + "\nX: \n\t" + Convert.ToString(BitConverter.DoubleToInt64Bits(array[i].pos[0]), 2)
-                        + "\n\t" + Convert.ToString(BitConverter.DoubleToInt64Bits(bodies[i].getPos().X), 2)
-                        + "\nY: \n\t" + Convert.ToString(BitConverter.DoubleToInt64Bits(array[i].pos[1]), 2)
-                        + "\n\t" + Convert.ToString(BitConverter.DoubleToInt64Bits(bodies[i].getPos().Y), 2)
-                        + "\nZ: \n\t" + Convert.ToString(BitConverter.DoubleToInt64Bits(array[i].pos[2]), 2)
-                        + "\n\t" + Convert.ToString(BitConverter.DoubleToInt64Bits(bodies[i].getPos().Z), 2)*/ + "\n\n";
+                        + "\n\n";
                 }
-                /*else Console.Write("Copy correctly executed at index: " + i
-                        + "\nOCL vs CPU"
-                        + "\nradius: " + array[i].radius.ToString() + "  |  " + bodies[i].getBSphere().radius.ToString()
-                        + "\nX: " + array[i].pos[0].ToString() + "  |  " + bodies[i].getPos().X.ToString()
-                        + "\nY: " + array[i].pos[1].ToString() + "  |  " + bodies[i].getPos().Y.ToString()
-                        + "\nZ: " + array[i].pos[2].ToString() + "  |  " + bodies[i].getPos().Z.ToString() + "\n");*/
             }
         }
     }
