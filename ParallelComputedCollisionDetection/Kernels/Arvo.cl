@@ -422,13 +422,12 @@ __kernel void Arvo(__global BodyData* obj_array, __global const int* n, __global
                         
   for(int l = 0; l < 8; l++){
 		cellArray[i * 8 + l] = obj_array[i].cellIDs[l];
-                ulong temp = (ulong)obj_array[i].cellIDs[l];
-                oArray[i * 8 + l] |= temp;
+                oArray[i * 8 + l] |= (ulong)obj_array[i].cellIDs[l];
                 //oArray[i * 8 + l] |= (obj_array[i].ctrl_bits & 255)  << 40;
-                //oArray[i * 8 + l] |= (obj_array[i].ID) << 32;
+                oArray[i * 8 + l] |= ((ulong)(obj_array[i].ID)) << 32;
   }
 
-  //oArray[i * 8] |= 1 << 63;
+  oArray[i * 8] |= ((ulong)1) << 63;
 /*                        
   barrier(CLK_LOCAL_MEM_FENCE);
                         

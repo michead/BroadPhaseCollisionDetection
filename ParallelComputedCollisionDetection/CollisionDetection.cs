@@ -320,13 +320,18 @@ namespace ParallelComputedCollisionDetection
             
             Array.Sort<uint>(rs_array);
 
+            indexArrayOut = new uint[element_count];
+            queue.ReadFromBuffer<uint>(iArrayIn, ref indexArrayOut, false, null);
+
             string s = "";
             for (int h = 0; h < element_count; h++)
             {
                 s += "INDEX: " + h + "\n";
-                s += copy[h] + "\n";
-                s += rs_array[h] + "\n";
-                s += unchecked((uint)o_array[h]) + "\n";
+                s += copy[h] + "\n"; //OCL
+                s += rs_array[h] + "\n"; //CPU
+                s += unchecked((uint)o_array[h]) + "\n"; //OCL reordered array cell ID
+                s += ((o_array[h] & ((ulong)281470681743360))  >> 32) + "\n"; //OCL reordered array obj ID
+                s += (indexArrayOut[h] / 8) + "\n"; // cell index divided by 8 --> should be equal to the line above;
             }
             File.WriteAllText(@"C:\Users\simone\Desktop\logFromRadixSort.txt", String.Empty);
             File.WriteAllText(@"C:\Users\simone\Desktop\logFromRadixSort.txt", s);

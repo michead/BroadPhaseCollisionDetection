@@ -113,6 +113,9 @@
     <None Include="Clpp.Core\Sort\clppSortRadixSortGPU.cl">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Include="Kernels\createCollisionCells.cl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="Kernels\oclRadixSort.cl">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
