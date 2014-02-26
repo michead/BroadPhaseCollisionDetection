@@ -95,7 +95,7 @@ typedef struct{
     uint cellIDs[8];
 }BodyData;
 
-__kernel void Arvo(__global BodyData* obj_array, __global const int* n, __global const float* grid_edge, __global uint* cellArray){
+__kernel void Arvo(__global BodyData* obj_array, __global const int* n, __global const float* grid_edge, __global uint* cellArray, __global ulong* oArray){
 
 										
     int i = get_global_id(0);
@@ -420,8 +420,15 @@ __kernel void Arvo(__global BodyData* obj_array, __global const int* n, __global
                         
 	//PHASE 1
                         
-  for(int l = 0; l < 8; l++)
+  for(int l = 0; l < 8; l++){
 		cellArray[i * 8 + l] = obj_array[i].cellIDs[l];
+                ulong temp = (ulong)obj_array[i].cellIDs[l];
+                oArray[i * 8 + l] |= temp;
+                //oArray[i * 8 + l] |= (obj_array[i].ctrl_bits & 255)  << 40;
+                //oArray[i * 8 + l] |= (obj_array[i].ID) << 32;
+  }
+
+  //oArray[i * 8] |= 1 << 63;
 /*                        
   barrier(CLK_LOCAL_MEM_FENCE);
                         

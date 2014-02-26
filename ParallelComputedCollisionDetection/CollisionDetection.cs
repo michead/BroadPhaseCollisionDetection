@@ -40,6 +40,7 @@ namespace ParallelComputedCollisionDetection
         static ComputeProgram program;
         static string Arvo;
         static string RadixSort;
+        static string reorder;
         public static string log;
         public static string deviceInfo;
         public const int CBITS = 4;
@@ -90,8 +91,15 @@ namespace ParallelComputedCollisionDetection
             int nob = Program.window.number_of_bodies;
             uint element_count = (uint)nob * 8;
             uint[] copy = new uint[element_count];
+            uint[] indexArrayIn = new uint[element_count];
+            for (int j = 0; j < element_count; j++)
+                indexArrayIn[j] = (uint)j;
+            IntPtr ptr_i = Marshal.AllocHGlobal((int)(element_count * sizeof(uint)));
+            for(int i=0; i < element_count; i++)
+                Marshal.StructureToPtr(indexArrayIn[i], ptr_i + i*sizeof(uint), false);
+            uint[] indexArrayOut = new uint[element_count];
 
-            array = new BodyData[nob];
+                array = new BodyData[nob];
             for (int i = 0; i < nob; i++)
             {
                 Body body = Program.window.bodies.ElementAt(i);
@@ -108,6 +116,9 @@ namespace ParallelComputedCollisionDetection
             kernelStream.Close();
             kernelStream = new System.IO.StreamReader("Kernels/oclRadixSort.cl");
             RadixSort = kernelStream.ReadToEnd();
+            kernelStream.Close();
+            kernelStream = new System.IO.StreamReader("Kernels/reorder.cl");
+            reorder = kernelStream.ReadToEnd();
             kernelStream.Close();
             int* addrNumOfBodies = &nob;
             IntPtr anob = (IntPtr)addrNumOfBodies;
@@ -151,6 +162,8 @@ namespace ParallelComputedCollisionDetection
 
             ComputeBuffer<byte> objArray = new ComputeBuffer<byte>
                 (context, ComputeMemoryFlags.ReadWrite | ComputeMemoryFlags.CopyHostPointer, input);
+            ComputeBuffer<ulong> oArray = new ComputeBuffer<ulong>
+                (context, ComputeMemoryFlags.ReadWrite | ComputeMemoryFlags.AllocateHostPointer, element_count);
             ComputeBuffer<uint> cellArray = new ComputeBuffer<uint>
                 (context, ComputeMemoryFlags.ReadWrite | ComputeMemoryFlags.AllocateHostPointer, element_count);
             ComputeBuffer<int> numOfBodies = new ComputeBuffer<int>
@@ -164,6 +177,9 @@ namespace ParallelComputedCollisionDetection
             kernelArvo.SetMemoryArgument(1, numOfBodies);
             kernelArvo.SetMemoryArgument(2, gridEdge);
             kernelArvo.SetMemoryArgument(3, cellArray);
+            kernelArvo.SetMemoryArgument(4, oArray);
+
+            uint[] objIDarray = new uint[element_count];
 
             #region INITIALIZING RADIX SORT MEMBERS
             uint block_count = (uint)Math.Ceiling((float)element_count / BLOCK_SIZE);
@@ -188,8 +204,11 @@ namespace ParallelComputedCollisionDetection
                 | ComputeMemoryFlags.AllocateHostPointer, block_count * (1 << CBITS));
             ComputeBuffer<uint> bfBlockSum = new ComputeBuffer<uint>(context, ComputeMemoryFlags.ReadWrite
                 | ComputeMemoryFlags.AllocateHostPointer, BLOCK_SIZE);
-            ComputeBuffer<uint> temp1 = new ComputeBuffer<uint>(context, ComputeMemoryFlags.ReadWrite
+            ComputeBuffer<uint> temp = new ComputeBuffer<uint>(context, ComputeMemoryFlags.ReadWrite
                 | ComputeMemoryFlags.AllocateHostPointer, element_count);
+            ComputeBuffer<uint> iArrayIn = new ComputeBuffer<uint>(context, ComputeMemoryFlags.ReadWrite
+                | ComputeMemoryFlags.CopyHostPointer, element_count, ptr_i);
+            ComputeBuffer<uint> iArrayOut = new ComputeBuffer<uint>(context, ComputeMemoryFlags.ReadWrite, element_count);
             #endregion
 
             //execution
@@ -204,27 +223,31 @@ namespace ParallelComputedCollisionDetection
             IntPtr ptr_ec = Marshal.AllocHGlobal(sizeof(uint));
             Marshal.StructureToPtr(element_count, ptr_ec, false);
           
+            ComputeBuffer<uint> bf_sc = 
+                    new ComputeBuffer<uint>(context, ComputeMemoryFlags.ReadOnly | ComputeMemoryFlags.CopyHostPointer, sizeof(uint), ptr_sc);
+            ComputeBuffer<uint> bf_ec =
+                    new ComputeBuffer<uint>(context, ComputeMemoryFlags.ReadOnly | ComputeMemoryFlags.CopyHostPointer, sizeof(uint), ptr_ec);
+
             #region libCL RADIX SORT ITERATION
             for (uint j = 0; j < 32; j += CBITS)
             {
                 IntPtr ptr_j = Marshal.AllocHGlobal(sizeof(uint));
                 Marshal.StructureToPtr(j, ptr_j, false);
 
-                ComputeBuffer<uint> bf_sc = 
-                    new ComputeBuffer<uint>(context, ComputeMemoryFlags.ReadOnly | ComputeMemoryFlags.CopyHostPointer, sizeof(uint), ptr_sc);
                 ComputeBuffer<uint> iter =
                     new ComputeBuffer<uint>(context, ComputeMemoryFlags.ReadOnly | ComputeMemoryFlags.CopyHostPointer, sizeof(uint), ptr_j);
-                ComputeBuffer<uint> bf_ec =
-                    new ComputeBuffer<uint>(context, ComputeMemoryFlags.ReadOnly | ComputeMemoryFlags.CopyHostPointer, sizeof(uint), ptr_ec);
 
                 #region BLOCK SORT
                 kernel_block_sort.SetMemoryArgument(0, cellArray);
-                kernel_block_sort.SetMemoryArgument(1, temp1);
-                kernel_block_sort.SetMemoryArgument(2, iter);
-                kernel_block_sort.SetMemoryArgument(3, bfBlockScan);
-                kernel_block_sort.SetMemoryArgument(4, bfBlockOffset);
-                kernel_block_sort.SetMemoryArgument(5, bf_ec);
+                kernel_block_sort.SetMemoryArgument(1, temp);
+                kernel_block_sort.SetMemoryArgument(2, iArrayIn);
+                kernel_block_sort.SetMemoryArgument(3, iArrayOut);
+                kernel_block_sort.SetMemoryArgument(4, iter);
+                kernel_block_sort.SetMemoryArgument(5, bfBlockScan);
+                kernel_block_sort.SetMemoryArgument(6, bfBlockOffset);
+                kernel_block_sort.SetMemoryArgument(7, bf_ec);
                 queue.Execute(kernel_block_sort, null, new long[] { globalSize }, new long[] { BLOCK_SIZE }, null);
+                queue.Finish();
                 #endregion
 
                 #region BLOCK SCAN
@@ -232,6 +255,7 @@ namespace ParallelComputedCollisionDetection
                 kernel_block_scan.SetMemoryArgument(1, bfBlockSum);
                 kernel_block_scan.SetMemoryArgument(2, bf_sc);
                 queue.Execute(kernel_block_scan, null, new long[] { lScanSize }, new long[] { BLOCK_SIZE }, null);
+                queue.Finish();
                 #endregion
 
                 #region BLOCK PREFIX
@@ -239,19 +263,25 @@ namespace ParallelComputedCollisionDetection
                 kernel_block_prefix.SetMemoryArgument(1, bfBlockSum);
                 kernel_block_prefix.SetMemoryArgument(2, bf_sc);
                 queue.Execute(kernel_block_prefix, null, new long[] { lScanSize }, new long[] { BLOCK_SIZE }, null);
+                queue.Finish();
                 #endregion
 
                 #region REORDER
-                kernel_reorder.SetMemoryArgument(0, temp1);
+                kernel_reorder.SetMemoryArgument(0, temp);
                 kernel_reorder.SetMemoryArgument(1, cellArray);
-                kernel_reorder.SetMemoryArgument(2, bfBlockScan);
-                kernel_reorder.SetMemoryArgument(3, bfBlockOffset);
-                kernel_reorder.SetMemoryArgument(4, iter);
-                kernel_reorder.SetMemoryArgument(5, bf_ec);
+                kernel_reorder.SetMemoryArgument(2, iArrayOut);
+                kernel_reorder.SetMemoryArgument(3, iArrayIn);
+                kernel_reorder.SetMemoryArgument(4, bfBlockScan);
+                kernel_reorder.SetMemoryArgument(5, bfBlockOffset);
+                kernel_reorder.SetMemoryArgument(6, iter);
+                kernel_reorder.SetMemoryArgument(7, bf_ec);
                 queue.Execute(kernel_reorder, null, new long[] { globalSize }, new long[] { BLOCK_SIZE }, null);
+                queue.Finish();
                 #endregion
             }
             #endregion
+
+            queue.ReadFromBuffer<uint>(cellArray, ref copy, false, null);
 
             #region clpp.net RADIX SORT
             /*
@@ -273,8 +303,21 @@ namespace ParallelComputedCollisionDetection
             ah.Free();*/
             #endregion
 
-            queue.ReadFromBuffer<uint>(cellArray, ref copy, false, null);
+            
+            ulong[] o_array = new ulong[element_count];
+            ComputeBuffer<ulong> oA = new ComputeBuffer<ulong>(context, ComputeMemoryFlags.ReadWrite, element_count);
+            ComputeProgram reOrder = new ComputeProgram(context, reorder);
+            reOrder.Build(devices, "-g", null, IntPtr.Zero);
+            ComputeKernel k_reord = reOrder.CreateKernel("reorder");
+            k_reord.SetMemoryArgument(0, iArrayIn);
+            k_reord.SetMemoryArgument(1, oArray);
+            k_reord.SetMemoryArgument(2, oA);
+            k_reord.SetMemoryArgument(3, bf_ec);
+            queue.Execute(k_reord, null, new long[] { element_count }, null, null);
+            queue.Finish();
 
+            queue.ReadFromBuffer<ulong>(oA, ref o_array, false, null);
+            
             Array.Sort<uint>(rs_array);
 
             string s = "";
@@ -283,6 +326,7 @@ namespace ParallelComputedCollisionDetection
                 s += "INDEX: " + h + "\n";
                 s += copy[h] + "\n";
                 s += rs_array[h] + "\n";
+                s += unchecked((uint)o_array[h]) + "\n";
             }
             File.WriteAllText(@"C:\Users\simone\Desktop\logFromRadixSort.txt", String.Empty);
             File.WriteAllText(@"C:\Users\simone\Desktop\logFromRadixSort.txt", s);
@@ -299,7 +343,7 @@ namespace ParallelComputedCollisionDetection
             checkCorrectness();
             Marshal.FreeHGlobal(intPtr);
 
-            //disposal
+            //disposal -- REMEMBER TO DISPOSE() THE REMAINING BUFFERS IN THE NEAR FUTURE
             cellArray.Dispose();
             objArray.Dispose();
             numOfBodies.Dispose();

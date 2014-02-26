@@ -7,12 +7,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using OpenTK;
+using OpenTK.Graphics;
 
 namespace ParallelComputedCollisionDetection
 {
     public partial class DebugBox : Form
     {
-        Window window;
+
         public DebugBox()
         {
             InitializeComponent();

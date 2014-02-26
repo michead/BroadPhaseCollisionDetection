@@ -19,6 +19,8 @@
 
 __kernel void clBlockSort(__global uint* keyIn,
                           __global uint* keyOut, 
+                          __global uint* valIn, 
+                          __global uint* valOut, 
                           __global uint* startbit_, 
                           __global uint* blockScan, 
                           __global uint* blockOffset, 
@@ -32,12 +34,15 @@ __kernel void clBlockSort(__global uint* keyIn,
 	uint startbit = *startbit_;
 	uint size = *size_;
 
-    __local uint key[BLOCKSIZE];
+    __local uint key[BLOCKSIZE]; 
+    __local uint val[BLOCKSIZE];
 
     key[threadid] = 0xFFFFFFFF;
+    val[threadid] = 0xFFFFFFFF;
     if (globalId < size)
     {  
         key[threadid] = keyIn[globalId];
+        val[threadid] = valIn[globalId];
     }
     barrier(CLK_LOCAL_MEM_FENCE);
  
@@ -46,6 +51,7 @@ __kernel void clBlockSort(__global uint* keyIn,
     for(uint bit = startbit; bit < (startbit+BITS); bit++)
     {
         uint curKey = key[threadid];
+        uint curVal = val[threadid];
         uint lsb = !((curKey >> bit) & 0x1);
         prefixSum[threadid] = lsb;
         barrier(CLK_LOCAL_MEM_FENCE);
@@ -59,12 +65,14 @@ __kernel void clBlockSort(__global uint* keyIn,
         barrier(CLK_LOCAL_MEM_FENCE);
         uint address = lsb ? prefixSum[threadid]-1: prefixSum[BLOCKSIZE-1] - prefixSum[threadid] + threadid;
         key[address] = curKey;
+        val[address] = curVal;
         barrier(CLK_LOCAL_MEM_FENCE);
     }
 
     if (globalId < size)
     {
         keyOut[globalId] = key[threadid];
+        valOut[globalId] = val[threadid];
     }
     barrier(CLK_LOCAL_MEM_FENCE);
 
@@ -106,7 +114,6 @@ __kernel void clBlockSort(__global uint* keyIn,
     {
         blockScan[threadid*totalBlocks+blockid] = offset[threadid];
     }
-
 }
 
 __kernel void clBlockScan(__global uint4* blockScan, __global uint* scanSum, __global uint* size_)
@@ -189,7 +196,9 @@ __kernel void clBlockPrefix(__global uint4* blockScan, __global uint* blockSum, 
 }
 
 __kernel void clReorder(__global uint* keyIn, 
-                        __global uint* keyOut,  
+                        __global uint* keyOut, 
+                        __global uint* valIn, 
+                        __global uint* valOut,  
                         __global uint* blockScan, 
                         __global uint* offsets, 
                         __global uint* startbit_, 
@@ -219,8 +228,10 @@ __kernel void clReorder(__global uint* keyIn,
     }
 
     uint key = keyIn[globalId];
+    uint val = valIn[globalId];
     uint radix = (key >> startbit) & 0xF;
     uint index = totalOffset[radix] + threadid - blockOffset[radix];
 
     keyOut[index] = key;
+    valOut[index] = val;
 }
