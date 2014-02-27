@@ -95,13 +95,12 @@ typedef struct{
     uint cellIDs[8];
 }BodyData;
 
-__kernel void Arvo(__global BodyData* obj_array, __global const int* n, __global const float* grid_edge, __global uint* cellArray, __global ulong* oArray){
+__kernel void Arvo(__global BodyData* obj_array, __global const float* grid_edge, __global uint* cellArray, __global ulong* oArray){
 
 										
     int i = get_global_id(0);
-    int id = get_local_id(0);
-    int group = get_group_id(0);
-    if(i>=*n) return;
+    /*int id = get_local_id(0);
+    int group = get_group_id(0);*/
             
     float cellPos[3];
     float pos[3];

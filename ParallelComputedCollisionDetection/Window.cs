@@ -51,7 +51,6 @@ namespace ParallelComputedCollisionDetection
         long elaspedTime;
         int frames;
         float updateInterval = 250f;
-        float timeLeft;
         Stopwatch timeSinceStart;
 
         MouseState mouse;
@@ -129,7 +128,7 @@ namespace ParallelComputedCollisionDetection
             timeSinceStart = new Stopwatch();
             timeSinceStart.Start();
             elaspedTime = timeSinceStart.ElapsedMilliseconds;
-            CollisionDetection.CollisionDetectionSetUp();
+            Program.cd.CollisionDetectionSetUp();
             Program.t.Start();
         }
 
@@ -189,8 +188,16 @@ namespace ParallelComputedCollisionDetection
                     Program.db.getComp_RTB().Text = "loading...";
                     Program.db.getRTB().Text = "";
                 };
-                Program.db.getRTB().BeginInvoke(mi);
-                CollisionDetection.CollisionDetectionSetUp();
+                try
+                {
+                    Program.db.getRTB().BeginInvoke(mi);
+                    Program.db.getComp_RTB().BeginInvoke(mi);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.Message);
+                }
+                Program.cd.CollisionDetectionSetUp();
                 showInfo();
             }
 
@@ -224,13 +231,24 @@ namespace ParallelComputedCollisionDetection
         {
             if (Keyboard[Key.R] && !old_key.IsKeyDown(Key.R))
             {
+                
                 MethodInvoker mi = delegate
                 {
                     Program.db.getComp_RTB().Text = "loading...";
                     Program.db.getRTB().Text = "";
                 };
+                try
+                {
+                    Program.db.getRTB().BeginInvoke(mi);
+                    Program.db.getComp_RTB().BeginInvoke(mi);
+                }
+                catch (Exception e)
+                {
+                    Console.Write(e.Message);
+                }
+
                 generateRandomBodies(number_of_bodies, true);
-                CollisionDetection.CollisionDetectionSetUp();
+                Program.cd.CollisionDetectionSetUp();
                 showInfo();
             }
             if (Keyboard[Key.Left])
@@ -715,7 +733,7 @@ namespace ParallelComputedCollisionDetection
                         string binValue = Convert.ToString(pBody.getBSphere().ctrl_bits, 2);
                         char[] bits = binValue.PadLeft(16, '0').ToCharArray();
                         binValue = "";
-                        string binValue2 = Convert.ToString(CollisionDetection.array[picked].ctrl_bits, 2);
+                        string binValue2 = Convert.ToString(Program.cd.array[picked].ctrl_bits, 2);
                         char[] bits2 = binValue2.PadLeft(16, '0').ToCharArray();
                         binValue2 = "";
                         for (int i = 0; i < 16; i++)
@@ -746,7 +764,7 @@ namespace ParallelComputedCollisionDetection
                             cellTypesIntersected += "7 ";
                         if ((s.ctrl_bits & 128) == 128)
                             cellTypesIntersected += "8 ";
-                        BodyData bd = CollisionDetection.array[picked];
+                        BodyData bd = Program.cd.array[picked];
                         #region PRINT DEBUG
                         Program.db.getRTB().Text = "Body[" + picked + "]:"
                                                     + "\n\tposition: (" + pBody.getPos().X.ToString("0.00")
@@ -776,7 +794,9 @@ namespace ParallelComputedCollisionDetection
                     }
                 };
                 try { Program.db.getRTB().BeginInvoke(mi); }
-                catch { }
+                catch(Exception e) {
+                    Console.WriteLine(e.Message);
+                }
             }
         }
 
@@ -791,20 +811,25 @@ namespace ParallelComputedCollisionDetection
                 int fps = (int)((frames * 1000f) / deltaTime);
                 frames = 0;
                 string format = System.String.Format("fps: " + fps);
-                {
-                    MethodInvoker mi = delegate
-                    {
-                        Program.db.getRTB_FPS().Text = format;
 
-                        if (fps < 30 && fps >=10)
-                            Program.db.getRTB_FPS().ForeColor = Color.Yellow;
-                        else if (fps < 10)
-                            Program.db.getRTB_FPS().ForeColor = Color.Red;
-                        else
-                            Program.db.getRTB_FPS().ForeColor = Color.LawnGreen;
-                    };
-                    try { Program.db.getRTB_FPS().BeginInvoke(mi); }
-                    catch { }
+                MethodInvoker mi = delegate
+                {
+                    Program.db.getRTB_FPS().Text = format;
+
+                    if (fps < 30 && fps >= 10)
+                        Program.db.getRTB_FPS().ForeColor = Color.Yellow;
+                    else if (fps < 10)
+                        Program.db.getRTB_FPS().ForeColor = Color.Red;
+                    else
+                        Program.db.getRTB_FPS().ForeColor = Color.LawnGreen;
+                };
+                try
+                {
+                    Program.db.getRTB_FPS().BeginInvoke(mi);
+                }
+                catch (Exception e)
+                {
+                    Console.Write(e.Message);
                 }
             }
         }

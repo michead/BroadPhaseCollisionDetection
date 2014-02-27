@@ -22,14 +22,15 @@ namespace ParallelComputedCollisionDetection
         public static Window window;
         public static DebugBox db;
         public static Thread t;
+        public static CollisionDetection cd;
 
-        [STAThread]
         public static void Main(string[] args)
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             window = new Window();
-            CollisionDetection.deviceSetUp();
+            cd = new CollisionDetection();
+            cd.deviceSetUp();
             t = new Thread(RunForm);
             //t.Start();
             window.Run(60.0);

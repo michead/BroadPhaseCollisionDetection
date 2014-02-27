@@ -8,47 +8,45 @@ __kernel void setupCollisionCells(__global const ulong* in, //1024
                                    __global uint* numOfOcc){ // 1093
     int i = get_global_id(0);
     
-    if(i >= *n || ((in[i] == 0xFFFFFFFF)))
-        return;
-        
-    //atom_xchg(&temp[i], i);
-    //uint nOO = numOfOcc[(uint)in[i]];
-    //numOfOcc[in[i]] = numOfOcc[in[i]] + 1;
-    //atom_xchg(&numOfOcc[(uint)in[i]], nOO + 1);
-    //atom_inc(&temp[i]);
+    //if((uint)in[i] == (uint)4294967295)
+        //return;
+    
+    if((uint)in[i] != (uint)4294967295)
+        atom_inc(&numOfOcc[(uint)in[i]]);
+    
+    barrier(CLK_GLOBAL_MEM_FENCE);
+    
     //count of occurrences of each cell ID
-    if((i==0 || in[i] != in[i-1])/* && (in[i] & ((ulong)1 << 63))*/){
-        //temp[i] = numOfOcc[in[i]];
+    if((i==0 || ((uint)in[i] != (uint)in[i-1]))/* && (in[i] & ((ulong)1 << 63))*/ && ((uint)in[i] != (uint)4294967295)){
         //offset[(uint)in[i]] = (uint)i;
-        //true collision cell
-        //offset[(uint)in[i]] |= ((uint)1 << 16);
-        //atom_xchg(&temp[i], 1);
-        //atom_xchg(&temp[i], numOfOcc[(uint)in[i]]);
-        //for(int p = 1; p < numOfOcc[(int)in[i]]; p++){
-            //atom_xchg(&temp[i + p], 1);
-            //offset[(uint)in[i + p]] |= ((uint)1 << 16);
-        //}
+        //offset[(uint)in[i]] |= ((uint)(1 << 16));
+        temp[i] = 1;
+        
+        //temp[i] = numOfOcc[(uint)in[i]]; //!!!!!!  why copy doesn't work???? -- barrier works?
+        for(int p = 1; p < numOfOcc[(uint)in[i]]; p++){
+           temp[i + p] = 1;
+        }
         //atom_xchg(numOfCCells, *numOfCCells + numOfOcc[(int)in[i]]);
     }
     
-    barrier(CLK_LOCAL_MEM_FENCE);
+    //barrier(CLK_GLOBAL_MEM_FENCE);
     /*
     //prefix sum
     for(int j = 1; j <= (int)log2((float)*n); j++){
         if(i >= (int)pow(2, (float)j)){
-            barrier(CLK_LOCAL_MEM_FENCE);
+            barrier(CLK_GLOBAL_MEM_FENCE);
             uint temp2 = temp[i - (int)pow(2, (float)(j-1))];
-            barrier(CLK_LOCAL_MEM_FENCE);
+            barrier(CLK_GLOBAL_MEM_FENCE);
             atom_xchg(&temp[i], temp2 + temp[i]);
             temp[i] = temp[i - (int)pow(2, (float)(j-1))] + temp[i];
         }
-        barrier(CLK_LOCAL_MEM_FENCE);
+        barrier(CLK_GLOBAL_MEM_FENCE);
     }
     
     if((uint)in[i] == 0xFFFFFFFF)
         temp[i] = 0;
     
-    barrier(CLK_LOCAL_MEM_FENCE);
+    barrier(CLK_GLOBAL_MEM_FENCE);
     
     if((i==0 || in[i]!=in[i-1]) && (in[i] & ((ulong)1 << 63))){
         out[temp[i]] = in[i];
@@ -56,5 +54,5 @@ __kernel void setupCollisionCells(__global const ulong* in, //1024
             out[temp[i] + p] = in[i + p];
         }
     }
-    barrier(CLK_LOCAL_MEM_FENCE);*/
+    barrier(CLK_GLOBAL_MEM_FENCE);*/
 }

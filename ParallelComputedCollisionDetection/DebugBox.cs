@@ -27,11 +27,11 @@ namespace ParallelComputedCollisionDetection
             this.SetBounds(0, 0, Screen.GetWorkingArea(this).Width, Screen.GetWorkingArea(this).Height);
             rtb.SetBounds(this.Width - 350, 15, 350, 250);
             rtb2.SetBounds(rtb.Location.X, 300, 350, 425);
-            rtb2.Text = CollisionDetection.deviceInfo;
+            rtb2.Text = Program.cd.deviceInfo;
             fps_rtb.SetBounds(10, 15, 50, 20);
             comp_rtb.SetBounds(10, 40, 320, 320);
             rtb_log.SetBounds(10, 345, 320, 380);
-            rtb_log.Text = CollisionDetection.log;
+            rtb_log.Text = Program.cd.log;
         }
 
         public RichTextBox getRTB()
