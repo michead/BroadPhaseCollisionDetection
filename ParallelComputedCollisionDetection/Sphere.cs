@@ -346,7 +346,7 @@ namespace ParallelComputedCollisionDetection
             float ge = (float)Program.window.grid_edge;
             cellArray[index] = (((uint)((hcp.X + 10) / ge) << XSHIFT) |
                                 ((uint)((hcp.Y + 10) / ge) << YSHIFT) |
-                                ((uint)((hcp.Z + 10) / ge) << ZSHIFT)) + (uint)1;
+                                ((uint)((hcp.Z + 10) / ge) << ZSHIFT));
         }
 
         bool checkForSphereBoxIntersection(Vector3 c1,  Vector3 c2, float radius)

@@ -18,7 +18,7 @@
                     obj_array[i].cellIDs[k] = \
                         ((((uint)((x + 10) / ge)) << XSHIFT) |  \
                         (((uint)((y + 10) / ge)) << YSHIFT) |  \
-                        (((uint)((z + 10) / ge)) << ZSHIFT)) + (uint)1;
+                        (((uint)((z + 10) / ge)) << ZSHIFT));
                     
 /*#define MOD(x, y) \
             (x - (y * (int)(x/y)))
@@ -428,6 +428,8 @@ __kernel void Arvo(__global BodyData* obj_array, __global const int* n, __global
   }
 
   oArray[i * 8] |= ((ulong)1) << 63;
+
+  barrier(CLK_LOCAL_MEM_FENCE);
 /*                        
   barrier(CLK_LOCAL_MEM_FENCE);
                         
