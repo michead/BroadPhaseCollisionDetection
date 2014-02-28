@@ -15,6 +15,8 @@ namespace ParallelComputedCollisionDetection
     public partial class DebugBox : Form
     {
 
+        public bool loaded = false;
+
         public DebugBox()
         {
             InitializeComponent();
@@ -32,26 +34,11 @@ namespace ParallelComputedCollisionDetection
             comp_rtb.SetBounds(10, 40, 320, 320);
             rtb_log.SetBounds(10, 345, 320, 380);
             rtb_log.Text = Program.cd.log;
+            loaded = true;
         }
 
-        public RichTextBox getRTB()
-        {
-            return rtb;
-        }
-
-        public RichTextBox getRTB_FPS()
-        {
-            return fps_rtb;
-        }
-
-        public RichTextBox getComp_RTB()
-        {
-            return comp_rtb;
-        }
-
-        public RichTextBox getRTB_log()
-        {
-            return rtb_log;
+        public void close(){
+            this.Close();
         }
     }
 }

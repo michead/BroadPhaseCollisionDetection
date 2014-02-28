@@ -120,6 +120,9 @@
     <None Include="Kernels\createCollisionCells.cl">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Include="Kernels\scanCollisionCells.cl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="Kernels\setupCollisionCells.cl">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

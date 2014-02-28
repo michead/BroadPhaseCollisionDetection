@@ -128,7 +128,7 @@ namespace ParallelComputedCollisionDetection
             timeSinceStart = new Stopwatch();
             timeSinceStart.Start();
             elaspedTime = timeSinceStart.ElapsedMilliseconds;
-            Program.cd.CollisionDetectionSetUp();
+            Program.cd.CreateCollisionCellList();
             Program.t.Start();
         }
 
@@ -152,7 +152,21 @@ namespace ParallelComputedCollisionDetection
 
             if (Keyboard[OpenTK.Input.Key.Escape])
             {
-                Program.t.Abort();
+                /*try
+                {
+                    Program.cd.DisposeComponents();
+                    Program.t.Abort();
+                }
+                catch { }*/
+                MethodInvoker mi = delegate
+                {
+                    Program.db.close();
+                };
+                try
+                {
+                    Program.db.BeginInvoke(mi);
+                }
+                catch{}
                 this.Exit();
             }
 
@@ -185,19 +199,21 @@ namespace ParallelComputedCollisionDetection
             {
                 MethodInvoker mi = delegate
                 {
-                    Program.db.getComp_RTB().Text = "loading...";
-                    Program.db.getRTB().Text = "";
+                    Program.db.comp_rtb.Text = "loading...";
+                    Program.db.rtb.Text = "";
+                    Program.db.fps_rtb.Text = "";
                 };
                 try
                 {
-                    Program.db.getRTB().BeginInvoke(mi);
-                    Program.db.getComp_RTB().BeginInvoke(mi);
+                    Program.db.rtb.BeginInvoke(mi);
+                    Program.db.comp_rtb.BeginInvoke(mi);
+                    Program.db.fps_rtb.BeginInvoke(mi);
                 }
                 catch (Exception e)
                 {
                     Console.WriteLine(e.Message);
                 }
-                Program.cd.CollisionDetectionSetUp();
+                Program.cd.CreateCollisionCellList();
                 showInfo();
             }
 
@@ -234,13 +250,13 @@ namespace ParallelComputedCollisionDetection
                 
                 MethodInvoker mi = delegate
                 {
-                    Program.db.getComp_RTB().Text = "loading...";
-                    Program.db.getRTB().Text = "";
+                    Program.db.comp_rtb.Text = "loading...";
+                    Program.db.rtb.Text = "";
                 };
                 try
                 {
-                    Program.db.getRTB().BeginInvoke(mi);
-                    Program.db.getComp_RTB().BeginInvoke(mi);
+                    Program.db.rtb.BeginInvoke(mi);
+                    Program.db.comp_rtb.BeginInvoke(mi);
                 }
                 catch (Exception e)
                 {
@@ -248,7 +264,7 @@ namespace ParallelComputedCollisionDetection
                 }
 
                 generateRandomBodies(number_of_bodies, true);
-                Program.cd.CollisionDetectionSetUp();
+                Program.cd.CreateCollisionCellList();
                 showInfo();
             }
             if (Keyboard[Key.Left])
@@ -723,9 +739,9 @@ namespace ParallelComputedCollisionDetection
                 {
                     if (picked == -1)
                     {
-                        Program.db.getRTB().Text = "";
+                        Program.db.rtb.Text = "";
                         //if (Program.db.getComp_RTB().Text != "loading...")
-                        Program.db.getComp_RTB().Text = "";
+                        Program.db.comp_rtb.Text = "";
                     }
                     else
                     {
@@ -766,7 +782,7 @@ namespace ParallelComputedCollisionDetection
                             cellTypesIntersected += "8 ";
                         BodyData bd = Program.cd.array[picked];
                         #region PRINT DEBUG
-                        Program.db.getRTB().Text = "Body[" + picked + "]:"
+                        Program.db.rtb.Text = "Body[" + picked + "]:"
                                                     + "\n\tposition: (" + pBody.getPos().X.ToString("0.00")
                                                     + ", " + pBody.getPos().Y.ToString("0.00")
                                                     + ", " + pBody.getPos().Z.ToString("0.00") + ")"
@@ -777,7 +793,7 @@ namespace ParallelComputedCollisionDetection
                                                     + "\n\tcTypes inters.: " + cellTypesIntersected
                                                     + "\n\tBodyData struct size: " + Marshal.SizeOf(bd);
 
-                        Program.db.getComp_RTB().Text = "\n\tCPU vs OCL"
+                        Program.db.comp_rtb.Text = "\n\tCPU vs OCL"
                                                         + "\n\n                       HASH\n"
                                                         + "\n[0]\t" + s.cellArray[0].ToString() + "\t" + bd.cellIDs[0]
                                                         + "\n[1]\t" + s.cellArray[1].ToString() + "\t" + bd.cellIDs[1]
@@ -793,9 +809,14 @@ namespace ParallelComputedCollisionDetection
                         #endregion
                     }
                 };
-                try { Program.db.getRTB().BeginInvoke(mi); }
+                try { Program.db.rtb.BeginInvoke(mi); }
                 catch(Exception e) {
                     Console.WriteLine(e.Message);
+                }
+                try { Program.db.comp_rtb.BeginInvoke(mi); }
+                catch (Exception e2)
+                {
+                    Console.WriteLine(e2.Message);
                 }
             }
         }
@@ -814,18 +835,18 @@ namespace ParallelComputedCollisionDetection
 
                 MethodInvoker mi = delegate
                 {
-                    Program.db.getRTB_FPS().Text = format;
+                    Program.db.fps_rtb.Text = format;
 
                     if (fps < 30 && fps >= 10)
-                        Program.db.getRTB_FPS().ForeColor = Color.Yellow;
+                        Program.db.fps_rtb.ForeColor = Color.Yellow;
                     else if (fps < 10)
-                        Program.db.getRTB_FPS().ForeColor = Color.Red;
+                        Program.db.fps_rtb.ForeColor = Color.Red;
                     else
-                        Program.db.getRTB_FPS().ForeColor = Color.LawnGreen;
+                        Program.db.fps_rtb.ForeColor = Color.LawnGreen;
                 };
                 try
                 {
-                    Program.db.getRTB_FPS().BeginInvoke(mi);
+                    Program.db.fps_rtb.BeginInvoke(mi);
                 }
                 catch (Exception e)
                 {

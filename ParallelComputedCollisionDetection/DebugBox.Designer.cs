@@ -130,10 +130,10 @@
 
         #endregion
 
-        private System.Windows.Forms.RichTextBox rtb;
-        private System.Windows.Forms.RichTextBox rtb2;
-        private System.Windows.Forms.RichTextBox fps_rtb;
-        private System.Windows.Forms.RichTextBox comp_rtb;
-        private System.Windows.Forms.RichTextBox rtb_log;
+        public System.Windows.Forms.RichTextBox rtb;
+        public System.Windows.Forms.RichTextBox rtb2;
+        public System.Windows.Forms.RichTextBox fps_rtb;
+        public System.Windows.Forms.RichTextBox comp_rtb;
+        public System.Windows.Forms.RichTextBox rtb_log;
     }
 }

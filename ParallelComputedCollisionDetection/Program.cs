@@ -24,6 +24,7 @@ namespace ParallelComputedCollisionDetection
         public static Thread t;
         public static CollisionDetection cd;
 
+        [STAThread]
         public static void Main(string[] args)
         {
             Application.EnableVisualStyles();
@@ -34,6 +35,7 @@ namespace ParallelComputedCollisionDetection
             t = new Thread(RunForm);
             //t.Start();
             window.Run(60.0);
+            cd.DisposeComponents();
         }
 
         public static void RunForm()

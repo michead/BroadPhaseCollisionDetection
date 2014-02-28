@@ -19,10 +19,11 @@ __kernel void setupCollisionCells(  __global const ulong* in, //1024
     barrier(CLK_GLOBAL_MEM_FENCE);
     
     //count of occurrences of each cell ID
-    if((i==0 || ((uint)in[i] != (uint)in[i-1])) && /*(in[i] & ((ulong)1 << 63)) &&*/ ((uint)in[i] != (uint)4294967295)){
+    if((i==0 || ((uint)in[i] != (uint)in[i-1])) && (in[i] & ((ulong)1 << 63)) && ((uint)in[i] != (uint)4294967295)){
         //offset[(uint)in[i]] = (uint)i;
         //offset[(uint)in[i]] |= ((uint)(1 << 16));
         temp[i] = 1;
+        offset[i] = i;
         //atom_inc(n);
         
         //temp[i] = numOfOcc[(uint)in[i]]; //!!!!!!  why copy doesn't work???? -- barrier works?
