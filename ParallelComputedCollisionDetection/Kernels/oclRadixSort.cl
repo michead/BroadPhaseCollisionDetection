@@ -15,7 +15,7 @@
 #define BITS 4
 #define RADIX (1<<BITS)
 #define WARPSIZE 32
-#define BLOCKSIZE 64
+#define BLOCKSIZE 32    
 
 __kernel void clBlockSort(__global uint* keyIn,
                           __global uint* keyOut, 

@@ -28,8 +28,8 @@ namespace ParallelComputedCollisionDetection
         public List<Body> cells;
 
         public const int XSHIFT = 0;
-        public const int YSHIFT = 4;
-        public const int ZSHIFT = 8;
+        public const int YSHIFT = 3;
+        public const int ZSHIFT = 6;
         public const uint ICType1 = 1;
         public const uint ICType2 = 2;
         public const uint ICType3 = 4;
@@ -91,7 +91,7 @@ namespace ParallelComputedCollisionDetection
             checkCellType(cellPos.X, cellPos.Y, cellPos.Z, true);
             //hashCell(cellPos, 0);
             
-            #region Check For Collisions
+            #region CHECK FOR COLLISIONS
             //right
             if (checkForSphereBoxIntersection(
                                 new Vector3(cellPos.X + grid_edge * 0.5f, cellPos.Y - grid_edge * 0.5f, cellPos.Z - grid_edge * 0.5f),
@@ -143,7 +143,7 @@ namespace ParallelComputedCollisionDetection
                                 new Vector3(cellPos.X + grid_edge * 0.5f, cellPos.Y + grid_edge * 0.5f, cellPos.Z - grid_edge * 0.5f),
                                 radius))
             {
-                cells.Add(new Parallelepiped(Vector3.Add(cellPos, new Vector3(0f, 0f, -grid_edge)), -grid_edge, -1));
+                cells.Add(new Parallelepiped(Vector3.Add(cellPos, new Vector3(0f, 0f, -grid_edge)), grid_edge, -1));
             }
 
             //bottom_left

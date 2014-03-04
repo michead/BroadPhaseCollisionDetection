@@ -1,6 +1,8 @@
-__kernel void reorder(__global const uint* index, __global const ulong* in, __global ulong* out, __global int* n){
+__kernel void reorder(  __global uint* index, 
+                        __global ulong* in, 
+                        __global ulong* out){
+    
     int i = get_global_id(0);
-    if(i >= *n)
-        return;
+
     out[i] = in[index[i]];
 }

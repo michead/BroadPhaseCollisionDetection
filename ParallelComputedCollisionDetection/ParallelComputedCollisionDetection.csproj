@@ -80,16 +80,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Body.cs" />
-    <Compile Include="Clpp.Core\ClppContext.cs" />
-    <Compile Include="Clpp.Core\ClppProgram.cs" />
-    <Compile Include="Clpp.Core\Scan\ClppScan.cs" />
-    <Compile Include="Clpp.Core\Scan\ClppScanDefault.cs" />
-    <Compile Include="Clpp.Core\Scan\ClppScanGPU.cs" />
-    <Compile Include="Clpp.Core\Sort\ClppSort.cs" />
-    <Compile Include="Clpp.Core\Sort\ClppSortRadixSortGPU.cs" />
-    <Compile Include="Clpp.Core\Utilities\DisposeHelper.cs" />
-    <Compile Include="Clpp.Core\Utilities\EmbeddedResourceUtilities.cs" />
-    <Compile Include="Clpp.Core\Utilities\OwnedObject.cs" />
     <Compile Include="CollisionDetection.cs" />
     <Compile Include="DebugBox.cs">
       <SubType>Form</SubType>
@@ -105,28 +95,19 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-    <None Include="Kernels\Arvo.cl">
+    <None Include="Kernels\ccArrayCreation.cl">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="Clpp.Core\packages.config" />
-    <None Include="Clpp.Core\Scan\clppScanDefault.cl" />
-    <None Include="Clpp.Core\Scan\clppScanGPU.cl" />
-    <None Include="Clpp.Core\Sort\clppSortRadixSortGPU.cl">
+    <None Include="Kernels\dataInitialization.cl">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="Kernels\clppScanDefault.cl">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="Kernels\createCollisionCells.cl">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="Kernels\scanCollisionCells.cl">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="Kernels\setupCollisionCells.cl">
+    <None Include="Kernels\elementCount.cl">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="Kernels\oclRadixSort.cl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Kernels\prefixSum.cl">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="Kernels\reorder.cl">
@@ -154,9 +135,6 @@
       <ProductName>.NET Framework 3.5 SP1</ProductName>
       <Install>false</Install>
     </BootstrapperPackage>
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="Clpp.Core\Clpp.Core.csproj" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -1,4 +1,5 @@
-﻿using System;
+﻿//#define TEST
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -39,7 +40,7 @@ namespace ParallelComputedCollisionDetection
         float coord_transf;
         float wp_scale_factor = 3;
         public float grid_edge = 3;
-        public int number_of_bodies = 128;
+        public int number_of_bodies = 16;
         int tiles;
         KeyboardState old_key;
         bool xRot;
@@ -79,7 +80,7 @@ namespace ParallelComputedCollisionDetection
         public Window()
             : base(1366, 768, new GraphicsMode(32, 0, 0, 4), "Parallel Computed Collision Detection")
         {
-            WindowState = WindowState.Fullscreen;
+            this.WindowState = WindowState.Fullscreen;
         }
 
         protected override void OnLoad(EventArgs e)
@@ -121,6 +122,11 @@ namespace ParallelComputedCollisionDetection
             
             generateRandomBodies(number_of_bodies, true);
             calculateGridEdge();
+            foreach (Body body in bodies)
+            {
+                body.updateBoundingSphere();
+                body.getBSphere().checkForCellIntersection();
+            }
 
             mouse = OpenTK.Input.Mouse.GetState();
             coord_transf = Screen.PrimaryScreen.Bounds.Height / 27f;
@@ -128,8 +134,9 @@ namespace ParallelComputedCollisionDetection
             timeSinceStart = new Stopwatch();
             timeSinceStart.Start();
             elaspedTime = timeSinceStart.ElapsedMilliseconds;
-            Program.cd.CreateCollisionCellList();
+            Program.cd.CreateCollisionCellArray();
             Program.t.Start();
+            while (Program.ready == false) ;
         }
 
         protected override void OnUnload(EventArgs e)
@@ -149,15 +156,11 @@ namespace ParallelComputedCollisionDetection
         protected override void OnUpdateFrame(FrameEventArgs e)
         {
             base.OnUpdateFrame(e);
+#if TEST
 
+#else
             if (Keyboard[OpenTK.Input.Key.Escape])
             {
-                /*try
-                {
-                    Program.cd.DisposeComponents();
-                    Program.t.Abort();
-                }
-                catch { }*/
                 MethodInvoker mi = delegate
                 {
                     Program.db.close();
@@ -166,7 +169,8 @@ namespace ParallelComputedCollisionDetection
                 {
                     Program.db.BeginInvoke(mi);
                 }
-                catch{}
+                catch(Exception ex)
+                { Console.WriteLine("Error encountered while closing the application - " + ex.Message); }
                 this.Exit();
             }
 
@@ -179,6 +183,7 @@ namespace ParallelComputedCollisionDetection
             checkKeyboardInput();
             foreach (Body body in bodies)
                 body.updateBoundingSphere();
+        #endif
         }
 
         void checkMouseInput()
@@ -211,9 +216,9 @@ namespace ParallelComputedCollisionDetection
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine(e.Message);
+                    Console.WriteLine("Error encountered while updating OCL data - " + e.Message);
                 }
-                Program.cd.CreateCollisionCellList();
+                Program.cd.CreateCollisionCellArray();
                 showInfo();
             }
 
@@ -252,19 +257,21 @@ namespace ParallelComputedCollisionDetection
                 {
                     Program.db.comp_rtb.Text = "loading...";
                     Program.db.rtb.Text = "";
+                    Program.db.fps_rtb.Text = "";
                 };
                 try
                 {
                     Program.db.rtb.BeginInvoke(mi);
-                    Program.db.comp_rtb.BeginInvoke(mi);
                 }
                 catch (Exception e)
                 {
-                    Console.Write(e.Message);
+                    Console.Write("Error encountered while generating random bodies - " + e.Message);
                 }
-
+                picked = -1; //this resolves the IndexOutOfBoundException
                 generateRandomBodies(number_of_bodies, true);
-                Program.cd.CreateCollisionCellList();
+                Program.cd.CreateCollisionCellArray();
+                
+                //picked = -1;
                 showInfo();
             }
             if (Keyboard[Key.Left])
@@ -364,7 +371,8 @@ namespace ParallelComputedCollisionDetection
         protected override void OnRenderFrame(FrameEventArgs e)
         {
             base.OnRenderFrame(e);
-
+#if TEST
+#else
             GL.Clear(TK.ClearBufferMask.DepthBufferBit | TK.ClearBufferMask.ColorBufferBit);
 
             if (ortho)
@@ -432,6 +440,7 @@ namespace ParallelComputedCollisionDetection
 
             showFPS();
             //showInfo();
+#endif
         }
 
         void DrawGrid()
@@ -811,12 +820,7 @@ namespace ParallelComputedCollisionDetection
                 };
                 try { Program.db.rtb.BeginInvoke(mi); }
                 catch(Exception e) {
-                    Console.WriteLine(e.Message);
-                }
-                try { Program.db.comp_rtb.BeginInvoke(mi); }
-                catch (Exception e2)
-                {
-                    Console.WriteLine(e2.Message);
+                    Console.WriteLine("Error encountered while updating info - " + e.Message);
                 }
             }
         }
@@ -850,7 +854,7 @@ namespace ParallelComputedCollisionDetection
                 }
                 catch (Exception e)
                 {
-                    Console.Write(e.Message);
+                    Console.Write("Error encountered while updating fps counter - " + e.Message);
                 }
             }
         }
