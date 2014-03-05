@@ -18,15 +18,19 @@ __kernel void prefixSum(    __global uint* temp,
     if(i >= ((int)pow(2, (float)iter)))
         temp[i] = temp2 + temp3;
 */
+    uint temp2;
+    uint temp3;
     uint iter = *iteration;
-    uint temp2 = 0;
-    uint temp3 = 0;
+    //barrier(CLK_GLOBAL_MEM_FENCE);
     if(i >= ((int)pow(2, (float)iter)))
-        temp2 = temp[i - (int)pow(2, (float)(iter))];
-    barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
+        //temp2 = temp[i - (int)pow(2, (float)(iter) - 1)];
+        atom_xchg(&temp2, temp[i - (int)pow(2, (float)(iter) - 1)]);
+    //barrier(CLK_GLOBAL_MEM_FENCE);
     if(i >= ((int)pow(2, (float)iter)))
-        temp3 = temp[i];
-    barrier(CLK_GLOBAL_MEM_FENCE | CLK_LOCAL_MEM_FENCE);
+        //temp3 = temp[i];
+        atom_xchg(&temp3, temp[i]);
+    //barrier(CLK_GLOBAL_MEM_FENCE);
     if(i >= ((int)pow(2, (float)iter)))
-        atom_xchg(&temp[i], temp2 + temp3);
+        //temp[i] = temp2 + temp3;
+        atomic_xchg(&temp[i], temp2 + temp3);
 }

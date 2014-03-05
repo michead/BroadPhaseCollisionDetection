@@ -19,7 +19,8 @@ __kernel void elementCount(  __global const ulong* in,
         
         
         for(uint p = 1; p < occPerRad[(uint)in[i]]; p++){
-           temp[i + p] = 1;
+            temp[i + p] = 1;
+            atom_inc(n);
         }
     }
 }

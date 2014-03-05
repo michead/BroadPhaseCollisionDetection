@@ -222,7 +222,7 @@ namespace ParallelComputedCollisionDetection
             Marshal.FreeHGlobal(intPtr);
             #endregion
 
-            #region CHECK OBJECTID AND CELLID ARRAYS
+            #region CHECK OBJECT ID AND CELL ID ARRAYS
 
             uint[] unsortedCellIDArray = new uint[num_of_elements];
             ulong[] unsortedObjectIDArray = new ulong[num_of_elements];
@@ -381,25 +381,6 @@ namespace ParallelComputedCollisionDetection
             File.WriteAllText(Application.StartupPath + @"\indexLog.txt", indexOut);
             #endregion
 
-            //DATA INITIALIZATION
-            b_objectData.Dispose();
-            b_objectIDArray.Dispose();
-            b_cellIDArray.Dispose();
-            b_gridEdge.Dispose();
-            //RADIX SORT
-            b_blockScan.Dispose();
-            b_blockOffset.Dispose();
-            b_blockSum.Dispose();
-            b_temp.Dispose();
-            b_iArrayIn.Dispose();
-            b_iArrayOut.Dispose();
-            b_scanCount.Dispose();
-            b_numberOfElems.Dispose();
-            //OBJECT ID ARRAY REORDER
-            b_reorder.Dispose();
-
-            return;
-
             #region ELEMENT COUNT
 
             //281 -> max value a cell hash can be
@@ -434,9 +415,10 @@ namespace ParallelComputedCollisionDetection
             }
             queue.Finish();
 
-            queue.ReadFromBuffer<uint>(b_temp2, ref temp_array, true, null);
-            queue.ReadFromBuffer<uint>(b_occPerRad, ref n_occurrences, true, null);
-            queue.ReadFromBuffer<uint>(b_numOfCC, ref nocc, true, null);
+            queue.ReadFromBuffer<uint>(b_temp2, ref temp_array, false, null);
+            queue.ReadFromBuffer<uint>(b_occPerRad, ref n_occurrences, false, null);
+            queue.ReadFromBuffer<uint>(b_numOfCC, ref nocc, false, null);
+            queue.Finish();
 
             //Console.WriteLine(sum);
             //Console.WriteLine(nocc[0]);
@@ -484,7 +466,7 @@ namespace ParallelComputedCollisionDetection
                 k_prefixSum.SetMemoryArgument(1, b_iteration2);
                 try
                 {
-                    queue.Execute(k_prefixSum, null, new long[] { num_of_elements }, null, null);
+                    queue.Execute(k_prefixSum, null, new long[] { num_of_elements }, new long[] { num_of_elements }, null);
                 }
                 catch (Exception e)
                 {
@@ -498,7 +480,7 @@ namespace ParallelComputedCollisionDetection
             string sscan = "";
 
             queue.ReadFromBuffer<uint>(b_temp2, ref temp_array2, false, null);
-            //queue.ReadFromBuffer<uint>(numOfCC, ref nocc, false, null);
+            queue.ReadFromBuffer<uint>(b_numOfCC, ref nocc, false, null);
 
             for (int h = 0; h < num_of_elements; h++)
             {
@@ -506,21 +488,23 @@ namespace ParallelComputedCollisionDetection
                 sscan += temp_array2[h] + "\n";
             }
             File.WriteAllText(Application.StartupPath + @"\scanLog.txt", sscan);
-            /*
+            
             #region CHECK SUM 
+
             uint sum = 0;
-            for (int p = 0; p < num_of_elements; p++) //TODO CHANGE TO nocc[0]
+            for (int p = 0; p < num_of_elements; p++) //TODO CHANGE TO nocc[0] -- but why??
                 sum += temp_array[p];
             Console.WriteLine(".NET sum: " + sum);
             Console.WriteLine("OCL sum: " + nocc[0]);
+            
             #endregion
-            */
+            
             #endregion
 
             #region COLLISION CELL ARRAY CREATION
 
             uint[] outArray = new uint[nocc[0]];
-            b_ccArray = new ComputeBuffer<ulong>(context, ComputeMemoryFlags.ReadWrite, num_of_elements);//TODO !!!!! CHANGE TO nocc[0]
+            b_ccArray = new ComputeBuffer<ulong>(context, ComputeMemoryFlags.ReadWrite, nocc[0]);//TODO !!!!! CHANGE TO nocc[0]
 
             GCHandle gch_ta = GCHandle.Alloc(temp_array, GCHandleType.Pinned);
             IntPtr ptr_ta = gch_ta.AddrOfPinnedObject();
@@ -528,7 +512,7 @@ namespace ParallelComputedCollisionDetection
             b_temp3 =
                 new ComputeBuffer<ulong>(context, ComputeMemoryFlags.ReadWrite | ComputeMemoryFlags.CopyHostPointer, num_of_elements, ptr_ta);
             b_ccIndexes =
-                new ComputeBuffer<uint>(context, ComputeMemoryFlags.ReadWrite, num_of_elements);//TODO!!! CHANGE TO nocc[0]
+                new ComputeBuffer<uint>(context, ComputeMemoryFlags.ReadWrite, nocc[0]);//TODO!!! CHANGE TO nocc[0]
 
             k_ccArrayCreation.SetMemoryArgument(0, b_reorder);
             k_ccArrayCreation.SetMemoryArgument(1, b_ccArray);
@@ -548,6 +532,7 @@ namespace ParallelComputedCollisionDetection
             queue.Finish();
 
             queue.ReadFromBuffer(b_ccArray, ref out_array, false, null);
+            queue.Finish();
 
             #endregion
 
