@@ -1,4 +1,5 @@
 ﻿#define ALL
+#define PRINT
 
 using System;
 using System.Collections.Generic;
@@ -48,9 +49,33 @@ namespace ParallelComputedCollisionDetection
         public const uint bits_to_sort = 4294967295;
         public BodyData[] array;
         System.IO.StreamReader kernelStream;
+
+        #region PERF
         Stopwatch time;
-        //long exe_time;
-        
+        Stopwatch time2;
+        Stopwatch time3;
+        long exe_time;
+        long buffer_time;
+        long program_time;
+        long kernel_time;
+        long queue_time;
+        long context_time;
+        long b_start;
+        long b_count;
+        long k_start;
+        long k_count;
+        long p_start;
+        long p_count;
+        long dataInit_start;
+        long radixSort_start;
+        long radixSort_count;
+        long reorder_start;
+        long elemCount_start;
+        long prefixSum_start;
+        long prefixSum_count;
+        long ccArrayC_start;
+        #endregion
+
         #region PROGRAMS
         ComputeProgram p_dataInitialization;
         ComputeProgram p_reorder;
@@ -105,20 +130,14 @@ namespace ParallelComputedCollisionDetection
         #endregion
         #endregion
 
-        public void deviceSetUp()
+        public void deviceSpecs()
         {
-            platform = ComputePlatform.Platforms[0];
-            properties = new ComputeContextPropertyList(platform);
-            devices = new List<ComputeDevice>();
-            foreach (ComputeDevice device in platform.Devices)
-                devices.Add(device);
-            context = new ComputeContext(devices, properties, null, IntPtr.Zero);
             deviceInfo = "[HOST]\n\t" + Environment.OSVersion + "\n"
                         + "[OPENCL Platform]\n"
                         + "\tName: " + platform.Name + "\n"
                         + "\tVendor: " + platform.Vendor + "\n";
             deviceInfo += "[DEVICES]\n";
-            foreach (ComputeDevice device in context.Devices)
+            foreach (ComputeDevice device in devices)
             {
                 deviceInfo += "\tName: " + device.Name + "\n"
                     + "\tVendor: " + device.Vendor + "\n"
@@ -134,7 +153,6 @@ namespace ParallelComputedCollisionDetection
                     + "\tGlobal Memory : " + device.GlobalMemorySize + " bytes\n"
                     + "\tShared Memory: " + device.LocalMemorySize + " bytes";
             }
-            InitializeComponents();
             time = new Stopwatch();
         }
 
@@ -145,6 +163,9 @@ namespace ParallelComputedCollisionDetection
             int num_of_bodies = Program.window.number_of_bodies;
             uint num_of_elements = (uint)num_of_bodies * 8;
             float ge = Program.window.grid_edge;
+
+            InitializeQueueAndContext();
+            InitializeComponents();
 
             time.Start();
 
@@ -183,6 +204,8 @@ namespace ParallelComputedCollisionDetection
             byte[] input = new byte[structSize * num_of_bodies];
             Marshal.Copy(ptr, input, 0, structSize * num_of_bodies);
 
+            b_start = time.ElapsedMilliseconds;
+
             b_objectData = new ComputeBuffer<byte>
                 (context, ComputeMemoryFlags.ReadWrite | ComputeMemoryFlags.CopyHostPointer, input);
             b_objectIDArray = new ComputeBuffer<ulong>
@@ -191,28 +214,35 @@ namespace ParallelComputedCollisionDetection
                 (context, ComputeMemoryFlags.ReadWrite, num_of_elements);
             b_gridEdge = new ComputeBuffer<float>
                 (context, ComputeMemoryFlags.ReadOnly | ComputeMemoryFlags.CopyHostPointer, 1, ptr_ge);
-            
+
+            b_count += time.ElapsedMilliseconds - b_start;
+
             k_dataInitialization.SetMemoryArgument(0, b_objectData);
             k_dataInitialization.SetMemoryArgument(1, b_gridEdge);
             k_dataInitialization.SetMemoryArgument(2, b_cellIDArray);
             k_dataInitialization.SetMemoryArgument(3, b_objectIDArray);
+
+            dataInit_start = time.ElapsedMilliseconds;
+
             queue.Execute(k_dataInitialization, null, new long[] { num_of_bodies }, null, null);
             queue.Finish();
+
+            Console.WriteLine("TIME SPENT EXECUTIND DATA INITIALIZATION KERNEL: " + (time.ElapsedMilliseconds - dataInit_start) + "ms");
 
             #endregion
 
             uint[] rs_array = new uint[num_of_bodies * 8];
-            queue.ReadFromBuffer<uint>(b_cellIDArray, ref rs_array, false, null);
+            queue.ReadFromBuffer<uint>(b_cellIDArray, ref rs_array, true, null);
             queue.Finish();
 
             #region READ DATA INITIALIZED IN DEVICE
             array = new BodyData[num_of_bodies];
             byte[] result = new byte[structSize * num_of_bodies];
             IntPtr intPtr = Marshal.AllocHGlobal(structSize * num_of_bodies);
-            queue.ReadFromBuffer<byte>(b_objectData, ref result, false, null);
+            queue.ReadFromBuffer<byte>(b_objectData, ref result, true, null);
             queue.Finish();
             #endregion
-
+#if PRINT
             #region CHECK CORRECTNESS
 
             Marshal.Copy(result, 0, intPtr, structSize * num_of_bodies);
@@ -227,7 +257,7 @@ namespace ParallelComputedCollisionDetection
             uint[] unsortedCellIDArray = new uint[num_of_elements];
             ulong[] unsortedObjectIDArray = new ulong[num_of_elements];
 
-            queue.ReadFromBuffer<uint>(b_cellIDArray, ref unsortedCellIDArray, false, null);
+            queue.ReadFromBuffer<uint>(b_cellIDArray, ref unsortedCellIDArray, true, null);
             queue.Finish();
             
             string cellIDArrayLog = "";
@@ -240,7 +270,7 @@ namespace ParallelComputedCollisionDetection
 
             string objectIDArrayLog = "";
 
-            queue.ReadFromBuffer<ulong>(b_objectIDArray, ref unsortedObjectIDArray, false, null);
+            queue.ReadFromBuffer<ulong>(b_objectIDArray, ref unsortedObjectIDArray, true, null);
             queue.Finish();
             for (int i = 0; i < num_of_elements; i++)
             {
@@ -249,6 +279,8 @@ namespace ParallelComputedCollisionDetection
             File.WriteAllText(Application.StartupPath + @"\unsortedObjectIDArrayLog.txt", objectIDArrayLog);
 
             #endregion
+#endif
+
 #if ALL
 
             #region RADIX SORT
@@ -260,6 +292,9 @@ namespace ParallelComputedCollisionDetection
             #endregion
 
             #region POPULATING RADIX SORT BUFFERS
+
+            b_start = time.ElapsedMilliseconds;
+            
             b_blockScan = new ComputeBuffer<uint>(context, ComputeMemoryFlags.ReadWrite, block_count * (1 << DIGITS_PER_ROUND));
             b_blockOffset = new ComputeBuffer<uint>(context, ComputeMemoryFlags.ReadWrite, block_count * (1 << DIGITS_PER_ROUND));
             b_blockSum = new ComputeBuffer<uint>(context, ComputeMemoryFlags.ReadWrite, BLOCK_SIZE);
@@ -267,6 +302,9 @@ namespace ParallelComputedCollisionDetection
             b_iArrayIn = new ComputeBuffer<uint>(context, ComputeMemoryFlags.ReadWrite
                 | ComputeMemoryFlags.CopyHostPointer, num_of_elements, ptr_i);
             b_iArrayOut = new ComputeBuffer<uint>(context, ComputeMemoryFlags.ReadWrite, num_of_elements);
+
+            b_count += time.ElapsedMilliseconds - b_start;
+
             #endregion
 
             GCHandle gch_sc = GCHandle.Alloc(lScanCount, GCHandleType.Pinned);
@@ -274,10 +312,14 @@ namespace ParallelComputedCollisionDetection
             GCHandle gch_ec = GCHandle.Alloc(num_of_elements, GCHandleType.Pinned);
             IntPtr ptr_ec = gch_ec.AddrOfPinnedObject();
 
+            b_start = time.ElapsedMilliseconds;
+
             b_scanCount =
                     new ComputeBuffer<uint>(context, ComputeMemoryFlags.ReadWrite | ComputeMemoryFlags.CopyHostPointer, 1, ptr_sc);
             b_numberOfElems =
                     new ComputeBuffer<uint>(context, ComputeMemoryFlags.ReadWrite | ComputeMemoryFlags.CopyHostPointer, 1, ptr_ec);
+
+            b_count += time.ElapsedMilliseconds - b_start;
             
             #region libCL RADIX SORT ITERATION
             for (uint j = 0; j < 32; j += DIGITS_PER_ROUND)
@@ -285,10 +327,14 @@ namespace ParallelComputedCollisionDetection
                 GCHandle gch_iter = GCHandle.Alloc(j, GCHandleType.Pinned);
                 IntPtr ptr_j = gch_iter.AddrOfPinnedObject();
 
+                b_start = time.ElapsedMilliseconds;
+
                 ComputeBuffer<uint> b_iteration =
                     new ComputeBuffer<uint>(context, ComputeMemoryFlags.ReadOnly | ComputeMemoryFlags.CopyHostPointer, 1, ptr_j);
 
-            #region BLOCK SORT
+                b_count += time.ElapsedMilliseconds - b_start;
+            
+                #region BLOCK SORT
                 kernel_block_sort.SetMemoryArgument(0, b_cellIDArray);
                 kernel_block_sort.SetMemoryArgument(1, b_temp);
                 kernel_block_sort.SetMemoryArgument(2, b_iArrayIn);
@@ -297,24 +343,42 @@ namespace ParallelComputedCollisionDetection
                 kernel_block_sort.SetMemoryArgument(5, b_blockScan);
                 kernel_block_sort.SetMemoryArgument(6, b_blockOffset);
                 kernel_block_sort.SetMemoryArgument(7, b_numberOfElems);
+
+                radixSort_start = time.ElapsedMilliseconds;
+
                 queue.Execute(kernel_block_sort, null, new long[] { globalSize }, new long[] { BLOCK_SIZE }, null);
                 queue.Finish();
+
+                radixSort_count += time.ElapsedMilliseconds - radixSort_start;
+
                 #endregion
 
             #region BLOCK SCAN
                 kernel_block_scan.SetMemoryArgument(0, b_blockScan);
                 kernel_block_scan.SetMemoryArgument(1, b_blockSum);
                 kernel_block_scan.SetMemoryArgument(2, b_scanCount);
+
+                radixSort_start = time.ElapsedMilliseconds;
+
                 queue.Execute(kernel_block_scan, null, new long[] { lScanSize }, new long[] { BLOCK_SIZE }, null);
                 queue.Finish();
+
+                radixSort_count += time.ElapsedMilliseconds - radixSort_start;
+
                 #endregion
 
             #region BLOCK PREFIX
                 kernel_block_prefix.SetMemoryArgument(0, b_blockScan);
                 kernel_block_prefix.SetMemoryArgument(1, b_blockSum);
                 kernel_block_prefix.SetMemoryArgument(2, b_scanCount);
+
+                radixSort_start = time.ElapsedMilliseconds;
+
                 queue.Execute(kernel_block_prefix, null, new long[] { lScanSize }, new long[] { BLOCK_SIZE }, null);
                 queue.Finish();
+
+                radixSort_count += time.ElapsedMilliseconds - radixSort_start;
+
                 #endregion
 
             #region REORDER
@@ -326,19 +390,30 @@ namespace ParallelComputedCollisionDetection
                 kernel_reorder.SetMemoryArgument(5, b_blockOffset);
                 kernel_reorder.SetMemoryArgument(6, b_iteration);
                 kernel_reorder.SetMemoryArgument(7, b_numberOfElems);
+
+                radixSort_start = time.ElapsedMilliseconds;
+
                 queue.Execute(kernel_reorder, null, new long[] { globalSize }, new long[] { BLOCK_SIZE }, null);
                 queue.Finish();
+
+                radixSort_count += time.ElapsedMilliseconds - radixSort_start;
+
                 #endregion
 
                 b_iteration.Dispose();
                 gch_iter.Free();
             }
             #endregion
+
+            Console.WriteLine("TIME SPENT EXECUTING RADIX SORT: " + radixSort_count + " ms");
+
             #endregion
 
-            queue.ReadFromBuffer<uint>(b_cellIDArray, ref sortedCellIDArray, false, null);
+            queue.ReadFromBuffer<uint>(b_cellIDArray, ref sortedCellIDArray, true, null);
             queue.Finish();
-            
+
+#if PRINT
+
             #region CHECK CELL ID ARRAY ORDER
             string orderedCellIDArrayLog = "";
 
@@ -348,24 +423,34 @@ namespace ParallelComputedCollisionDetection
             }
             File.WriteAllText(Application.StartupPath + @"\radixSortLog.txt", orderedCellIDArrayLog);
             #endregion
-
+#endif
             #region REORDER OBJECT ID ARRAY
             ulong[] o_array = new ulong[num_of_elements];
+
+            b_start = time.ElapsedMilliseconds;
+
             b_reorder = new ComputeBuffer<ulong>(context, ComputeMemoryFlags.ReadWrite, num_of_elements);
+
+            b_count += time.ElapsedMilliseconds - b_start;
 
             k_reorder.SetMemoryArgument(0, b_iArrayIn);
             k_reorder.SetMemoryArgument(1, b_objectIDArray);
             k_reorder.SetMemoryArgument(2, b_reorder);
+
+            reorder_start = time.ElapsedMilliseconds;
+
             queue.Execute(k_reorder, null, new long[] { num_of_elements }, null, null);
             queue.Finish();
 
-            queue.ReadFromBuffer<ulong>(b_reorder, ref o_array, false, null);
+            Console.WriteLine("TIME SPENT REORDERING OBJECT ID ARRAY: " + (time.ElapsedMilliseconds - reorder_start) + " ms");
+
+            queue.ReadFromBuffer<ulong>(b_reorder, ref o_array, true, null);
             queue.Finish();
 
             indexArrayOut = new uint[num_of_elements];
-            queue.ReadFromBuffer<uint>(b_iArrayIn, ref indexArrayOut, false, null);
+            queue.ReadFromBuffer<uint>(b_iArrayIn, ref indexArrayOut, true, null);
             #endregion
-            
+#if PRINT      
             #region CHECK OBJECT ID ORDER
             string orderedObjIDArray = "";
             for (int i = 0; i < num_of_elements; i++)
@@ -381,18 +466,21 @@ namespace ParallelComputedCollisionDetection
             File.WriteAllText(Application.StartupPath + @"\indexLog.txt", indexOut);
             #endregion
 
+#endif
+            
             #region ELEMENT COUNT
 
-            //281 -> max value a cell hash can be
-            uint[] occurrences = new uint[282];
-            uint[] n_occurrences = new uint[282];
+            //511 -> max value a cell hash can be
+            //uint[] occurrences = new uint[512];
+            uint[] n_occurrences = new uint[512];
             uint[] temp_array = new uint[num_of_elements];
             uint[] temp_array2 = new uint[num_of_elements];
-            ulong[] out_array = new ulong[num_of_elements];
             uint[] nocc = new uint[1];
 
+            b_start = time.ElapsedMilliseconds;
+
             b_occPerRad =
-                new ComputeBuffer<uint>(context, ComputeMemoryFlags.ReadWrite, 282);
+                new ComputeBuffer<uint>(context, ComputeMemoryFlags.ReadWrite, 512);
             b_temp2 =
                 new ComputeBuffer<uint>(context, ComputeMemoryFlags.ReadWrite, num_of_elements);
             b_flags =
@@ -400,12 +488,17 @@ namespace ParallelComputedCollisionDetection
             b_numOfCC =
                 new ComputeBuffer<uint>(context, ComputeMemoryFlags.ReadWrite, 1);
 
+            b_count = time.ElapsedMilliseconds - b_start;
+
             k_elementCount.SetMemoryArgument(0, b_reorder);
             k_elementCount.SetMemoryArgument(1, b_temp2);
             k_elementCount.SetMemoryArgument(2, b_numOfCC);
             k_elementCount.SetMemoryArgument(3, b_occPerRad);
             k_elementCount.SetMemoryArgument(4, b_flags);
-            
+
+
+            elemCount_start = time.ElapsedMilliseconds;
+
             try{
                 queue.Execute(k_elementCount, null, new long[] { num_of_elements }, null, null);
             }
@@ -415,23 +508,29 @@ namespace ParallelComputedCollisionDetection
             }
             queue.Finish();
 
-            queue.ReadFromBuffer<uint>(b_temp2, ref temp_array, false, null);
-            queue.ReadFromBuffer<uint>(b_occPerRad, ref n_occurrences, false, null);
-            queue.ReadFromBuffer<uint>(b_numOfCC, ref nocc, false, null);
+            Console.WriteLine("TIME SPENT EXECUTING ELEMENT COUNT: " + (time.ElapsedMilliseconds - elemCount_start) + " ms");
+
+            queue.ReadFromBuffer<uint>(b_temp2, ref temp_array, true, null);
+            queue.ReadFromBuffer<uint>(b_occPerRad, ref n_occurrences, true, null);
+            queue.ReadFromBuffer<uint>(b_numOfCC, ref nocc, true, null);
             queue.Finish();
 
             //Console.WriteLine(sum);
             //Console.WriteLine(nocc[0]);
+            #endregion
 
+#if PRINT
+
+            #region CHECK ELEMENT COUNT
             string hs = "";
-            for (int h = 0; h < 282; h++)
+            for (int h = 0; h < 512; h++)
             {
                 hs += "[" + h + "] " +
                     //temp_array[h] + "\n\t" + 
                     n_occurrences[h] + "\n";
             }
 
-            File.WriteAllText(Application.StartupPath + @"\elementCountLog.txt", hs);
+            File.WriteAllText(Application.StartupPath + @"\elementCountLog_nOcc.txt", hs);
 
             Array.Sort<uint>(rs_array); //sort by .NET
             
@@ -447,9 +546,10 @@ namespace ParallelComputedCollisionDetection
                     temp_array[h] + "\n";
             }
             
-            File.WriteAllText(Application.StartupPath + @"\elementCountLog2.txt", s);
-
+            File.WriteAllText(Application.StartupPath + @"\elementCountLog_temp.txt", s);
             #endregion
+
+#endif
 
             #region PREFIX SUM
 
@@ -458,12 +558,19 @@ namespace ParallelComputedCollisionDetection
             {
                 GCHandle gch_iteration = GCHandle.Alloc(d, GCHandleType.Pinned);
                 IntPtr ptr_iteration = gch_iteration.AddrOfPinnedObject();
-                
+
+                b_start = time.ElapsedMilliseconds;
+
                 ComputeBuffer<uint> b_iteration2 =
                     new ComputeBuffer<uint>(context, ComputeMemoryFlags.ReadWrite | ComputeMemoryFlags.CopyHostPointer, 1, ptr_iteration);
 
+                b_count += time.ElapsedMilliseconds - b_start;
+
                 k_prefixSum.SetMemoryArgument(0, b_temp2);
                 k_prefixSum.SetMemoryArgument(1, b_iteration2);
+
+                prefixSum_start = time.ElapsedMilliseconds;
+
                 try
                 {
                     queue.Execute(k_prefixSum, null, new long[] { num_of_elements }, new long[] { num_of_elements }, null);
@@ -473,23 +580,32 @@ namespace ParallelComputedCollisionDetection
                     File.WriteAllText(Application.StartupPath + @"\exeLog.txt", e.Message);
                 }
                 queue.Finish();
+
+                prefixSum_count += time.ElapsedMilliseconds - prefixSum_start;
+
                 b_iteration2.Dispose();
                 gch_iteration.Free();
             }
 
-            string sscan = "";
+            Console.WriteLine("TIME SPENT EXECUTING PREFIX SUM: " + prefixSum_count + " ms");
 
-            queue.ReadFromBuffer<uint>(b_temp2, ref temp_array2, false, null);
-            queue.ReadFromBuffer<uint>(b_numOfCC, ref nocc, false, null);
+            queue.ReadFromBuffer<uint>(b_temp2, ref temp_array2, true, null);
+            queue.ReadFromBuffer<uint>(b_numOfCC, ref nocc, true, null);
+
+            #endregion
+
+#if PRINT
+
+            #region CHECK SUM
+
+            string sscan = "";
 
             for (int h = 0; h < num_of_elements; h++)
             {
-                //TO BE FIXED!
+                //TO BE FIXED! -- fixed?!
                 sscan += temp_array2[h] + "\n";
             }
             File.WriteAllText(Application.StartupPath + @"\scanLog.txt", sscan);
-            
-            #region CHECK SUM 
 
             uint sum = 0;
             for (int p = 0; p < num_of_elements; p++) //TODO CHANGE TO nocc[0] -- but why??
@@ -498,22 +614,27 @@ namespace ParallelComputedCollisionDetection
             Console.WriteLine("OCL sum: " + nocc[0]);
             
             #endregion
-            
-            #endregion
+
+#endif
 
             #region COLLISION CELL ARRAY CREATION
 
             //uint[] outArray = new uint[nocc[0]];
+            ulong[] out_array = new ulong[nocc[0]];
             uint[] indexes = new uint[nocc[0]];
             b_ccArray = new ComputeBuffer<ulong>(context, ComputeMemoryFlags.ReadWrite, nocc[0]);//TODO !!!!! CHANGE TO nocc[0]
 
             GCHandle gch_ta = GCHandle.Alloc(temp_array, GCHandleType.Pinned);
             IntPtr ptr_ta = gch_ta.AddrOfPinnedObject();
 
+            b_start = time.ElapsedMilliseconds;
+
             b_temp3 =
                 new ComputeBuffer<ulong>(context, ComputeMemoryFlags.ReadWrite | ComputeMemoryFlags.CopyHostPointer, num_of_elements, ptr_ta);
             b_ccIndexes =
                 new ComputeBuffer<uint>(context, ComputeMemoryFlags.ReadWrite, nocc[0]);//TODO!!! CHANGE TO nocc[0]
+
+            b_count += time.ElapsedMilliseconds - b_start;
 
             k_ccArrayCreation.SetMemoryArgument(0, b_reorder);
             k_ccArrayCreation.SetMemoryArgument(1, b_ccArray);
@@ -522,6 +643,9 @@ namespace ParallelComputedCollisionDetection
             k_ccArrayCreation.SetMemoryArgument(4, b_temp3);
             k_ccArrayCreation.SetMemoryArgument(5, b_ccIndexes);
             k_ccArrayCreation.SetMemoryArgument(6, b_flags);
+
+            ccArrayC_start = time.ElapsedMilliseconds;
+
             try
             {
                 queue.Execute(k_ccArrayCreation, null, new long[] { num_of_elements }, null, null);
@@ -532,13 +656,19 @@ namespace ParallelComputedCollisionDetection
             }
             queue.Finish();
 
-            queue.ReadFromBuffer(b_ccArray, ref out_array, false, null);
-            queue.ReadFromBuffer(b_ccIndexes, ref indexes, false, null);
+            Console.WriteLine("TIME SPENT POPULATING COLLISION CELL ARRAY: " + (time.ElapsedMilliseconds - ccArrayC_start) + " ms");
+            time.Stop();
+
+            queue.ReadFromBuffer(b_ccArray, ref out_array, true, null);
+            queue.ReadFromBuffer(b_ccIndexes, ref indexes, true, null);
             queue.Finish();
 
             #endregion
 
-            Console.WriteLine("ELAPSED TIME: " + time.ElapsedMilliseconds);
+            Console.WriteLine("TIME SPENT EXECUTING BROAD-PHASE COLLISION DETECTION: " + time.ElapsedMilliseconds + " ms");
+            Console.WriteLine("TIME SPENT CREATING DEVICE BUFFERS: " + b_count + " ms");
+
+#if PRINT
 
             #region CHECK RESULT
             
@@ -556,6 +686,8 @@ namespace ParallelComputedCollisionDetection
             
             #endregion
 
+#endif
+
             #region POINTERS DISPOSAL
             Marshal.FreeHGlobal(ptr);
             gch_ta.Free();
@@ -567,9 +699,12 @@ namespace ParallelComputedCollisionDetection
             try
             {
                 DisposeBuffers();
+                DisposeComponents();
+                DisposeQueueAndContext();
             }
             catch (Exception e){
                 Console.WriteLine("Error encountered while releasing buffers - " + e.Message);
+                File.WriteAllText(Application.StartupPath + @"\exeLog.txt", e.Message);
             }
 #else
             Marshal.FreeHGlobal(ptr);
@@ -613,16 +748,107 @@ namespace ParallelComputedCollisionDetection
             try
             {
                 DisposeBuffers();
+                DisposeComponents();
+                DisposeQueueAndContext();
             }
-            catch (Exception e) { }
+            catch (Exception e) {
+                Console.WriteLine("Error encountered while releasing resources - " + e.Message);
+                File.WriteAllText(Application.StartupPath + @"\exeLog.txt", e.Message);
+            }
             return;
         }
 
         public void InitializeComponents()
         {
-            queue = new ComputeCommandQueue(context, ComputePlatform.Platforms[0].Devices[0], ComputeCommandQueueFlags.Profiling);
             //ceb = new ComputeEventList();
+            time3 = new Stopwatch();
+            time3.Start();
 
+            p_dataInitialization = new ComputeProgram(context, s_dataInitialization);
+            p_dataInitialization.Build(devices, "-g", null, IntPtr.Zero);
+            p_reorder = new ComputeProgram(context, s_reorder);
+            p_reorder.Build(devices, "-g", null, IntPtr.Zero);
+            p_elementCount = new ComputeProgram(context, s_elementCount);
+            p_elementCount.Build(devices, "-g", null, IntPtr.Zero);
+            p_prefixSum = new ComputeProgram(context, s_prefixSum);
+            p_prefixSum.Build(devices, "-g", null, IntPtr.Zero);
+            p_ccArrayCreation = new ComputeProgram(context, s_ccArrayCreation);
+            p_ccArrayCreation.Build(devices, "-g", null, IntPtr.Zero);
+            p_radixSort = new ComputeProgram(context, s_radixSort);
+            p_radixSort.Build(devices, "-g", null, IntPtr.Zero);
+
+            p_count = time3.ElapsedMilliseconds;
+
+            k_start = time3.ElapsedMilliseconds;
+
+            k_dataInitialization = p_dataInitialization.CreateKernel("dataInitialization");
+            k_reorder = p_reorder.CreateKernel("reorder");
+            k_elementCount = p_elementCount.CreateKernel("elementCount");
+            k_prefixSum = p_prefixSum.CreateKernel("prefixSum");
+            k_ccArrayCreation = p_ccArrayCreation.CreateKernel("ccArrayCreation");
+            kernel_block_sort = p_radixSort.CreateKernel("clBlockSort");
+            kernel_block_scan = p_radixSort.CreateKernel("clBlockScan");
+            kernel_block_prefix = p_radixSort.CreateKernel("clBlockPrefix");
+            kernel_reorder = p_radixSort.CreateKernel("clReorder");
+
+            k_count = time3.ElapsedMilliseconds - k_start;
+
+            Console.WriteLine("TIME SPENT INITIALIZING AND BUILDING PROGRAMS: " + p_count + "ms");
+            Console.WriteLine("TIME SPENT CREATING KERNELS: " + k_count + "ms");
+        }
+
+        public void InitializePlatformPropertiesAndDevices()
+        {
+            platform = ComputePlatform.Platforms[0];
+            properties = new ComputeContextPropertyList(platform);
+            devices = new List<ComputeDevice>();
+            foreach (ComputeDevice device in platform.Devices)
+                devices.Add(device);
+        }
+
+        public void InitializeQueueAndContext()
+        {
+            time2 = new Stopwatch();
+            time2.Start();
+            context = new ComputeContext(devices, properties, null, IntPtr.Zero);
+            Console.WriteLine("TIME SPENT INITIALIZING CONTEXT: " + time2.ElapsedMilliseconds + " ms");
+            time2.Reset();
+            time2.Start();
+            queue = new ComputeCommandQueue(context, ComputePlatform.Platforms[0].Devices[0], ComputeCommandQueueFlags.Profiling);
+            Console.WriteLine("TIME SPENT INITIALIZING QUEUE: " + time2.ElapsedMilliseconds + " ms");
+            time2.Stop();
+        }
+
+        public void DisposeComponents()
+        {
+            //RELEASE KERNELS
+            kernel_block_prefix.Dispose();
+            kernel_block_scan.Dispose();
+            kernel_block_sort.Dispose();
+            kernel_reorder.Dispose();
+            k_reorder.Dispose();
+            k_elementCount.Dispose();
+            k_prefixSum.Dispose();
+            k_ccArrayCreation.Dispose();
+            k_dataInitialization.Dispose();
+
+            //RELEASE PROGRAMS
+            p_elementCount.Dispose();
+            p_reorder.Dispose();
+            p_radixSort.Dispose();
+            p_prefixSum.Dispose();
+            p_dataInitialization.Dispose();
+            p_ccArrayCreation.Dispose();
+        }
+
+        public void DisposeQueueAndContext()
+        {
+            queue.Dispose();
+            context.Dispose();
+        }
+
+        public void ReadAllSources()
+        {
             kernelStream = new System.IO.StreamReader("Kernels/dataInitialization.cl");
             s_dataInitialization = kernelStream.ReadToEnd();
             kernelStream.Close();
@@ -646,87 +872,42 @@ namespace ParallelComputedCollisionDetection
             kernelStream = new System.IO.StreamReader("Kernels/elementCount.cl");
             s_elementCount = kernelStream.ReadToEnd();
             kernelStream.Close();
-
-            p_dataInitialization = new ComputeProgram(context, s_dataInitialization);
-            p_dataInitialization.Build(devices, "-g", null, IntPtr.Zero);
-            k_dataInitialization = p_dataInitialization.CreateKernel("dataInitialization");
-
-            p_reorder = new ComputeProgram(context, s_reorder);
-            p_reorder.Build(devices, "-g", null, IntPtr.Zero);
-            k_reorder = p_reorder.CreateKernel("reorder");
-
-            p_elementCount = new ComputeProgram(context, s_elementCount);
-            p_elementCount.Build(devices, "-g", null, IntPtr.Zero);
-            k_elementCount = p_elementCount.CreateKernel("elementCount");
-
-            p_prefixSum = new ComputeProgram(context, s_prefixSum);
-            p_prefixSum.Build(devices, "-g", null, IntPtr.Zero);
-            k_prefixSum = p_prefixSum.CreateKernel("prefixSum");
-
-            p_ccArrayCreation = new ComputeProgram(context, s_ccArrayCreation);
-            p_ccArrayCreation.Build(devices, "-g", null, IntPtr.Zero);
-            k_ccArrayCreation = p_ccArrayCreation.CreateKernel("ccArrayCreation");
-
-            p_radixSort = new ComputeProgram(context, s_radixSort);
-            p_radixSort.Build(devices, "-g", null, IntPtr.Zero);
-            kernel_block_sort = p_radixSort.CreateKernel("clBlockSort");
-            kernel_block_scan = p_radixSort.CreateKernel("clBlockScan");
-            kernel_block_prefix = p_radixSort.CreateKernel("clBlockPrefix");
-            kernel_reorder = p_radixSort.CreateKernel("clReorder");
-        }
-
-        public void DisposeComponents()
-        {
-            //RELEASE KERNELS
-            kernel_block_prefix.Dispose();
-            kernel_block_scan.Dispose();
-            kernel_block_sort.Dispose();
-            kernel_reorder.Dispose();
-            k_reorder.Dispose();
-            k_elementCount.Dispose();
-            k_prefixSum.Dispose();
-            k_ccArrayCreation.Dispose();
-            k_dataInitialization.Dispose();
-
-            //RELEASE PROGRAMS
-            p_elementCount.Dispose();
-            p_reorder.Dispose();
-            p_radixSort.Dispose();
-            p_prefixSum.Dispose();
-            p_dataInitialization.Dispose();
-            p_ccArrayCreation.Dispose();
-
-            queue.Dispose();
-            context.Dispose();
         }
 
         public void DisposeBuffers()
         {
-            //DATA INITIALIZATION
-            b_objectData.Dispose();
-            b_objectIDArray.Dispose();
-            b_cellIDArray.Dispose();
-            b_gridEdge.Dispose();
-            //RADIX SORT
-            b_blockScan.Dispose();
-            b_blockOffset.Dispose();
-            b_blockSum.Dispose();
-            b_temp.Dispose();
-            b_iArrayIn.Dispose();
-            b_iArrayOut.Dispose();
-            b_scanCount.Dispose();
-            b_numberOfElems.Dispose();
-            //OBJECT ID ARRAY REORDER
-            b_reorder.Dispose();
-            //ELEMENT COUNT
-            b_occPerRad.Dispose();
-            b_temp2.Dispose();
-            b_flags.Dispose();
-            b_numOfCC.Dispose();
-            //COLLISION CELL ARRAY CREATION
-            b_ccArray.Dispose();
-            b_temp3.Dispose();
-            b_ccIndexes.Dispose();
+            try
+            {
+                //DATA INITIALIZATION
+                b_objectData.Dispose();
+                b_objectIDArray.Dispose();
+                b_cellIDArray.Dispose();
+                b_gridEdge.Dispose();
+                //RADIX SORT
+                b_blockScan.Dispose();
+                b_blockOffset.Dispose();
+                b_blockSum.Dispose();
+                b_temp.Dispose();
+                b_iArrayIn.Dispose();
+                b_iArrayOut.Dispose();
+                b_scanCount.Dispose();
+                b_numberOfElems.Dispose();
+                //OBJECT ID ARRAY REORDER
+                b_reorder.Dispose();
+                //ELEMENT COUNT
+                b_occPerRad.Dispose();
+                b_temp2.Dispose();
+                b_flags.Dispose();
+                b_numOfCC.Dispose();
+                //COLLISION CELL ARRAY CREATION
+                b_ccArray.Dispose();
+                b_temp3.Dispose();
+                b_ccIndexes.Dispose();
+            }
+            catch (Exception e)
+            {
+                File.WriteAllText(Application.StartupPath + @"\exeLog.txt", e.Message);
+            }
         }
     }
 }

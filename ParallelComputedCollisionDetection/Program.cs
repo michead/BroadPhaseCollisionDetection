@@ -32,12 +32,13 @@ namespace ParallelComputedCollisionDetection
             Application.SetCompatibleTextRenderingDefault(false);
             window = new Window();
             cd = new CollisionDetection();
-            cd.deviceSetUp();
+            //cd.deviceSetUp();
             t = new Thread(RunForm);
             //t.Start();
             window.Run(60.0);
             //cd.DisposeBuffers();
-            cd.DisposeComponents();
+            //cd.DisposeComponents();
+            //cd.DisposeQueueAndContext();
         }
 
         public static void RunForm()

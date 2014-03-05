@@ -1,4 +1,6 @@
 ﻿//#define TEST
+#define PRINT
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -134,6 +136,9 @@ namespace ParallelComputedCollisionDetection
             timeSinceStart = new Stopwatch();
             timeSinceStart.Start();
             elaspedTime = timeSinceStart.ElapsedMilliseconds;
+            Program.cd.InitializePlatformPropertiesAndDevices();
+            Program.cd.deviceSpecs();
+            Program.cd.ReadAllSources();
             Program.cd.CreateCollisionCellArray();
             Program.t.Start();
             while (Program.ready == false) ;
@@ -211,8 +216,8 @@ namespace ParallelComputedCollisionDetection
                 try
                 {
                     Program.db.rtb.BeginInvoke(mi);
-                    Program.db.comp_rtb.BeginInvoke(mi);
-                    Program.db.fps_rtb.BeginInvoke(mi);
+                    //Program.db.comp_rtb.BeginInvoke(mi);
+                    //Program.db.fps_rtb.BeginInvoke(mi);
                 }
                 catch (Exception e)
                 {
@@ -269,7 +274,7 @@ namespace ParallelComputedCollisionDetection
                 }
                 picked = -1; //this resolves the IndexOutOfBoundException
                 generateRandomBodies(number_of_bodies, true);
-                Program.cd.CreateCollisionCellArray();
+                //Program.cd.CreateCollisionCellArray();
                 
                 //picked = -1;
                 showInfo();
@@ -743,6 +748,7 @@ namespace ParallelComputedCollisionDetection
 
         void showInfo()
         {
+#if PRINT
             {
                 MethodInvoker mi = delegate
                 {
@@ -823,6 +829,17 @@ namespace ParallelComputedCollisionDetection
                     Console.WriteLine("Error encountered while updating info - " + e.Message);
                 }
             }
+#else
+            MethodInvoker mi = delegate
+                {
+                Program.db.comp_rtb.Text = "";
+                };
+            try { Program.db.comp_rtb.BeginInvoke(mi); }
+            catch (Exception e)
+            {
+                Console.WriteLine("Error encountered while updating info - " + e.Message);
+            }
+#endif
         }
 
         public void showFPS()
