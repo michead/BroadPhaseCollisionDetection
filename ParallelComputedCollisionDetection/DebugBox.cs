@@ -33,7 +33,14 @@ namespace ParallelComputedCollisionDetection
             rtb_log.SetBounds(10, 345, 320, 380);
             rtb_log.Text = Program.cd.log;
             Program.ready = true;
+            this.BringToFront();
         }
+
+        private void DebugBox_Layout(object sender, LayoutEventArgs e)
+        {
+            this.BringToFront();
+        }
+        
 
         public void close(){
             this.Close();

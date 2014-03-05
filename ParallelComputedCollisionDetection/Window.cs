@@ -42,7 +42,7 @@ namespace ParallelComputedCollisionDetection
         float coord_transf;
         float wp_scale_factor = 3;
         public float grid_edge = 3;
-        public int number_of_bodies = 64;
+        public int number_of_bodies = 16;
         int tiles;
         KeyboardState old_key;
         bool xRot;
@@ -164,6 +164,8 @@ namespace ParallelComputedCollisionDetection
 #if TEST
 
 #else
+            bringPanelOnTop();
+
             if (Keyboard[OpenTK.Input.Key.Escape])
             {
                 MethodInvoker mi = delegate
@@ -266,7 +268,7 @@ namespace ParallelComputedCollisionDetection
                 };
                 try
                 {
-                    Program.db.rtb.BeginInvoke(mi);
+                    Program.db.BeginInvoke(mi);
                 }
                 catch (Exception e)
                 {
@@ -824,7 +826,7 @@ namespace ParallelComputedCollisionDetection
                         #endregion
                     }
                 };
-                try { Program.db.rtb.BeginInvoke(mi); }
+                try { Program.db.BeginInvoke(mi); }
                 catch(Exception e) {
                     Console.WriteLine("Error encountered while updating info - " + e.Message);
                 }
@@ -856,14 +858,14 @@ namespace ParallelComputedCollisionDetection
 
                 MethodInvoker mi = delegate
                 {
-                    Program.db.fps_rtb.Text = format;
+                    Program.db.Text = format;
 
                     if (fps < 30 && fps >= 10)
                         Program.db.fps_rtb.ForeColor = Color.Yellow;
                     else if (fps < 10)
-                        Program.db.fps_rtb.ForeColor = Color.Red;
+                        Program.db.ForeColor = Color.Red;
                     else
-                        Program.db.fps_rtb.ForeColor = Color.LawnGreen;
+                        Program.db.ForeColor = Color.LawnGreen;
                 };
                 try
                 {
@@ -874,6 +876,15 @@ namespace ParallelComputedCollisionDetection
                     Console.Write("Error encountered while updating fps counter - " + e.Message);
                 }
             }
+        }
+
+        public void bringPanelOnTop()
+        {
+            MethodInvoker mi = delegate
+                {
+                    Program.db.BringToFront();
+                };
+            Program.db.BeginInvoke(mi);
         }
     }
 }

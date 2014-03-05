@@ -41,10 +41,10 @@
             this.comp_rtb.BorderStyle = System.Windows.Forms.BorderStyle.None;
             this.comp_rtb.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.comp_rtb.ForeColor = System.Drawing.SystemColors.Info;
-            this.comp_rtb.Location = new System.Drawing.Point(0, 3);
+            this.comp_rtb.Location = new System.Drawing.Point(0, 1);
             this.comp_rtb.Name = "comp_rtb";
             this.comp_rtb.ReadOnly = true;
-            this.comp_rtb.Size = new System.Drawing.Size(309, 194);
+            this.comp_rtb.Size = new System.Drawing.Size(309, 196);
             this.comp_rtb.TabIndex = 3;
             this.comp_rtb.TabStop = false;
             this.comp_rtb.Text = "";

@@ -230,6 +230,7 @@ namespace ParallelComputedCollisionDetection
             Console.WriteLine("TIME SPENT EXECUTIND DATA INITIALIZATION KERNEL: " + (time.ElapsedMilliseconds - dataInit_start) + "ms");
 
             #endregion
+#if PRINT
 
             uint[] rs_array = new uint[num_of_bodies * 8];
             queue.ReadFromBuffer<uint>(b_cellIDArray, ref rs_array, true, null);
@@ -242,7 +243,7 @@ namespace ParallelComputedCollisionDetection
             queue.ReadFromBuffer<byte>(b_objectData, ref result, true, null);
             queue.Finish();
             #endregion
-#if PRINT
+
             #region CHECK CORRECTNESS
 
             Marshal.Copy(result, 0, intPtr, structSize * num_of_bodies);
@@ -409,12 +410,13 @@ namespace ParallelComputedCollisionDetection
 
             #endregion
 
-            queue.ReadFromBuffer<uint>(b_cellIDArray, ref sortedCellIDArray, true, null);
-            queue.Finish();
-
 #if PRINT
 
             #region CHECK CELL ID ARRAY ORDER
+
+            queue.ReadFromBuffer<uint>(b_cellIDArray, ref sortedCellIDArray, true, null);
+            queue.Finish();
+            
             string orderedCellIDArrayLog = "";
 
             for (int i = 0; i < num_of_elements; i++)
@@ -444,14 +446,17 @@ namespace ParallelComputedCollisionDetection
 
             Console.WriteLine("TIME SPENT REORDERING OBJECT ID ARRAY: " + (time.ElapsedMilliseconds - reorder_start) + " ms");
 
-            queue.ReadFromBuffer<ulong>(b_reorder, ref o_array, true, null);
-            queue.Finish();
-
-            indexArrayOut = new uint[num_of_elements];
-            queue.ReadFromBuffer<uint>(b_iArrayIn, ref indexArrayOut, true, null);
             #endregion
 #if PRINT      
             #region CHECK OBJECT ID ORDER
+
+            indexArrayOut = new uint[num_of_elements];
+            queue.ReadFromBuffer<uint>(b_iArrayIn, ref indexArrayOut, true, null);
+            queue.Finish();
+
+            queue.ReadFromBuffer<ulong>(b_reorder, ref o_array, true, null);
+            queue.Finish();
+
             string orderedObjIDArray = "";
             for (int i = 0; i < num_of_elements; i++)
             {
@@ -511,17 +516,18 @@ namespace ParallelComputedCollisionDetection
             Console.WriteLine("TIME SPENT EXECUTING ELEMENT COUNT: " + (time.ElapsedMilliseconds - elemCount_start) + " ms");
 
             queue.ReadFromBuffer<uint>(b_temp2, ref temp_array, true, null);
-            queue.ReadFromBuffer<uint>(b_occPerRad, ref n_occurrences, true, null);
             queue.ReadFromBuffer<uint>(b_numOfCC, ref nocc, true, null);
             queue.Finish();
 
-            //Console.WriteLine(sum);
-            //Console.WriteLine(nocc[0]);
             #endregion
 
 #if PRINT
 
             #region CHECK ELEMENT COUNT
+
+            queue.ReadFromBuffer<uint>(b_occPerRad, ref n_occurrences, true, null);
+            queue.Finish();
+
             string hs = "";
             for (int h = 0; h < 512; h++)
             {
@@ -590,7 +596,6 @@ namespace ParallelComputedCollisionDetection
             Console.WriteLine("TIME SPENT EXECUTING PREFIX SUM: " + prefixSum_count + " ms");
 
             queue.ReadFromBuffer<uint>(b_temp2, ref temp_array2, true, null);
-            queue.ReadFromBuffer<uint>(b_numOfCC, ref nocc, true, null);
 
             #endregion
 
@@ -659,10 +664,6 @@ namespace ParallelComputedCollisionDetection
             Console.WriteLine("TIME SPENT POPULATING COLLISION CELL ARRAY: " + (time.ElapsedMilliseconds - ccArrayC_start) + " ms");
             time.Stop();
 
-            queue.ReadFromBuffer(b_ccArray, ref out_array, true, null);
-            queue.ReadFromBuffer(b_ccIndexes, ref indexes, true, null);
-            queue.Finish();
-
             #endregion
 
             Console.WriteLine("TIME SPENT EXECUTING BROAD-PHASE COLLISION DETECTION: " + time.ElapsedMilliseconds + " ms");
@@ -671,6 +672,10 @@ namespace ParallelComputedCollisionDetection
 #if PRINT
 
             #region CHECK RESULT
+
+            queue.ReadFromBuffer(b_ccArray, ref out_array, true, null);
+            queue.ReadFromBuffer(b_ccIndexes, ref indexes, true, null);
+            queue.Finish();
             
             string output = "";
             for (int t = 0; t < nocc[0]; t++)//CHANGE TO nocc[0]
