@@ -503,7 +503,8 @@ namespace ParallelComputedCollisionDetection
 
             #region COLLISION CELL ARRAY CREATION
 
-            uint[] outArray = new uint[nocc[0]];
+            //uint[] outArray = new uint[nocc[0]];
+            uint[] indexes = new uint[nocc[0]];
             b_ccArray = new ComputeBuffer<ulong>(context, ComputeMemoryFlags.ReadWrite, nocc[0]);//TODO !!!!! CHANGE TO nocc[0]
 
             GCHandle gch_ta = GCHandle.Alloc(temp_array, GCHandleType.Pinned);
@@ -532,6 +533,7 @@ namespace ParallelComputedCollisionDetection
             queue.Finish();
 
             queue.ReadFromBuffer(b_ccArray, ref out_array, false, null);
+            queue.ReadFromBuffer(b_ccIndexes, ref indexes, false, null);
             queue.Finish();
 
             #endregion
@@ -541,12 +543,13 @@ namespace ParallelComputedCollisionDetection
             #region CHECK RESULT
             
             string output = "";
-            for (int t = 0; t < num_of_elements; t++)//CHANGE TO nocc[0]
+            for (int t = 0; t < nocc[0]; t++)//CHANGE TO nocc[0]
             {
-                output += "___INDEX___ " + t + "\n\t";
+                output += "---INDEX--- " + t + "\n\t";
                 if ((out_array[t] & ((ulong)1 << 63)) != (ulong)0)
                     output += "[H] ";
-                output += (uint)out_array[t] + "\t\n";
+                output += (uint)out_array[t] + "\n\t";
+                output += indexes[t] + "\n";
             }
 
             File.WriteAllText(Application.StartupPath + @"\outputLog.txt", output);
